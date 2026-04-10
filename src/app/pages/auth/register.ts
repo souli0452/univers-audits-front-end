@@ -10,7 +10,7 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-    selector: 'app-login',
+    selector: 'app-register',
     standalone: true,
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
     template: `
@@ -37,36 +37,33 @@ import { AuthService } from '../../services/auth.service';
                                     />
                                 </g>
                             </svg>
-                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to ASCE-LC!</div>
-                            <span class="text-muted-color font-medium">Sign in to continue</span>
+                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Create Account</div>
+                            <span class="text-muted-color font-medium">Join ASCE-LC to submit denunciations</span>
                         </div>
 
                         <div>
+                            <label for="name" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Full Name</label>
+                            <input pInputText id="name" type="text" placeholder="Full name" class="w-full md:w-120 mb-8" [(ngModel)]="name" />
+
                             <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-                            <input pInputText id="email1" type="text" placeholder="Email address" class="w-full md:w-120 mb-8" [(ngModel)]="email" />
+                            <input pInputText id="email1" type="email" placeholder="Email address" class="w-full md:w-120 mb-8" [(ngModel)]="email" />
 
                             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
+                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="true"></p-password>
 
-                            <div class="flex items-center justify-between mt-2 mb-8 gap-8">
-                                <div class="flex items-center">
-                                    <p-checkbox [(ngModel)]="checked" id="rememberme1" binary class="mr-2"></p-checkbox>
-                                    <label for="rememberme1">Remember me</label>
-                                </div>
-                                <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
+                            <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Confirm Password</label>
+                            <p-password id="confirmPassword" [(ngModel)]="confirmPassword" placeholder="Confirm password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
+
+                            <div class="flex items-center mb-8">
+                                <p-checkbox [(ngModel)]="agreeTerms" id="terms" binary class="mr-2"></p-checkbox>
+                                <label for="terms">I agree to the terms and conditions</label>
                             </div>
-                            <p-button label="Sign In" styleClass="w-full" (click)="login()"></p-button>
+                            <p-button label="Create Account" styleClass="w-full" (click)="register()"></p-button>
                             
                             <div class="text-center mt-4">
-                                <span class="text-muted-color">Don't have an account? 
-                                    <a routerLink="/auth/register" class="text-primary font-medium cursor-pointer">Sign up</a>
+                                <span class="text-muted-color">Already have an account? 
+                                    <a routerLink="/auth/login" class="text-primary font-medium cursor-pointer">Sign in</a>
                                 </span>
-                            </div>
-
-                            <!-- Admin Test Button -->
-                            <div class="mt-4 flex gap-2">
-                                <p-button label="Test as Admin" styleClass="w-full" severity="success" (click)="loginAsAdmin()"></p-button>
-                                <p-button label="Test as User" styleClass="w-full" severity="info" (click)="loginAsUser()"></p-button>
                             </div>
                         </div>
                     </div>
@@ -75,40 +72,41 @@ import { AuthService } from '../../services/auth.service';
         </div>
     `
 })
-export class Login {
+export class Register {
+    name: string = '';
     email: string = '';
-
     password: string = '';
-
-    checked: boolean = false;
+    confirmPassword: string = '';
+    agreeTerms: boolean = false;
 
     constructor(
         private authService: AuthService,
         private router: Router
     ) {}
 
-    login(): void {
-        if (this.email && this.password) {
-            this.authService.login(this.email, this.password, 'user').subscribe({
-                next: () => {
-                    this.router.navigate(['/user-home']);
-                }
-            });
+    register(): void {
+        if (!this.name || !this.email || !this.password || !this.confirmPassword) {
+            alert('Please fill in all fields');
+            return;
         }
-    }
 
-    loginAsAdmin(): void {
-        this.authService.login('admin@asce-lc.org', 'admin123', 'admin').subscribe({
-            next: () => {
-                this.router.navigate(['/admin']);
-            }
-        });
-    }
+        if (this.password !== this.confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
 
-    loginAsUser(): void {
-        this.authService.login('user@example.com', 'user123', 'user').subscribe({
+        if (!this.agreeTerms) {
+            alert('Please accept the terms and conditions');
+            return;
+        }
+
+        // Simulate registration - in real app, send to backend
+        this.authService.login(this.email, this.password, 'user').subscribe({
             next: () => {
                 this.router.navigate(['/user-home']);
+            },
+            error: () => {
+                alert('Registration failed. Please try again.');
             }
         });
     }
