@@ -14,9 +14,16 @@ export default [
             .then(m => m.DossierForm)
     },
     {
+        path: 'audio',
+        loadComponent: () =>
+            import('./dossier-audio/dossier-audio')
+            .then(m => m.DossierAudio)
+    },
+    {
         path: ':id',
         loadComponent: () =>
             import('./dossier-detail/dossier-detail')
             .then(m => m.DossierDetail)
     }
+    
 ] as Routes;

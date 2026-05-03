@@ -14,6 +14,12 @@ export default [
             .then(m => m.DepotPlainte)
     },
     {
+        path: 'vocal',
+        loadComponent: () =>
+            import('./vocal/portail-vocal')
+            .then(m => m.PortailVocal)
+    },
+    {
         path: 'suivi',
         loadComponent: () =>
             import('./suivi/portail-suivi')

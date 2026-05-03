@@ -1,2 +1,10 @@
 ﻿import { Routes } from '@angular/router';
-export default [] as Routes;
+
+export default [
+    {
+        path: '',
+        loadComponent: () =>
+            import('./statistiques-dashboard/statistiques-dashboard')
+            .then(m => m.StatistiquesDashboard)
+    }
+] as Routes;

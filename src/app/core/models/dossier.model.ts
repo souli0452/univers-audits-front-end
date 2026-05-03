@@ -164,16 +164,17 @@ export interface PageResponse<T> {
 }
 
 export interface StatistiqueResponse {
-    totalDossiers: number;
-    countByStatus: Record<string, number>;
-    countBySubmissionMode: Record<string, number>;
-    countByType: Record<string, number>;
-    admissibilityRate: number;
-    totalEstimatedLoss?: number;
-    avgRegistrationDelayDays?: number;
+    totalDossiers:                 number;
+    countByStatus:                 Record<string, number>;
+    countBySubmissionMode:         Record<string, number>;
+    countByType:                   Record<string, number>;
+    admissibilityRate:             number;
+    totalEstimatedLoss?:           number;
+    avgRegistrationDelayDays?:     number;
     avgInvestigationDurationDays?: number;
-    overdueAcknowledgments: number;
-    overdueInvestigations: number;
-    period: string;
-    generatedAt: string;
+    overdueAcknowledgments:        number;
+    overdueInvestigations:         number;
+    referredToJustice?:            number;
+    period:                        string;
+    generatedAt:                   string;
 }

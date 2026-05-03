@@ -4,10 +4,24 @@ import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Notfound } from './app/pages/notfound/notfound';
 import { authGuard } from './app/core/guards/auth.guard';
 
-
 export const appRoutes: Routes = [
+
+    // Portail public — page d'accueil sans auth
     {
         path: '',
+        loadComponent: () =>
+            import('./app/pages/portail/accueil/portail-accueil')
+            .then(m => m.PortailAccueil)
+    },
+    {
+        path: 'portail',
+        loadChildren: () =>
+            import('./app/pages/portail/portail.routes')
+    },
+
+    // Application interne — avec auth et layout Sakai
+    {
+        path: 'app',
         component: AppLayout,
         canActivate: [authGuard],
         children: [
@@ -17,7 +31,6 @@ export const appRoutes: Routes = [
                 loadChildren: () =>
                     import('./app/pages/pages.routes')
             },
-            // Pages proces
             {
                 path: 'dossiers',
                 loadChildren: () =>
@@ -37,26 +50,24 @@ export const appRoutes: Routes = [
                 path: 'administration',
                 loadChildren: () =>
                     import('./app/pages/administration/administration.routes')
+            },
+            {
+                path: 'profil',
+                loadComponent: () =>
+                    import('./app/pages/profil/profil')
+                    .then(m => m.Profil)
             }
         ]
     },
+
+    // Suivi public sans auth
+    
+
     { path: 'notfound', component: Notfound },
     {
         path: 'auth',
         loadChildren: () =>
             import('./app/pages/auth/auth.routes')
     },
-    // Page publique suivi citoyen — sans auth
-    {
-        path: 'suivi',
-        loadChildren: () =>
-            import('./app/pages/public/public.routes')
-    },
-
-    {
-    path: 'portail',
-    loadChildren: () =>
-        import('./app/pages/portail/portail.routes')
-},
     { path: '**', redirectTo: '/notfound' }
 ];

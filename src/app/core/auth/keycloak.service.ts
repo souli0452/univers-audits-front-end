@@ -1,71 +1,27 @@
 import { Injectable } from '@angular/core';
 import Keycloak from 'keycloak-js';
-import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class KeycloakService {
 
-    private _keycloak: Keycloak | undefined;
+    private keycloak: Keycloak;
 
-    get keycloak() {
-        if (!this._keycloak) {
-            this._keycloak = new Keycloak({
-                url: environment.keycloak.url,
-                realm: environment.keycloak.realm,
-                clientId: environment.keycloak.clientId
-            });
-        }
-        return this._keycloak;
+    constructor() {
+        this.keycloak = new Keycloak({
+            url:      'http://localhost:8080',
+            realm:    'asce-lc',
+            clientId: 'asce-lc-frontend'
+        });
     }
 
     async init(): Promise<void> {
-        const authenticated = await this.keycloak.init({
-            onLoad: 'login-required',
+        await this.keycloak.init({
+            onLoad:   'check-sso',        
             silentCheckSsoRedirectUri:
                 window.location.origin + '/silent-check-sso.html',
-            pkceMethod: 'S256',
+            pkceMethod:       'S256',
             checkLoginIframe: false
         });
-
-        if (!authenticated) {
-            await this.keycloak.login();
-        }
-    }
-
-    async getToken(): Promise<string> {
-        try {
-            await this.keycloak.updateToken(30);
-        } catch {
-            await this.keycloak.login();
-        }
-        return this.keycloak.token ?? '';
-    }
-
-    getUserInfo() {
-        const t = this.keycloak.tokenParsed;
-        return {
-            id: t?.['sub'] ?? '',
-            username: t?.['preferred_username'] ?? '',
-            firstName: t?.['given_name'] ?? '',
-            lastName: t?.['family_name'] ?? '',
-            email: t?.['email'] ?? '',
-            fullName: ((t?.['given_name'] ?? '') + ' ' +
-                       (t?.['family_name'] ?? '')).trim(),
-            roles: this.getRoles()
-        };
-    }
-
-    getRoles(): string[] {
-        return this.keycloak.tokenParsed
-            ?.['realm_access']?.['roles'] ?? [];
-    }
-
-    hasRole(role: string): boolean {
-        return this.getRoles().includes(role);
-    }
-
-    hasAnyRole(roles: string[]): boolean {
-        return roles.some(r => this.hasRole(r));
     }
 
     isAuthenticated(): boolean {
@@ -73,12 +29,48 @@ export class KeycloakService {
     }
 
     login(): void {
-        this.keycloak.login();
+        this.keycloak.login({
+            redirectUri: window.location.origin + '/#/app'
+        });
     }
 
     logout(): void {
         this.keycloak.logout({
-            redirectUri: window.location.origin
+            redirectUri: window.location.origin + '/#/portail'
         });
+    }
+
+    getToken(): string | undefined {
+        return this.keycloak.token;
+    }
+
+    async getValidToken(): Promise<string | undefined> {
+        try {
+            await this.keycloak.updateToken(30);
+        } catch {
+            this.login();
+        }
+        return this.keycloak.token;
+    }
+
+    getUserInfo() {
+        const p = this.keycloak.tokenParsed;
+        return {
+            id:        p?.['sub']         || '',
+            username:  p?.['preferred_username'] || '',
+            firstName: p?.['given_name']  || '',
+            lastName:  p?.['family_name'] || '',
+            email:     p?.['email']       || '',
+            fullName:  p?.['name']        || '',
+            roles:     p?.['realm_access']?.['roles'] || []
+        };
+    }
+
+    hasRole(role: string): boolean {
+        return this.keycloak.hasRealmRole(role);
+    }
+
+    hasAnyRole(roles: string[]): boolean {
+        return roles.some(r => this.keycloak.hasRealmRole(r));
     }
 }

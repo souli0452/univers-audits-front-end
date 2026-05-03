@@ -5,14 +5,13 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angu
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ToastModule } from 'primeng/toast';
-import { StepperModule } from 'primeng/stepper';
 import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
+import { AttachmentService } from '../../../core/services/attachment.service';
 
 @Component({
     selector: 'app-depot-plainte',
@@ -20,499 +19,760 @@ import { DossierService } from '../../../core/services/dossier.service';
     imports: [
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
-        TextareaModule, SelectModule, CheckboxModule,
-        InputNumberModule, ToastModule, StepperModule, DialogModule
+        TextareaModule, CheckboxModule, InputNumberModule,
+        ToastModule, DialogModule
     ],
     providers: [MessageService],
+    styles: [`
+        @keyframes slide-up {
+            from { opacity:0; transform:translateY(20px); }
+            to   { opacity:1; transform:translateY(0);    }
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+        @keyframes pulse-ring {
+            0%   { transform:scale(1);    opacity:.5; }
+            100% { transform:scale(1.6);  opacity:0;  }
+        }
+
+        :host { display:block; font-family:var(--font-family); }
+
+        .page { min-height:100vh; background:linear-gradient(160deg,#f0fdf4 0%,#f8fafc 70%); }
+
+        /* Navbar */
+        .navbar {
+            background:#16a34a; padding:0 1.5rem; height:60px;
+            display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+            box-shadow:0 2px 12px rgba(0,0,0,.15);
+        }
+        .nav-left { display:flex; align-items:center; gap:.875rem; }
+        .nav-logo  {
+            width:38px; height:38px; border-radius:50%;
+            overflow:hidden; background:#fff; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .nav-logo img { width:100%; height:100%; object-fit:contain; }
+        .nav-title { color:#fff; font-weight:900; font-size:1rem; letter-spacing:1px; }
+        .nav-sub   { color:#bbf7d0; font-size:.72rem; }
+
+        /* Content */
+        .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
+
+        /* Hero */
+        .hero { text-align:center; margin-bottom:2.5rem; animation:slide-up .4s ease; }
+        .hero-icon {
+            width:80px; height:80px; border-radius:50%;
+            background:linear-gradient(135deg,#16a34a,#22c55e);
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem;
+            box-shadow:0 8px 24px rgba(22,163,74,.3);
+        }
+        .hero-icon i { font-size:2.25rem; color:#fff; }
+        .hero h1 { font-size:1.75rem; font-weight:900; color:#111827; margin-bottom:.5rem; }
+        .hero p  { color:#6b7280; font-size:.875rem; }
+
+        /* Steps bar */
+        .steps-bar {
+            display:flex; align-items:center;
+            justify-content:center; gap:0; margin-bottom:2rem;
+        }
+        .step-item { display:flex; align-items:center; }
+        .step-circle {
+            width:44px; height:44px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:.875rem;
+            border:2.5px solid #e5e7eb; background:#fff; color:#9ca3af;
+            transition:all .3s; flex-shrink:0;
+        }
+        .step-circle.active {
+            background:#16a34a; border-color:#16a34a; color:#fff;
+            box-shadow:0 0 0 5px rgba(22,163,74,.15);
+        }
+        .step-circle.done { background:#22c55e; border-color:#22c55e; color:#fff; }
+        .step-label {
+            font-size:.78rem; font-weight:600; color:#9ca3af;
+            margin:0 .5rem; white-space:nowrap;
+        }
+        .step-label.active { color:#16a34a; }
+        .step-label.done   { color:#22c55e; }
+        .step-line {
+            width:48px; height:3px; background:#e5e7eb;
+            border-radius:2px; transition:background .3s; flex-shrink:0;
+        }
+        .step-line.done { background:#22c55e; }
+
+        /* Card */
+        .card {
+            background:#fff; border-radius:20px; padding:2rem;
+            border:1px solid #f0fdf4;
+            box-shadow:0 4px 24px rgba(0,0,0,.06);
+            animation:slide-up .3s ease;
+        }
+        .card-title {
+            font-size:1.1rem; font-weight:800; color:#111827;
+            margin-bottom:1.5rem; display:flex; align-items:center; gap:.75rem;
+        }
+        .card-title-icon {
+            width:36px; height:36px; border-radius:10px;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0;
+        }
+
+        /* Type selector */
+        .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .type-card {
+            border:2.5px solid #e5e7eb; border-radius:14px; padding:1rem;
+            cursor:pointer; transition:all .2s; background:#fff;
+        }
+        .type-card:hover   { border-color:#86efac; background:#f9fffe; }
+        .type-card.selected { border-color:#16a34a; background:#f0fdf4; }
+        .type-icon {
+            width:36px; height:36px; border-radius:10px;
+            display:flex; align-items:center; justify-content:center;
+            margin-bottom:.625rem;
+        }
+        .type-name { font-weight:700; font-size:.875rem; color:#111827; }
+        .type-desc { font-size:.75rem; color:#9ca3af; margin-top:2px; }
+
+        /* Field */
+        .field { display:flex; flex-direction:column; gap:.375rem; }
+        .field label { font-size:.875rem; font-weight:700; color:#374151; }
+        .field-hint { font-size:.75rem; color:#9ca3af; }
+        .char-count { text-align:right; font-size:.75rem; color:#9ca3af; }
+
+        /* Grid 2 */
+        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+
+        /* Audio zone */
+        .audio-idle {
+            text-align:center; padding:2rem 1.5rem; border-radius:14px;
+            border:2px dashed #86efac; background:#f0fdf4;
+        }
+        .audio-idle-icon {
+            width:64px; height:64px; border-radius:50%;
+            background:#dcfce7; display:flex; align-items:center; justify-content:center;
+            margin:0 auto .875rem;
+        }
+        .audio-idle-icon i { font-size:1.75rem; color:#16a34a; }
+
+        .audio-recording {
+            text-align:center; padding:1.5rem;
+            border-radius:14px; border:2px solid #ef4444; background:#fff5f5;
+        }
+        .rec-pulse-wrap { position:relative; display:inline-block; margin-bottom:.875rem; }
+        .rec-ring {
+            position:absolute; inset:-10px; border-radius:50%;
+            border:3px solid #ef4444; animation:pulse-ring 1.4s ease-out infinite;
+        }
+        .rec-icon {
+            width:72px; height:72px; border-radius:50%; background:#ef4444;
+            display:flex; align-items:center; justify-content:center; position:relative; z-index:1;
+        }
+        .rec-icon i { font-size:2rem; color:#fff; }
+        .rec-timer { font-family:monospace; font-size:2.5rem; font-weight:900; color:#dc2626; line-height:1; }
+        .rec-label-badge {
+            display:inline-flex; align-items:center; gap:6px;
+            background:#fee2e2; border-radius:20px; padding:4px 14px; margin:.625rem 0 1rem;
+        }
+        .rec-dot { width:8px; height:8px; border-radius:50%; background:#ef4444; animation:blink 1s infinite; }
+        .rec-text { color:#b91c1c; font-weight:900; font-size:.75rem; letter-spacing:2px; }
+
+        .audio-done {
+            display:flex; align-items:center; gap:.875rem; padding:.875rem;
+            border-radius:12px; background:#f0fdf4; border:1.5px solid #86efac;
+            margin-bottom:.75rem;
+        }
+        .done-icon {
+            width:44px; height:44px; border-radius:12px; background:#22c55e;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .done-icon i { color:#fff; font-size:1.1rem; }
+
+        /* Upload zone */
+        .upload-zone {
+            border:2.5px dashed #d1d5db; border-radius:14px;
+            padding:1.5rem; text-align:center; cursor:pointer;
+            transition:all .2s; background:#fafafa;
+        }
+        .upload-zone:hover { border-color:#86efac; background:#f0fdf4; }
+        .file-item {
+            display:flex; align-items:center; gap:.75rem; padding:.75rem;
+            border-radius:12px; background:#f9fafb; border:1.5px solid #e5e7eb;
+        }
+        .file-icon {
+            width:40px; height:40px; border-radius:10px;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+
+        /* Anonymous selector */
+        .anon-option {
+            border:2.5px solid #e5e7eb; border-radius:14px;
+            padding:1rem 1.25rem; cursor:pointer; transition:all .2s;
+        }
+        .anon-option.selected-id   { border-color:#16a34a; background:#f0fdf4; }
+        .anon-option.selected-anon { border-color:#f59e0b; background:#fffbeb; }
+        .radio-dot {
+            width:20px; height:20px; border-radius:50%; border:2px solid #d1d5db;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s;
+        }
+        .radio-dot.active-id   { border-color:#16a34a; background:#16a34a; }
+        .radio-dot.active-anon { border-color:#f59e0b; background:#f59e0b; }
+        .radio-inner { width:8px; height:8px; border-radius:50%; background:#fff; }
+
+        /* Recap */
+        .recap-section {
+            background:#f9fafb; border-radius:14px; padding:1rem 1.25rem;
+            border:1.5px solid #e5e7eb;
+        }
+        .recap-row { display:flex; gap:.5rem; font-size:.875rem; padding:.25rem 0; }
+        .recap-key { color:#9ca3af; width:100px; flex-shrink:0; }
+        .recap-val { font-weight:600; color:#111827; }
+
+        /* Footer nav */
+        .step-footer {
+            display:flex; justify-content:space-between;
+            align-items:center; margin-top:1.75rem; gap:.75rem;
+        }
+
+        /* Success dialog */
+        .success-body { padding:.5rem .25rem; text-align:center; }
+        .success-icon {
+            width:88px; height:88px; border-radius:50%;
+            background:linear-gradient(135deg,#16a34a,#22c55e);
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; box-shadow:0 8px 24px rgba(22,163,74,.3);
+        }
+        .success-icon i { font-size:2.75rem; color:#fff; }
+        .code-box {
+            background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+            border:2px solid #86efac; border-radius:16px;
+            padding:1.25rem; margin:1.25rem 0;
+        }
+        .code-label { font-size:.65rem; font-weight:900; color:#16a34a; letter-spacing:2px; text-transform:uppercase; }
+        .code-value { font-family:monospace; font-size:2.5rem; font-weight:900; color:#166534; letter-spacing:6px; }
+        .code-hint  { font-size:.75rem; color:#15803d; margin-top:.375rem; }
+
+        /* Page foot */
+        .page-foot { text-align:center; margin-top:2rem; color:#9ca3af; font-size:.75rem; padding-bottom:1rem; }
+
+        @media (max-width:520px) {
+            .grid2 { grid-template-columns:1fr; }
+            .type-grid { grid-template-columns:1fr; }
+            .step-label { display:none; }
+        }
+    `],
     template: `
 <p-toast />
 
-<!-- Dialog succès -->
-<p-dialog
-    [(visible)]="showSuccess"
-    header="Dossier soumis avec succès"
-    [modal]="true"
-    [closable]="false"
-    [style]="{width: '480px'}">
-    <div class="text-center py-4">
-        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="pi pi-check-circle text-green-600 text-4xl"></i>
-        </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">
-            Merci pour votre signalement
+<!-- ── Dialog succès ──────────────────────────────────────── -->
+<p-dialog [(visible)]="showSuccess" header=" " [modal]="true"
+    [closable]="false" [style]="{width:'400px'}">
+    <div class="success-body">
+        <div class="success-icon"><i class="pi pi-check-circle"></i></div>
+        <h3 style="font-size:1.35rem;font-weight:900;color:#111827;margin-bottom:.5rem;">
+            Merci pour votre signalement !
         </h3>
-        <p class="text-gray-500 mb-4">
-            Votre dossier a été enregistré avec succès.
+        <p style="font-size:.875rem;color:#6b7280;line-height:1.7;margin-bottom:0;">
+            Votre dossier a été enregistré.<br>
             Conservez précieusement votre code d'accès.
         </p>
-        <div class="bg-green-50 rounded-xl p-4 border border-green-200 mb-4">
-            <div class="text-xs text-green-600 font-medium mb-1">
-                Votre code de suivi (B4)
-            </div>
-            <div class="font-mono text-3xl font-bold text-green-700 tracking-widest">
-                {{ createdAccessCode }}
-            </div>
-            <div class="text-xs text-green-500 mt-2">
-                Notez ce code — il vous permettra de suivre
-                votre dossier en ligne
+        <div class="code-box">
+            <div class="code-label">Votre code de suivi (B4)</div>
+            <div class="code-value">{{ createdAccessCode }}</div>
+            <div class="code-hint">
+                <i class="pi pi-camera" style="font-size:.7rem;"></i>
+                Notez ce code ou prenez une photo
             </div>
         </div>
-        <div class="text-sm text-gray-500 bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-            <i class="pi pi-info-circle text-yellow-600 mr-2"></i>
-            Vous recevrez un accusé de réception officiel
-            dans les 7 jours ouvrables.
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:.875rem;font-size:.8rem;color:#92400e;text-align:left;">
+            <i class="pi pi-info-circle" style="color:#d97706;margin-right:6px;"></i>
+            Vous recevrez un accusé de réception officiel dans les 7 jours ouvrables.
         </div>
     </div>
     <ng-template pTemplate="footer">
-        <div class="flex gap-2 justify-center">
-            <p-button
-                label="Suivre mon dossier"
-                icon="pi pi-search"
-                routerLink="/portail/suivi"
+        <div style="display:flex;gap:.5rem;justify-content:center;">
+            <p-button label="Suivre mon dossier" icon="pi pi-search"
+                severity="success" routerLink="/portail/suivi"
                 (onClick)="showSuccess = false" />
-            <p-button
-                label="Retour à l'accueil"
-                severity="secondary"
-                outlined
-                routerLink="/portail"
-                (onClick)="showSuccess = false" />
+            <p-button label="Accueil" severity="secondary" outlined
+                routerLink="/" (onClick)="showSuccess = false" />
         </div>
     </ng-template>
 </p-dialog>
 
-<div class="min-h-screen bg-gray-50">
+<!-- ── Page principale ────────────────────────────────────── -->
+<div class="page">
 
-    <!-- Navigation -->
-    <nav class="bg-green-700 text-white px-6 py-4 shadow-lg">
-        <div class="max-w-4xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <p-button
-                    icon="pi pi-arrow-left"
-                    severity="contrast"
-                    text
-                    routerLink="/portail" />
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-shield text-xl"></i>
-                    <span class="font-bold">ASCE-LC</span>
-                    <span class="text-green-300 hidden sm:block">
-                        — Dépôt de plainte en ligne
-                    </span>
-                </div>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <p-button icon="pi pi-arrow-left" severity="contrast"
+                text routerLink="/" />
+            <div class="nav-logo">
+                <img src="assets/logo-integrite.png" alt="Intégrité+" />
             </div>
-            <p-button
-                label="Suivre un dossier"
-                icon="pi pi-search"
-                severity="contrast"
-                outlined
-                size="small"
-                routerLink="/portail/suivi" />
+            <div>
+                <div class="nav-title">INTÉGRITÉ+</div>
+                <div class="nav-sub">Dépôt de plainte sécurisé</div>
+            </div>
         </div>
+        <p-button label="Suivre" icon="pi pi-search" severity="contrast"
+            outlined size="small" routerLink="/portail/suivi" />
     </nav>
 
-    <div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="content">
 
-        <!-- En-tête -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                Déposer une plainte ou dénonciation
-            </h1>
-            <p class="text-gray-500">
-                Formulaire sécurisé — vos données sont protégées
-            </p>
+        <!-- Hero -->
+        <div class="hero">
+            <div class="hero-icon"><i class="pi pi-file-edit"></i></div>
+            <h1>Déposer un signalement</h1>
+            <p>Formulaire sécurisé — vos données sont strictement protégées</p>
         </div>
 
-        <!-- Indicateur de progression -->
-        <div class="flex items-center justify-center mb-8">
-            <div *ngFor="let s of [1,2,3]; let i = index"
-                 class="flex items-center">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                         [class]="currentStep > s
-                            ? 'bg-green-500 text-white'
-                            : currentStep === s
-                                ? 'bg-green-700 text-white'
-                                : 'bg-gray-200 text-gray-500'">
-                        <i *ngIf="currentStep > s" class="pi pi-check text-xs"></i>
-                        <span *ngIf="currentStep <= s">{{ s }}</span>
-                    </div>
-                    <span class="text-sm hidden sm:block"
-                          [class]="currentStep >= s ? 'text-gray-900 font-medium' : 'text-gray-400'">
-                        {{ stepLabels[i] }}
-                    </span>
+        <!-- Steps -->
+        <div class="steps-bar">
+            <div class="step-item" *ngFor="let s of steps; let i = index; let last = last">
+                <div class="step-circle"
+                    [class.active]="currentStep === s.id"
+                    [class.done]="currentStep > s.id">
+                    <i *ngIf="currentStep > s.id" class="pi pi-check" style="font-size:.75rem;"></i>
+                    <span *ngIf="currentStep <= s.id">{{ s.id }}</span>
                 </div>
-                <div *ngIf="s < 3"
-                     class="w-12 h-0.5 mx-2"
-                     [class]="currentStep > s ? 'bg-green-500' : 'bg-gray-200'">
-                </div>
+                <span class="step-label"
+                    [class.active]="currentStep === s.id"
+                    [class.done]="currentStep > s.id">
+                    {{ s.label }}
+                </span>
+                <div *ngIf="!last" class="step-line"
+                    [class.done]="currentStep > s.id"></div>
             </div>
         </div>
 
-        <!-- Étape 1 — Les faits -->
-        <div *ngIf="currentStep === 1"
-             class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <i class="pi pi-file-edit text-green-600"></i>
-                Décrivez les faits
-            </h2>
+        <!-- ═══ Étape 1 — Les faits ═══ -->
+        <div *ngIf="currentStep === 1" class="card">
 
-            <div class="flex flex-col gap-4">
+            <div class="card-title">
+                <div class="card-title-icon" style="background:#dcfce7;">
+                    <i class="pi pi-file-edit" style="color:#16a34a;"></i>
+                </div>
+                Décrivez les faits
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
                 <!-- Type -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium text-gray-700">
-                        Type de signalement *
-                    </label>
-                    <div class="grid grid-cols-2 gap-3">
+                <div class="field">
+                    <label>Type de signalement *</label>
+                    <div class="type-grid">
                         <div *ngFor="let type of typeOptions"
-                             class="border-2 rounded-xl p-3 cursor-pointer transition-all"
-                             [class]="f['type'].value === type.value
-                                ? 'border-green-500 bg-green-50'
-                                : 'border-gray-200 hover:border-gray-300'"
-                             (click)="f['type'].setValue(type.value)">
-                            <div class="font-medium text-sm">{{ type.label }}</div>
-                            <div class="text-xs text-gray-400 mt-0.5">
-                                {{ type.description }}
+                            class="type-card"
+                            [class.selected]="f['type'].value === type.value"
+                            (click)="f['type'].setValue(type.value)">
+                            <div class="type-icon"
+                                [style.background]="f['type'].value === type.value ? '#dcfce7' : '#f3f4f6'">
+                                <i [class]="type.icon"
+                                    [style.color]="f['type'].value === type.value ? '#16a34a' : '#9ca3af'"
+                                    style="font-size:1.1rem;"></i>
                             </div>
+                            <div class="type-name">{{ type.label }}</div>
+                            <div class="type-desc">{{ type.description }}</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Objet -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium text-gray-700">
-                        Résumé de votre signalement *
-                    </label>
-                    <input
-                        pInputText
-                        [formControl]="f['object']"
+                <div class="field">
+                    <label>Résumé du signalement *</label>
+                    <input pInputText [formControl]="f['object']"
                         placeholder="Ex: Détournement de fonds à la mairie de..."
                         class="w-full" />
-                    <small class="text-gray-400">
-                        {{ f['object'].value?.length || 0 }}/200 caractères
+                    <small *ngIf="f['object'].invalid && f['object'].touched"
+                        style="color:#ef4444;font-size:.75rem;">
+                        Minimum 10 caractères requis
                     </small>
                 </div>
 
                 <!-- Description -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium text-gray-700">
-                        Description détaillée des faits *
-                    </label>
-                    <textarea
-                        pTextarea
-                        [formControl]="f['description']"
-                        placeholder="Décrivez les faits avec précision : qui, quoi, quand, où, comment. Plus votre description est détaillée, plus votre dossier sera traité efficacement."
-                        rows="6"
-                        class="w-full">
+                <div class="field">
+                    <label>Description détaillée *</label>
+                    <textarea pTextarea [formControl]="f['description']"
+                        placeholder="Décrivez les faits : qui, quoi, quand, où, comment..."
+                        rows="5" class="w-full resize-none">
                     </textarea>
+                    <div class="char-count">
+                        {{ f['description'].value?.length || 0 }} caractères
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Lieu -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">
-                            Lieu des faits
-                        </label>
-                        <input
-                            pInputText
-                            [formControl]="f['incidentLocation']"
-                            placeholder="Service, ville, région..."
-                            class="w-full" />
+                <!-- Lieu + Période -->
+                <div class="grid2">
+                    <div class="field">
+                        <label>Lieu des faits</label>
+                        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            <i class="pi pi-map-marker" style="color:#9ca3af;font-size:.875rem;"></i>
+                            <input pInputText [formControl]="f['incidentLocation']"
+                                placeholder="Service, ville..."
+                                style="border:none;outline:none;background:transparent;padding:.625rem 0;flex:1;font-size:.875rem;" />
+                        </div>
                     </div>
-
-                    <!-- Période -->
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">
-                            Période approximative
-                        </label>
-                        <input
-                            pInputText
-                            [formControl]="f['incidentPeriod']"
-                            placeholder="Ex: Janvier 2024"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Période approximative</label>
+                        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            <i class="pi pi-calendar" style="color:#9ca3af;font-size:.875rem;"></i>
+                            <input pInputText [formControl]="f['incidentPeriod']"
+                                placeholder="Ex: Janvier 2024"
+                                style="border:none;outline:none;background:transparent;padding:.625rem 0;flex:1;font-size:.875rem;" />
+                        </div>
                     </div>
                 </div>
 
                 <!-- Montant -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-sm font-medium text-gray-700">
-                        Montant estimé du préjudice (FCFA)
-                        <span class="text-gray-400 font-normal ml-1">optionnel</span>
+                <div class="field">
+                    <label>
+                        Montant estimé (FCFA)
+                        <span style="color:#9ca3af;font-weight:400;"> — optionnel</span>
                     </label>
-                    <p-inputnumber
-                        [formControl]="f['estimatedLoss']"
-                        [useGrouping]="true"
-                        placeholder="0"
-                        styleClass="w-full" />
+                    <p-inputnumber [formControl]="f['estimatedLoss']"
+                        [useGrouping]="true" placeholder="0" styleClass="w-full" />
+                    <span class="field-hint">Laissez vide si inconnu</span>
+                </div>
+
+                <!-- Audio -->
+                <div class="field">
+                    <label>
+                        Témoignage audio
+                        <span style="color:#9ca3af;font-weight:400;"> — optionnel</span>
+                    </label>
+
+                    <div *ngIf="!audioUrl && !isRecording" class="audio-idle">
+                        <div class="audio-idle-icon">
+                            <i class="pi pi-microphone"></i>
+                        </div>
+                        <p style="font-size:.875rem;color:#374151;font-weight:600;margin-bottom:.375rem;">
+                            Enregistrez votre témoignage vocal
+                        </p>
+                        <p style="font-size:.8rem;color:#9ca3af;margin-bottom:1rem;">
+                            Complément utile à votre déclaration écrite
+                        </p>
+                        <p-button label="Démarrer l'enregistrement"
+                            icon="pi pi-microphone" severity="secondary" outlined
+                            (onClick)="startRecording()" />
+                    </div>
+
+                    <div *ngIf="isRecording" class="audio-recording">
+                        <div class="rec-pulse-wrap">
+                            <div class="rec-ring"></div>
+                            <div class="rec-icon"><i class="pi pi-microphone"></i></div>
+                        </div>
+                        <div class="rec-timer">{{ formatDuration(recordingDuration) }}</div>
+                        <div class="rec-label-badge">
+                            <span class="rec-dot"></span>
+                            <span class="rec-text">REC</span>
+                        </div>
+                        <p-button label="Arrêter" icon="pi pi-stop-circle"
+                            severity="danger" (onClick)="stopRecording()" />
+                    </div>
+
+                    <div *ngIf="audioUrl && !isRecording">
+                        <div class="audio-done">
+                            <div class="done-icon"><i class="pi pi-check"></i></div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;color:#166534;font-size:.875rem;">
+                                    Audio enregistré ✓
+                                </div>
+                                <div style="font-size:.8rem;color:#16a34a;margin-top:2px;">
+                                    Durée : {{ formatDuration(recordingDuration) }}
+                                </div>
+                            </div>
+                        </div>
+                        <audio [src]="audioUrl" controls
+                            style="width:100%;border-radius:8px;margin-bottom:.625rem;"></audio>
+                        <p-button label="Supprimer et recommencer" icon="pi pi-trash"
+                            severity="danger" text size="small" (onClick)="deleteAudio()" />
+                    </div>
+                </div>
+
+                <!-- Pièces jointes -->
+                <div class="field">
+                    <label>
+                        Pièces jointes
+                        <span style="color:#9ca3af;font-weight:400;">
+                            — max {{ maxFiles }} fichiers, {{ maxSizeMB }}MB chacun
+                        </span>
+                    </label>
+
+                    <div class="upload-zone" (click)="fileInput.click()"
+                        (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+                        <input #fileInput type="file" multiple style="display:none;"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
+                            (change)="onFileSelect($event)" />
+                        <i class="pi pi-cloud-upload" style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;display:block;"></i>
+                        <p style="font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.25rem;">
+                            Cliquez ou glissez vos fichiers ici
+                        </p>
+                        <p style="font-size:.75rem;color:#9ca3af;">
+                            PDF, Word, Images, Audio, Vidéo
+                        </p>
+                    </div>
+
+                    <div *ngIf="attachments.length > 0"
+                        style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
+                        <div *ngFor="let file of attachments; let i = index" class="file-item">
+                            <div class="file-icon"
+                                [style.background]="getFileBg(file)">
+                                <i [class]="getFileIcon(file)"
+                                    [style.color]="getFileColor(file)"
+                                    style="font-size:1rem;"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:.875rem;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    {{ file.name }}
+                                </div>
+                                <div style="font-size:.75rem;color:#9ca3af;">
+                                    {{ formatFileSize(file.size) }}
+                                </div>
+                            </div>
+                            <p-button icon="pi pi-times" severity="danger"
+                                text size="small" (onClick)="removeAttachment(i)" />
+                        </div>
+                        <div style="text-align:right;font-size:.75rem;color:#9ca3af;">
+                            {{ attachments.length }}/{{ maxFiles }} fichiers
+                        </div>
+                    </div>
                 </div>
 
             </div>
 
-            <div class="flex justify-end mt-6">
-                <p-button
-                    label="Continuer"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
+            <div class="step-footer">
+                <span style="font-size:.78rem;color:#9ca3af;">
+                    <i class="pi pi-lock"></i> Données chiffrées
+                </span>
+                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
                     [disabled]="!f['object'].value || !f['description'].value"
                     (onClick)="currentStep = 2" />
             </div>
         </div>
 
-        <!-- Étape 2 — Vos coordonnées -->
-        <div *ngIf="currentStep === 2"
-             class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <i class="pi pi-user text-green-600"></i>
+        <!-- ═══ Étape 2 — Coordonnées ═══ -->
+        <div *ngIf="currentStep === 2" class="card">
+
+            <div class="card-title">
+                <div class="card-title-icon" style="background:#dbeafe;">
+                    <i class="pi pi-user" style="color:#2563eb;"></i>
+                </div>
                 Vos coordonnées
-            </h2>
-            <p class="text-gray-500 text-sm mb-6">
-                Ces informations sont strictement confidentielles.
-                Vous pouvez rester anonyme.
+            </div>
+            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;margin-top:-.75rem;">
+                Informations strictement confidentielles. Vous pouvez rester anonyme.
             </p>
 
-            <!-- Choix anonymat -->
-            <div class="flex flex-col gap-3 mb-6">
-                <div class="border-2 rounded-xl p-4 cursor-pointer transition-all"
-                     [class]="!fd['anonymous'].value
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200'"
-                     (click)="fd['anonymous'].setValue(false)">
-                    <div class="flex items-center gap-3">
-                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                             [class]="!fd['anonymous'].value
-                                ? 'border-green-500 bg-green-500'
-                                : 'border-gray-300'">
-                            <div *ngIf="!fd['anonymous'].value"
-                                 class="w-2 h-2 bg-white rounded-full">
-                            </div>
+            <!-- Choix identité -->
+            <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
+                <div class="anon-option" [class.selected-id]="!fd['anonymous'].value"
+                    (click)="fd['anonymous'].setValue(false)">
+                    <div style="display:flex;align-items:center;gap:.875rem;">
+                        <div class="radio-dot" [class.active-id]="!fd['anonymous'].value">
+                            <div *ngIf="!fd['anonymous'].value" class="radio-inner"></div>
                         </div>
-                        <div>
-                            <div class="font-medium text-sm">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:.875rem;color:#111827;">
                                 Je fournis mes coordonnées
                             </div>
-                            <div class="text-xs text-gray-400">
+                            <div style="font-size:.75rem;color:#6b7280;margin-top:2px;">
                                 Recommandé pour un meilleur suivi de votre dossier
                             </div>
+                        </div>
+                        <div style="width:32px;height:32px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;">
+                            <i class="pi pi-id-card" style="color:#16a34a;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="border-2 rounded-xl p-4 cursor-pointer transition-all"
-                     [class]="fd['anonymous'].value
-                        ? 'border-yellow-500 bg-yellow-50'
-                        : 'border-gray-200'"
-                     (click)="fd['anonymous'].setValue(true)">
-                    <div class="flex items-center gap-3">
-                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                             [class]="fd['anonymous'].value
-                                ? 'border-yellow-500 bg-yellow-500'
-                                : 'border-gray-300'">
-                            <div *ngIf="fd['anonymous'].value"
-                                 class="w-2 h-2 bg-white rounded-full">
-                            </div>
+                <div class="anon-option" [class.selected-anon]="fd['anonymous'].value"
+                    (click)="fd['anonymous'].setValue(true)">
+                    <div style="display:flex;align-items:center;gap:.875rem;">
+                        <div class="radio-dot" [class.active-anon]="fd['anonymous'].value">
+                            <div *ngIf="fd['anonymous'].value" class="radio-inner"></div>
                         </div>
-                        <div>
-                            <div class="font-medium text-sm">
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:.875rem;color:#111827;">
                                 Je reste anonyme
                             </div>
-                            <div class="text-xs text-gray-400">
+                            <div style="font-size:.75rem;color:#6b7280;margin-top:2px;">
                                 Votre identité ne sera pas enregistrée
                             </div>
+                        </div>
+                        <div style="width:32px;height:32px;border-radius:8px;background:#fef9c3;display:flex;align-items:center;justify-content:center;">
+                            <i class="pi pi-eye-slash" style="color:#ca8a04;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Formulaire coordonnées -->
-            <div *ngIf="!fd['anonymous'].value" class="flex flex-col gap-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Prénom</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['firstName']"
-                            placeholder="Votre prénom"
-                            class="w-full" />
+            <!-- Champs coordonnées -->
+            <div *ngIf="!fd['anonymous'].value"
+                style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.25rem;">
+                <div class="grid2">
+                    <div class="field">
+                        <label>Prénom</label>
+                        <input pInputText [formControl]="fd['firstName']"
+                            placeholder="Votre prénom" class="w-full" />
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Nom</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['lastName']"
-                            placeholder="Votre nom"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Nom</label>
+                        <input pInputText [formControl]="fd['lastName']"
+                            placeholder="Votre nom" class="w-full" />
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Téléphone</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['phoneNumber']"
-                            placeholder="+226 XX XX XX XX"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Téléphone</label>
+                        <input pInputText [formControl]="fd['phoneNumber']"
+                            placeholder="+226 XX XX XX XX" class="w-full" />
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Email</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['email']"
-                            placeholder="votre@email.com"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Email</label>
+                        <input pInputText [formControl]="fd['email']"
+                            placeholder="votre@email.com" class="w-full" />
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Commune</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['commune']"
-                            placeholder="Votre commune"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Commune</label>
+                        <input pInputText [formControl]="fd['commune']"
+                            placeholder="Votre commune" class="w-full" />
                     </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm font-medium text-gray-700">Province</label>
-                        <input
-                            pInputText
-                            [formControl]="fd['province']"
-                            placeholder="Votre province"
-                            class="w-full" />
+                    <div class="field">
+                        <label>Province</label>
+                        <input pInputText [formControl]="fd['province']"
+                            placeholder="Votre province" class="w-full" />
                     </div>
                 </div>
 
                 <!-- Protection lanceur d'alerte -->
-                <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p-checkbox
-                        [formControl]="fd['protectionRequested']"
-                        [binary]="true"
-                        inputId="protection" />
-                    <label for="protection" class="text-sm text-blue-800 cursor-pointer">
-                        <span class="font-medium">
-                            Je demande une protection en tant que lanceur d'alerte
-                        </span>
-                        <br>
-                        <span class="text-blue-600">
-                            Loi N°010-2004/AN — protection garantie par l'État
-                        </span>
+                <div style="display:flex;align-items:flex-start;gap:.875rem;
+                    padding:.875rem;border-radius:12px;background:#eff6ff;
+                    border:1.5px solid #bfdbfe;">
+                    <p-checkbox [formControl]="fd['protectionRequested']"
+                        [binary]="true" inputId="protection" />
+                    <label for="protection" style="cursor:pointer;">
+                        <div style="font-weight:700;font-size:.875rem;color:#1e40af;">
+                            Je demande une protection lanceur d'alerte
+                        </div>
+                        <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">
+                            Loi N°010-2004/AN — Protection garantie par l'État
+                        </div>
                     </label>
                 </div>
             </div>
 
             <!-- Consentement -->
-            <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <div class="flex items-start gap-3">
-                    <p-checkbox
-                        [formControl]="fd['dataProcessingConsent']"
-                        [binary]="true"
-                        inputId="consent" />
-                    <label for="consent" class="text-sm text-gray-700 cursor-pointer">
-                        J'accepte que mes données soient traitées
-                        par l'ASCE-LC dans le cadre exclusif du traitement
-                        de ce dossier, conformément à la réglementation
-                        en vigueur. *
-                    </label>
-                </div>
+            <div style="display:flex;align-items:flex-start;gap:.875rem;
+                padding:.875rem;border-radius:12px;background:#f9fafb;
+                border:1.5px solid #e5e7eb;">
+                <p-checkbox [formControl]="fd['dataProcessingConsent']"
+                    [binary]="true" inputId="consent" />
+                <label for="consent" style="font-size:.875rem;color:#374151;cursor:pointer;">
+                    J'accepte le traitement de mes données personnelles par l'ASCE-LC.
+                    <span style="color:#ef4444;">*</span>
+                </label>
             </div>
 
-            <div class="flex justify-between mt-6">
-                <p-button
-                    label="Précédent"
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    outlined
-                    (onClick)="currentStep = 1" />
-                <p-button
-                    label="Continuer"
-                    icon="pi pi-arrow-right"
-                    iconPos="right"
+            <div class="step-footer">
+                <p-button label="Précédent" icon="pi pi-arrow-left"
+                    severity="secondary" outlined (onClick)="currentStep = 1" />
+                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
                     [disabled]="!fd['dataProcessingConsent'].value"
                     (onClick)="currentStep = 3" />
             </div>
         </div>
 
-        <!-- Étape 3 — Confirmation -->
-        <div *ngIf="currentStep === 3"
-             class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <i class="pi pi-check-circle text-green-600"></i>
-                Confirmer votre signalement
-            </h2>
+        <!-- ═══ Étape 3 — Confirmation ═══ -->
+        <div *ngIf="currentStep === 3" class="card">
 
-            <div class="flex flex-col gap-4">
+            <div class="card-title">
+                <div class="card-title-icon" style="background:#fef9c3;">
+                    <i class="pi pi-check-circle" style="color:#ca8a04;"></i>
+                </div>
+                Confirmer votre signalement
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
 
                 <!-- Résumé dossier -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-semibold text-sm text-gray-700 mb-3">
+                <div class="recap-section">
+                    <div style="font-size:.75rem;font-weight:800;color:#6b7280;
+                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
                         Votre signalement
-                    </h3>
-                    <div class="flex flex-col gap-2 text-sm">
-                        <div class="flex gap-2">
-                            <span class="text-gray-400 w-24 flex-shrink-0">Type :</span>
-                            <span class="font-medium">
-                                {{ getTypeLabel(f['type'].value) }}
-                            </span>
-                        </div>
-                        <div class="flex gap-2">
-                            <span class="text-gray-400 w-24 flex-shrink-0">Objet :</span>
-                            <span class="font-medium">{{ f['object'].value }}</span>
-                        </div>
-                        <div class="flex gap-2" *ngIf="f['incidentLocation'].value">
-                            <span class="text-gray-400 w-24 flex-shrink-0">Lieu :</span>
-                            <span>{{ f['incidentLocation'].value }}</span>
-                        </div>
-                        <div class="flex gap-2" *ngIf="f['estimatedLoss'].value">
-                            <span class="text-gray-400 w-24 flex-shrink-0">Montant :</span>
-                            <span class="text-red-600 font-medium">
-                                {{ f['estimatedLoss'].value | number }} FCFA
-                            </span>
-                        </div>
+                    </div>
+                    <div class="recap-row">
+                        <span class="recap-key">Type</span>
+                        <span class="recap-val">{{ getTypeLabel(f['type'].value) }}</span>
+                    </div>
+                    <div class="recap-row">
+                        <span class="recap-key">Objet</span>
+                        <span class="recap-val" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            {{ f['object'].value }}
+                        </span>
+                    </div>
+                    <div *ngIf="f['incidentLocation'].value" class="recap-row">
+                        <span class="recap-key">Lieu</span>
+                        <span class="recap-val">{{ f['incidentLocation'].value }}</span>
+                    </div>
+                    <div *ngIf="audioUrl" class="recap-row">
+                        <span class="recap-key">Audio</span>
+                        <span class="recap-val" style="color:#16a34a;">
+                            ✓ {{ formatDuration(recordingDuration) }}
+                        </span>
+                    </div>
+                    <div *ngIf="attachments.length > 0" class="recap-row">
+                        <span class="recap-key">Fichiers</span>
+                        <span class="recap-val">{{ attachments.length }} pièce(s)</span>
                     </div>
                 </div>
 
-                <!-- Résumé déclarant -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <h3 class="font-semibold text-sm text-gray-700 mb-3">
+                <!-- Déclarant -->
+                <div class="recap-section">
+                    <div style="font-size:.75rem;font-weight:800;color:#6b7280;
+                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
                         Déclarant
-                    </h3>
-                    <div class="text-sm">
-                        <span *ngIf="fd['anonymous'].value"
-                              class="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
-                            <i class="pi pi-eye-slash"></i> Anonyme
-                        </span>
-                        <span *ngIf="!fd['anonymous'].value">
-                            {{ fd['firstName'].value }}
-                            {{ fd['lastName'].value }}
-                            <span class="text-gray-400 ml-2">
-                                {{ fd['phoneNumber'].value }}
-                            </span>
+                    </div>
+                    <div *ngIf="fd['anonymous'].value"
+                        style="display:inline-flex;align-items:center;gap:.5rem;
+                            background:#fef9c3;color:#92400e;padding:.375rem .875rem;
+                            border-radius:20px;font-size:.8rem;font-weight:700;">
+                        <i class="pi pi-eye-slash" style="font-size:.75rem;"></i>
+                        Anonyme
+                    </div>
+                    <div *ngIf="!fd['anonymous'].value" class="recap-row">
+                        <span class="recap-key">Identité</span>
+                        <span class="recap-val">
+                            {{ fd['firstName'].value }} {{ fd['lastName'].value }}
                         </span>
                     </div>
                 </div>
 
-                <!-- Avertissement final -->
-                <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <div class="flex items-start gap-3">
-                        <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
-                        <p class="text-sm text-amber-800">
-                            En soumettant ce formulaire, vous certifiez
-                            que les informations fournies sont exactes
-                            et sincères. Toute fausse déclaration est
-                            passible de poursuites judiciaires.
-                        </p>
-                    </div>
+                <!-- Avertissement -->
+                <div style="display:flex;align-items:flex-start;gap:.875rem;
+                    padding:.875rem;border-radius:12px;background:#fffbeb;
+                    border:1.5px solid #fde68a;">
+                    <i class="pi pi-exclamation-triangle" style="color:#d97706;margin-top:1px;"></i>
+                    <p style="font-size:.8rem;color:#92400e;line-height:1.6;">
+                        En soumettant, vous certifiez l'exactitude des informations.
+                        Toute fausse déclaration est passible de poursuites.
+                    </p>
                 </div>
 
             </div>
 
-            <div class="flex justify-between mt-6">
-                <p-button
-                    label="Précédent"
-                    icon="pi pi-arrow-left"
-                    severity="secondary"
-                    outlined
-                    (onClick)="currentStep = 2" />
-                <p-button
-                    label="Soumettre mon signalement"
-                    icon="pi pi-send"
-                    [loading]="submitting"
-                    styleClass="bg-green-600 border-green-600 font-bold"
-                    (onClick)="submit()" />
+            <div class="step-footer">
+                <p-button label="Précédent" icon="pi pi-arrow-left"
+                    severity="secondary" outlined (onClick)="currentStep = 2" />
+                <p-button label="Soumettre mon signalement" icon="pi pi-send"
+                    severity="success" [loading]="submitting" (onClick)="submit()" />
             </div>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="page-foot">
+            <i class="pi pi-shield"></i>
+            ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
         </div>
 
     </div>
@@ -521,105 +781,227 @@ import { DossierService } from '../../../core/services/dossier.service';
 })
 export class DepotPlainte {
 
-    private fb = inject(FormBuilder);
-    private dossierService = inject(DossierService);
-    private messageService = inject(MessageService);
+    private fb                = inject(FormBuilder);
+    private dossierService    = inject(DossierService);
+    private messageService    = inject(MessageService);
+    private attachmentService = inject(AttachmentService);
 
-    currentStep = 1;
-    submitting = false;
-    showSuccess = false;
+    currentStep       = 1;
+    submitting        = false;
+    showSuccess       = false;
     createdAccessCode = '';
 
-    stepLabels = ['Les faits', 'Vos coordonnées', 'Confirmation'];
+    readonly steps = [
+        { id: 1, label: 'Les faits'    },
+        { id: 2, label: 'Coordonnées'  },
+        { id: 3, label: 'Confirmation' }
+    ];
+
+    // Audio
+    isRecording       = false;
+    audioBlob:        Blob | null   = null;
+    audioUrl:         string | null = null;
+    mediaRecorder:    MediaRecorder | null = null;
+    recordingDuration = 0;
+    recordingTimer:   any = null;
+
+    // Pièces jointes
+    attachments: File[] = [];
+    maxFiles  = 5;
+    maxSizeMB = 25;
 
     dossierForm = this.fb.group({
-        type: ['COMPLAINT'],
-        object: ['', [Validators.required, Validators.minLength(10)]],
-        description: ['', Validators.required],
+        type:             ['COMPLAINT'],
+        object:           ['', [Validators.required, Validators.minLength(10)]],
+        description:      ['', Validators.required],
         incidentLocation: [''],
-        incidentPeriod: [''],
-        estimatedLoss: [null]
+        incidentPeriod:   [''],
+        estimatedLoss:    [null]
     });
 
     declarantForm = this.fb.group({
-        typeDeclarant: ['CITIZEN'],
-        firstName: [''],
-        lastName: [''],
-        email: [''],
-        phoneNumber: [''],
-        commune: [''],
-        province: [''],
-        anonymous: [false],
+        typeDeclarant:         ['CITIZEN'],
+        firstName:             [''],
+        lastName:              [''],
+        email:                 [''],
+        phoneNumber:           [''],
+        commune:               [''],
+        province:              [''],
+        anonymous:             [false],
         dataProcessingConsent: [false],
         notificationsAccepted: [true],
-        protectionRequested: [false]
+        protectionRequested:   [false]
     });
 
-    get f() { return this.dossierForm.controls; }
+    get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
     typeOptions = [
-        {
-            label: 'Plainte',
-            value: 'COMPLAINT',
-            description: 'Je suis victime ou témoin de corruption'
-        },
-        {
-            label: 'Dénonciation',
-            value: 'DENUNCIATION',
-            description: 'Je signale des faits dont j\'ai connaissance'
-        }
+        { label: 'Plainte',      value: 'COMPLAINT',    description: 'Je suis victime ou témoin', icon: 'pi pi-exclamation-circle' },
+        { label: 'Dénonciation', value: 'DENUNCIATION', description: 'Je signale des faits',      icon: 'pi pi-megaphone'          }
     ];
+
+    async startRecording(): Promise<void> {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            const chunks: BlobPart[] = [];
+
+            this.mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+            this.mediaRecorder.onstop = () => {
+                this.audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                this.audioUrl  = URL.createObjectURL(this.audioBlob);
+                stream.getTracks().forEach(t => t.stop());
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording       = true;
+            this.recordingDuration = 0;
+            this.recordingTimer    = setInterval(() => this.recordingDuration++, 1000);
+
+        } catch {
+            this.messageService.add({
+                severity: 'error', summary: 'Microphone',
+                detail: "Impossible d'accéder au microphone"
+            });
+        }
+    }
+
+    stopRecording(): void {
+        if (this.mediaRecorder) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            clearInterval(this.recordingTimer);
+        }
+    }
+
+    deleteAudio(): void {
+        this.audioBlob         = null;
+        this.audioUrl          = null;
+        this.recordingDuration = 0;
+    }
+
+    formatDuration(seconds: number): string {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    onFileSelect(event: any): void { this.addFiles(Array.from(event.target.files)); }
+
+    onDrop(event: DragEvent): void {
+        event.preventDefault();
+        this.addFiles(Array.from(event.dataTransfer?.files || []));
+    }
+
+    private addFiles(files: File[]): void {
+        const valid = files.filter(f => {
+            if (f.size > this.maxSizeMB * 1024 * 1024) {
+                this.messageService.add({
+                    severity: 'warn', summary: 'Fichier trop volumineux',
+                    detail: `${f.name} dépasse ${this.maxSizeMB}MB`
+                });
+                return false;
+            }
+            return true;
+        });
+        this.attachments = [...this.attachments, ...valid].slice(0, this.maxFiles);
+    }
+
+    removeAttachment(index: number): void { this.attachments.splice(index, 1); }
+
+    getFileIcon(file: File): string {
+        if (file.type.includes('image')) return 'pi pi-image';
+        if (file.type.includes('pdf'))   return 'pi pi-file-pdf';
+        if (file.type.includes('word'))  return 'pi pi-file-word';
+        if (file.type.includes('video')) return 'pi pi-video';
+        if (file.type.includes('audio')) return 'pi pi-volume-up';
+        return 'pi pi-file';
+    }
+
+    getFileBg(file: File): string {
+        if (file.type.includes('image')) return '#dbeafe';
+        if (file.type.includes('pdf'))   return '#fee2e2';
+        if (file.type.includes('video')) return '#ede9fe';
+        if (file.type.includes('audio')) return '#fce7f3';
+        return '#f3f4f6';
+    }
+
+    getFileColor(file: File): string {
+        if (file.type.includes('image')) return '#2563eb';
+        if (file.type.includes('pdf'))   return '#dc2626';
+        if (file.type.includes('video')) return '#7c3aed';
+        if (file.type.includes('audio')) return '#db2777';
+        return '#6b7280';
+    }
+
+    formatFileSize(bytes: number): string {
+        if (bytes < 1024)        return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    getTypeLabel(type: string | null): string {
+        if (!type) return '';
+        return this.typeOptions.find(o => o.value === type)?.label || type;
+    }
 
     submit(): void {
         this.submitting = true;
 
         const request = {
-            type: this.f['type'].value as any,
-            submissionMode: 'WEB_FORM' as any,
-            object: this.f['object'].value!,
-            description: this.f['description'].value || undefined,
+            type:             this.f['type'].value as any,
+            submissionMode:   'WEB_FORM' as any,
+            object:           this.f['object'].value!,
+            description:      this.f['description'].value || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
-            incidentPeriod: this.f['incidentPeriod'].value || undefined,
-            estimatedLoss: this.f['estimatedLoss'].value || undefined,
+            incidentPeriod:   this.f['incidentPeriod'].value  || undefined,
+            estimatedLoss:    this.f['estimatedLoss'].value   || undefined,
             declarantData: {
-                typeDeclarant: this.fd['anonymous'].value
-                    ? 'ANONYMOUS' as any
-                    : 'CITIZEN' as any,
-                firstName: this.fd['firstName'].value || undefined,
-                lastName: this.fd['lastName'].value || undefined,
-                email: this.fd['email'].value || undefined,
-                phoneNumber: this.fd['phoneNumber'].value || undefined,
-                commune: this.fd['commune'].value || undefined,
-                province: this.fd['province'].value || undefined,
-                anonymous: this.fd['anonymous'].value || false,
+                typeDeclarant:         this.fd['anonymous'].value ? 'ANONYMOUS' as any : 'CITIZEN' as any,
+                firstName:             this.fd['firstName'].value   || undefined,
+                lastName:              this.fd['lastName'].value    || undefined,
+                email:                 this.fd['email'].value       || undefined,
+                phoneNumber:           this.fd['phoneNumber'].value || undefined,
+                commune:               this.fd['commune'].value     || undefined,
+                province:              this.fd['province'].value    || undefined,
+                anonymous:             this.fd['anonymous'].value             || false,
                 dataProcessingConsent: this.fd['dataProcessingConsent'].value || true,
                 notificationsAccepted: this.fd['notificationsAccepted'].value || true,
-                protectionRequested: this.fd['protectionRequested'].value || false
+                protectionRequested:   this.fd['protectionRequested'].value   || false
             }
         };
 
         this.dossierService.submit(request).subscribe({
             next: dossier => {
                 this.createdAccessCode = dossier.accessCode;
-                this.submitting = false;
-                this.showSuccess = true;
+                const allFiles = [...this.attachments];
+                if (this.audioBlob) {
+                    allFiles.push(new File(
+                        [this.audioBlob],
+                        `temoignage_audio_${Date.now()}.webm`,
+                        { type: 'audio/webm' }
+                    ));
+                }
+                if (allFiles.length > 0) {
+                    this.attachmentService.upload(dossier.id, allFiles).subscribe({
+                        next:  () => { this.submitting = false; this.showSuccess = true; },
+                        error: () => { this.submitting = false; this.showSuccess = true; }
+                    });
+                } else {
+                    this.submitting  = false;
+                    this.showSuccess = true;
+                }
             },
             error: err => {
                 this.submitting = false;
                 this.messageService.add({
-                    severity: 'error',
-                    summary: 'Erreur',
-                    detail: err.error?.message
-                        || 'Impossible de soumettre le dossier. Réessayez.'
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Impossible de soumettre. Réessayez.'
                 });
             }
         });
-    }
-
-    getTypeLabel(type: string | null): string {
-        if (!type) return '';
-        return this.typeOptions.find(o => o.value === type)
-            ?.label || type;
     }
 }

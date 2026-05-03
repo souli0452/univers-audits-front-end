@@ -13,7 +13,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
 @Component({
-    selector: 'app-portail-suivi',
+    selector: 'app-suivi-citoyen',
     standalone: true,
     imports: [
         CommonModule, RouterModule, FormsModule,
@@ -91,25 +91,27 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
             </p>
 
             <div style="display:flex;gap:.75rem;margin-bottom:.875rem;">
-                <input class="search-input"
+                <input
+                    class="search-input"
                     [(ngModel)]="accessCode"
                     placeholder="EX: BCS5XHRG"
                     maxlength="8"
                     (keyup.enter)="search()"
                     (ngModelChange)="accessCode = $event?.toUpperCase(); notFound = false" />
-                <button (click)="search()"
+                <button
+                    (click)="search()"
                     [disabled]="loading || !accessCode || accessCode.length < 6"
                     style="padding:0 1.5rem;border-radius:12px;border:none;cursor:pointer;
                         background:#16a34a;color:#fff;font-weight:700;font-size:.875rem;
                         display:flex;align-items:center;gap:.5rem;white-space:nowrap;
-                        transition:all .2s;flex-shrink:0;"
+                        opacity:1;transition:all .2s;flex-shrink:0;"
                     [style.opacity]="loading || !accessCode || accessCode.length < 6 ? '0.5' : '1'">
                     <i [class]="loading ? 'pi pi-spin pi-spinner' : 'pi pi-search'"></i>
                     {{ loading ? 'Recherche...' : 'Rechercher' }}
                 </button>
             </div>
 
-            <!-- Indicateur longueur -->
+            <!-- Indicateur longueur code -->
             <div style="display:flex;justify-content:center;gap:6px;margin-bottom:.5rem;">
                 <div *ngFor="let i of codeSlots"
                     style="width:32px;height:4px;border-radius:2px;transition:background .2s;"
@@ -128,7 +130,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                         Aucun dossier trouvé
                     </div>
                     <div style="font-size:.775rem;color:#ef4444;margin-top:2px;">
-                        Vérifiez le code sur votre reçu B4.
+                        Vérifiez le code sur votre reçu B4. Les lettres I, O, 0 peuvent être confondues.
                     </div>
                 </div>
             </div>
@@ -137,14 +139,17 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         <!-- ── Résultat ── -->
         <div *ngIf="dossier">
 
-            <!-- Statut principal -->
+            <!-- Carte statut principal -->
             <div class="card" style="margin-bottom:1.25rem;">
 
+                <!-- En-tête statut -->
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;
                     margin-bottom:1.25rem;gap:1rem;">
                     <div>
                         <div style="font-size:.7rem;color:#9ca3af;text-transform:uppercase;
-                            letter-spacing:1px;margin-bottom:.375rem;">Numéro officiel</div>
+                            letter-spacing:1px;margin-bottom:.375rem;">
+                            Numéro officiel
+                        </div>
                         <div style="font-family:monospace;font-size:1.4rem;font-weight:900;
                             color:#16a34a;letter-spacing:2px;">
                             {{ dossier.number || 'En attente' }}
@@ -155,6 +160,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                         styleClass="text-sm" />
                 </div>
 
+                <!-- Objet -->
                 <div style="background:#f9fafb;border-radius:12px;padding:.875rem;margin-bottom:.875rem;">
                     <div style="font-size:.7rem;color:#9ca3af;text-transform:uppercase;
                         letter-spacing:1px;margin-bottom:.375rem;">Objet</div>
@@ -163,6 +169,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     </div>
                 </div>
 
+                <!-- Dates -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
                     <div style="background:#f9fafb;border-radius:12px;padding:.875rem;">
                         <div style="font-size:.7rem;color:#9ca3af;text-transform:uppercase;
@@ -181,13 +188,13 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     </div>
                 </div>
 
+                <!-- Message statut -->
                 <div style="padding:.875rem;border-radius:12px;border:1.5px solid;"
                     [style.background]="getStatusBg(dossier.status)"
                     [style.border-color]="getStatusBorder(dossier.status)">
                     <div style="display:flex;align-items:flex-start;gap:.75rem;">
                         <i [class]="getStatusIcon(dossier.status)"
-                            style="font-size:1.1rem;flex-shrink:0;margin-top:1px;"
-                            [style.color]="getStatusTextColor(dossier.status)"></i>
+                            style="font-size:1.1rem;flex-shrink:0;margin-top:1px;"></i>
                         <p style="font-size:.8rem;line-height:1.7;margin:0;"
                             [style.color]="getStatusTextColor(dossier.status)">
                             {{ getStatusMessage(dossier.status) }}
@@ -207,10 +214,11 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div style="display:flex;flex-direction:column;">
                     <div *ngFor="let step of progressSteps; let last = last"
                         style="display:flex;gap:.875rem;">
+
                         <div style="display:flex;flex-direction:column;align-items:center;">
                             <div style="width:36px;height:36px;border-radius:50%;
                                 display:flex;align-items:center;justify-content:center;
-                                flex-shrink:0;border:2.5px solid;transition:all .3s;position:relative;"
+                                flex-shrink:0;border:2.5px solid;transition:all .3s;"
                                 [style.background]="step.done ? '#22c55e' : step.active ? '#3b82f6' : '#f3f4f6'"
                                 [style.border-color]="step.done ? '#22c55e' : step.active ? '#3b82f6' : '#e5e7eb'">
                                 <i *ngIf="step.done" class="pi pi-check"
@@ -218,11 +226,17 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                                 <i *ngIf="!step.done" [class]="step.icon"
                                     style="font-size:.75rem;"
                                     [style.color]="step.active ? '#fff' : '#9ca3af'"></i>
+                                <!-- Point pulsant si actif -->
+                                <div *ngIf="step.active && !step.done"
+                                    style="position:absolute;width:36px;height:36px;
+                                    border-radius:50%;border:2px solid #3b82f6;
+                                    animation:pulse-dot 1.5s infinite;opacity:.5;"></div>
                             </div>
                             <div *ngIf="!last" class="step-line"
                                 [style.background]="step.done ? '#86efac' : '#e5e7eb'">
                             </div>
                         </div>
+
                         <div style="padding-bottom:1.25rem;flex:1;">
                             <div style="font-size:.875rem;font-weight:600;transition:color .3s;"
                                 [style.color]="step.done ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
@@ -247,15 +261,16 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     style="padding:.75rem 1.5rem;border-radius:12px;
                         border:1.5px solid #e5e7eb;background:#fff;
                         color:#374151;font-weight:600;font-size:.875rem;
-                        cursor:pointer;display:flex;align-items:center;gap:.5rem;">
+                        cursor:pointer;display:flex;align-items:center;gap:.5rem;
+                        transition:all .2s;">
                     <i class="pi pi-refresh"></i>
                     Nouvelle recherche
                 </button>
                 <a routerLink="/portail"
                     style="padding:.75rem 1.5rem;border-radius:12px;
                         background:#16a34a;color:#fff;font-weight:600;
-                        font-size:.875rem;text-decoration:none;
-                        display:flex;align-items:center;gap:.5rem;">
+                        font-size:.875rem;cursor:pointer;text-decoration:none;
+                        display:flex;align-items:center;gap:.5rem;transition:all .2s;">
                     <i class="pi pi-home"></i>
                     Accueil
                 </a>
@@ -276,7 +291,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 </div>
     `
 })
-export class PortailSuivi {
+export class SuiviCitoyen {
 
     private dossierService = inject(DossierService);
     private messageService = inject(MessageService);
@@ -318,15 +333,15 @@ export class PortailSuivi {
 
     private buildProgressSteps(dossier: DossierResponse): void {
         const steps = [
-            { label: 'Dossier déposé',           status: 'SOUMIS',               icon: 'pi pi-upload'  },
-            { label: 'Enregistré par le BRPD',   status: 'RECU',                 icon: 'pi pi-inbox'   },
-            { label: 'Étude de recevabilité',     status: 'EN_ETUDE_OPPORTUNITE', icon: 'pi pi-search'  },
-            { label: 'Examen par le CTADP',       status: 'EN_REVUE_CTADP',       icon: 'pi pi-users'   },
-            { label: 'Décision de recevabilité',  status: 'RECEVABLE',            icon: 'pi pi-check'   },
-            { label: 'Investigation en cours',    status: 'EN_INVESTIGATION',     icon: 'pi pi-eye'     },
-            { label: "Rapport d'enquête produit", status: 'RAPPORT_PRODUIT',      icon: 'pi pi-file'    },
-            { label: 'Décision finale rendue',    status: 'DECISION_RENDUE',      icon: 'pi pi-gavel'   },
-            { label: 'Dossier clôturé',           status: 'CLOS',                 icon: 'pi pi-lock'    }
+            { label: 'Dossier déposé',              status: 'SOUMIS',               icon: 'pi pi-upload'   },
+            { label: 'Enregistré par le BRPD',      status: 'RECU',                 icon: 'pi pi-inbox'    },
+            { label: 'Étude de recevabilité',        status: 'EN_ETUDE_OPPORTUNITE', icon: 'pi pi-search'   },
+            { label: 'Examen par le CTADP',          status: 'EN_REVUE_CTADP',       icon: 'pi pi-users'    },
+            { label: 'Décision de recevabilité',     status: 'RECEVABLE',            icon: 'pi pi-check'    },
+            { label: 'Investigation en cours',       status: 'EN_INVESTIGATION',     icon: 'pi pi-eye'      },
+            { label: "Rapport d'enquête produit",    status: 'RAPPORT_PRODUIT',      icon: 'pi pi-file'     },
+            { label: 'Décision finale rendue',       status: 'DECISION_RENDUE',      icon: 'pi pi-gavel'    },
+            { label: 'Dossier clôturé',              status: 'CLOS',                 icon: 'pi pi-lock'     }
         ];
 
         const order        = steps.map(s => s.status);
@@ -354,9 +369,8 @@ export class PortailSuivi {
     getStatusSeverity(status: string): TagSeverity {
         const map: Record<string, TagSeverity> = {
             SOUMIS: 'info', RECU: 'info',
-            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn',
-            EN_REVUE_CTADP: 'warn', RECEVABLE: 'success',
-            IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
+            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn', EN_REVUE_CTADP: 'warn',
+            RECEVABLE: 'success', IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
             EN_INVESTIGATION: 'warn', RAPPORT_PRODUIT: 'info',
             DECISION_RENDUE: 'success', CLOS: 'success', CLASSE: 'secondary'
         };
@@ -367,15 +381,15 @@ export class PortailSuivi {
         const messages: Record<string, string> = {
             SOUMIS:                "Votre dossier a été soumis et est en attente d'enregistrement par le BRPD. Délai maximum : 7 jours ouvrables.",
             RECU:                  "Votre dossier a été officiellement enregistré. Un accusé de réception vous sera transmis sous 3 jours.",
-            EN_ETUDE_OPPORTUNITE:  "Votre dossier est en cours d'examen par un conseiller juridique.",
-            EN_ATTENTE_COMPLEMENT: "Des informations complémentaires vous ont été demandées. Contactez l'ASCE-LC.",
-            EN_REVUE_CTADP:        "Votre dossier est soumis au Comité de Traitement et d'Analyse.",
+            EN_ETUDE_OPPORTUNITE:  "Votre dossier est en cours d'examen par un conseiller juridique pour évaluer la compétence de l'ASCE-LC.",
+            EN_ATTENTE_COMPLEMENT: "Des informations complémentaires vous ont été demandées. Veuillez contacter l'ASCE-LC pour fournir les éléments manquants.",
+            EN_REVUE_CTADP:        "Votre dossier est soumis au Comité de Traitement et d'Analyse. Une décision sera rendue prochainement.",
             RECEVABLE:             "Votre dossier a été déclaré recevable. Une équipe d'investigation va être constituée.",
-            IRRECEVABLE:           "Votre dossier a été déclaré irrecevable. Une réponse motivée vous sera transmise.",
+            IRRECEVABLE:           "Votre dossier a été déclaré irrecevable. Une réponse motivée vous sera transmise dans les 3 jours.",
             TRANSFERE:             "Votre dossier a été transféré à une institution compétente.",
-            EN_INVESTIGATION:      "Une enquête est en cours. L'équipe dispose de 90 jours pour ses investigations.",
-            RAPPORT_PRODUIT:       "Le rapport d'enquête a été produit. Il est en cours d'approbation.",
-            DECISION_RENDUE:       "La décision finale a été rendue par le Contrôleur Général d'État.",
+            EN_INVESTIGATION:      "Une enquête est en cours. L'équipe dispose de 90 jours pour mener ses investigations.",
+            RAPPORT_PRODUIT:       "Le rapport d'enquête a été produit. Il est en cours d'approbation par la hiérarchie.",
+            DECISION_RENDUE:       "La décision finale a été rendue par le Contrôleur Général d'État. Vous serez notifié.",
             CLOS:                  "Votre dossier a été traité et officiellement clôturé. Merci pour votre contribution.",
             CLASSE:                "Votre dossier a été classé. Contactez l'ASCE-LC pour plus d'informations."
         };
@@ -420,13 +434,19 @@ export class PortailSuivi {
 
     getStatusIcon(status: string): string {
         const icons: Record<string, string> = {
-            SOUMIS: 'pi pi-info-circle', RECU: 'pi pi-check-circle',
-            EN_ETUDE_OPPORTUNITE: 'pi pi-clock', EN_ATTENTE_COMPLEMENT: 'pi pi-exclamation-triangle',
-            EN_REVUE_CTADP: 'pi pi-clock', RECEVABLE: 'pi pi-check-circle',
-            IRRECEVABLE: 'pi pi-times-circle', TRANSFERE: 'pi pi-arrow-right',
-            EN_INVESTIGATION: 'pi pi-eye', RAPPORT_PRODUIT: 'pi pi-file',
-            DECISION_RENDUE: 'pi pi-check-circle', CLOS: 'pi pi-lock',
-            CLASSE: 'pi pi-folder'
+            SOUMIS:                'pi pi-info-circle',
+            RECU:                  'pi pi-check-circle',
+            EN_ETUDE_OPPORTUNITE:  'pi pi-clock',
+            EN_ATTENTE_COMPLEMENT: 'pi pi-exclamation-triangle',
+            EN_REVUE_CTADP:        'pi pi-clock',
+            RECEVABLE:             'pi pi-check-circle',
+            IRRECEVABLE:           'pi pi-times-circle',
+            TRANSFERE:             'pi pi-arrow-right',
+            EN_INVESTIGATION:      'pi pi-eye',
+            RAPPORT_PRODUIT:       'pi pi-file',
+            DECISION_RENDUE:       'pi pi-check-circle',
+            CLOS:                  'pi pi-lock',
+            CLASSE:                'pi pi-folder'
         };
         return icons[status] || 'pi pi-info-circle';
     }

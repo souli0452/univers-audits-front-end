@@ -39,7 +39,7 @@ export class AppMenu {
                     {
                         label: 'Tableau de Bord',
                         icon: 'pi pi-fw pi-home',
-                        routerLink: ['/']
+                        routerLink: ['/app']
                     }
                 ]
             },
@@ -53,43 +53,36 @@ export class AppMenu {
                     {
                         label: 'Tous les Dossiers',
                         icon: 'pi pi-fw pi-folder',
-                        routerLink: ['/dossiers']
+                        routerLink: ['/app/dossiers']
                     },
                     {
                         label: 'Nouveau Dossier',
                         icon: 'pi pi-fw pi-plus-circle',
-                        routerLink: ['/dossiers/nouveau']
+                        routerLink: ['/app/dossiers/nouveau']
                     },
-                    {
-                        label: 'En Attente',
-                        icon: 'pi pi-fw pi-clock',
-                        routerLink: ['/dossiers'],
-                        queryParams: { status: 'SOUMIS' }
-                    },
-                    {
-                        label: 'En Investigation',
-                        icon: 'pi pi-fw pi-eye',
-                        routerLink: ['/dossiers'],
-                        queryParams: { status: 'EN_INVESTIGATION' }
-                    }
+{
+    label: 'Denonciation Audio',
+    icon: 'pi pi-fw pi-microphone',
+    routerLink: ['/app/dossiers/audio']
+},
                 ]
             },
 
             { separator: true },
 
-            // ── Investigations ────────────────────────────────
+            // ── Investigations ─────────────────────────────────
             {
                 label: 'Investigations',
                 items: [
                     {
                         label: 'Toutes les Enquêtes',
                         icon: 'pi pi-fw pi-search',
-                        routerLink: ['/investigations']
+                        routerLink: ['/app/investigations']
                     },
                     {
                         label: 'En Cours',
                         icon: 'pi pi-fw pi-spin pi-spinner',
-                        routerLink: ['/investigations'],
+                        routerLink: ['/app/investigations'],
                         queryParams: { status: 'IN_PROGRESS' }
                     }
                 ]
@@ -97,47 +90,22 @@ export class AppMenu {
 
             { separator: true },
 
-            // ── Statistiques ──────────────────────────────────
+            // ── Statistiques ───────────────────────────────────
             {
                 label: 'Statistiques',
                 items: [
                     {
                         label: 'Tableau de Bord Stats',
                         icon: 'pi pi-fw pi-chart-bar',
-                        routerLink: ['/statistiques']
+                        routerLink: ['/app/statistiques']
                     },
-                    {
-                        label: 'Rapport Trimestriel',
-                        icon: 'pi pi-fw pi-chart-pie',
-                        routerLink: ['/statistiques'],
-                        queryParams: { type: 'quarterly' }
-                    },
-                    {
-                        label: 'Rapport Annuel',
-                        icon: 'pi pi-fw pi-calendar',
-                        routerLink: ['/statistiques'],
-                        queryParams: { type: 'annual' }
-                    }
+                  
                 ]
             },
 
             { separator: true },
 
-            // ── Services Publics ──────────────────────────────
-            {
-                label: 'Services Publics',
-                items: [
-                    {
-                        label: 'Suivi Citoyen',
-                        icon: 'pi pi-fw pi-id-card',
-                        routerLink: ['/suivi']
-                    }
-                ]
-            },
-
-            { separator: true },
-
-            // ── Administration ────────────────────────────────
+            // ── Administration ─────────────────────────────────
             {
                 label: 'Administration',
                 visible: this.keycloakService.hasAnyRole([
@@ -147,12 +115,12 @@ export class AppMenu {
                     {
                         label: 'Gestion Agents',
                         icon: 'pi pi-fw pi-users',
-                        routerLink: ['/administration/agents']
+                        routerLink: ['/app/administration/agents']
                     },
                     {
                         label: 'Configuration',
                         icon: 'pi pi-fw pi-cog',
-                        routerLink: ['/administration/config']
+                        routerLink: ['/app/administration/config']
                     }
                 ]
             },
@@ -166,7 +134,7 @@ export class AppMenu {
                     {
                         label: 'Mon Profil',
                         icon: 'pi pi-fw pi-user',
-                        routerLink: ['/pages/profile']
+                        routerLink: ['/app/profil']  
                     },
                     {
                         label: 'Se Déconnecter',

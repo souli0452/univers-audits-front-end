@@ -9,9 +9,9 @@ import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { StepperModule } from 'primeng/stepper';
-import { CardModule } from 'primeng/card';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { timer } from 'rxjs';
 import { DossierService } from '../../../core/services/dossier.service';
 
 @Component({
@@ -21,54 +21,67 @@ import { DossierService } from '../../../core/services/dossier.service';
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, SelectModule, CheckboxModule,
-        InputNumberModule, StepperModule, CardModule, ToastModule
+        InputNumberModule, StepperModule, ToastModule
     ],
     providers: [MessageService],
     template: `
 <p-toast />
 
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-6">
 
-    <!-- En-tête -->
-    <div class="flex items-center gap-3">
-        <p-button
-            icon="pi pi-arrow-left"
-            severity="secondary"
-            text
-            routerLink="/dossiers" />
+    <!-- ── En-tête ─────────────────────────────────────────── -->
+    <div class="flex items-center gap-4">
+        <p-button icon="pi pi-arrow-left" severity="secondary"
+            text routerLink="/app/dossiers" />
         <div>
-            <h1 class="text-2xl font-bold">Nouveau Dossier</h1>
-            <p class="text-surface-500 text-sm">
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">
+                Nouveau Dossier
+            </h1>
+            <p class="text-surface-400 text-sm mt-1">
                 Enregistrement d'une plainte ou dénonciation
             </p>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Formulaire principal -->
+        <!-- ── Formulaire principal ───────────────────────── -->
         <div class="lg:col-span-2">
-            <p-stepper [value]="currentStep" styleClass="mb-4">
 
-                <!-- Étape 1 — Informations du dossier -->
+            <p-stepper [value]="currentStep">
                 <p-step-list>
-                    <p-step [value]="1">Dossier</p-step>
-                    <p-step [value]="2">Déclarant</p-step>
-                    <p-step [value]="3">Confirmation</p-step>
+                    <p-step [value]="1">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-file text-sm"></i>
+                            Dossier
+                        </div>
+                    </p-step>
+                    <p-step [value]="2">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-user text-sm"></i>
+                            Déclarant
+                        </div>
+                    </p-step>
+                    <p-step [value]="3">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-check text-sm"></i>
+                            Confirmation
+                        </div>
+                    </p-step>
                 </p-step-list>
 
                 <p-step-panels>
 
-                    <!-- Panel 1 -->
+                    <!-- ═══ Étape 1 — Informations dossier ═══ -->
                     <p-step-panel [value]="1">
                         <ng-template #content let-activateCallback="activateCallback">
-                        <div class="flex flex-col gap-4 p-2">
+                        <div class="flex flex-col gap-5 pt-4">
 
+                            <!-- Type + Canal -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                <!-- Type de saisine -->
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-medium">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Type de saisine *
                                     </label>
                                     <p-select
@@ -78,15 +91,14 @@ import { DossierService } from '../../../core/services/dossier.service';
                                         optionValue="value"
                                         placeholder="Sélectionner"
                                         styleClass="w-full" />
-                                    <small class="text-red-500"
-                                           *ngIf="f['type'].invalid && f['type'].touched">
+                                    <small class="text-red-500 text-xs"
+                                        *ngIf="f['type'].invalid && f['type'].touched">
                                         Champ obligatoire
                                     </small>
                                 </div>
 
-                                <!-- Canal de réception -->
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-medium">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Canal de réception *
                                     </label>
                                     <p-select
@@ -96,8 +108,8 @@ import { DossierService } from '../../../core/services/dossier.service';
                                         optionValue="value"
                                         placeholder="Sélectionner"
                                         styleClass="w-full" />
-                                    <small class="text-red-500"
-                                           *ngIf="f['submissionMode'].invalid && f['submissionMode'].touched">
+                                    <small class="text-red-500 text-xs"
+                                        *ngIf="f['submissionMode'].invalid && f['submissionMode'].touched">
                                         Champ obligatoire
                                     </small>
                                 </div>
@@ -105,423 +117,567 @@ import { DossierService } from '../../../core/services/dossier.service';
                             </div>
 
                             <!-- Objet -->
-                            <div class="flex flex-col gap-1">
-                                <label class="text-sm font-medium">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                     Objet de la plainte *
                                 </label>
-                                <input
-                                    pInputText
-                                    [formControl]="f['object']"
-                                    placeholder="Résumé en quelques mots"
-                                    class="w-full" />
-                                <small class="text-red-500"
-                                       *ngIf="f['object'].invalid && f['object'].touched">
+                                <input pInputText [formControl]="f['object']"
+                                    placeholder="Résumé en quelques mots" class="w-full" />
+                                <small class="text-red-500 text-xs"
+                                    *ngIf="f['object'].invalid && f['object'].touched">
                                     Champ obligatoire (min 10 caractères)
                                 </small>
                             </div>
 
                             <!-- Description -->
-                            <div class="flex flex-col gap-1">
-                                <label class="text-sm font-medium">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                     Description détaillée *
                                 </label>
-                                <textarea
-                                    pTextarea
-                                    [formControl]="f['description']"
+                                <textarea pTextarea [formControl]="f['description']"
                                     placeholder="Décrivez les faits en détail..."
-                                    rows="5"
-                                    class="w-full">
+                                    rows="5" class="w-full resize-none">
                                 </textarea>
+                                <div class="flex items-center justify-between">
+                                    <small class="text-red-500 text-xs"
+                                        *ngIf="f['description'].invalid && f['description'].touched">
+                                        Champ obligatoire
+                                    </small>
+                                    <small class="text-surface-400 text-xs ml-auto">
+                                        {{ f['description'].value?.length || 0 }} caractères
+                                    </small>
+                                </div>
                             </div>
 
+                            <!-- Lieu + Période -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                                <!-- Lieu -->
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-medium">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Lieu des faits
                                     </label>
-                                    <input
-                                        pInputText
-                                        [formControl]="f['incidentLocation']"
-                                        placeholder="Ex: Mairie de Koudougou"
-                                        class="w-full" />
+                                    <div class="flex items-center gap-2 border border-surface-200 rounded-lg px-3">
+                                        <i class="pi pi-map-marker text-surface-300 text-sm"></i>
+                                        <input pInputText [formControl]="f['incidentLocation']"
+                                            placeholder="Ex: Mairie de Koudougou"
+                                            class="flex-1 border-none shadow-none outline-none bg-transparent py-2 text-sm" />
+                                    </div>
                                 </div>
 
-                                <!-- Période -->
-                                <div class="flex flex-col gap-1">
-                                    <label class="text-sm font-medium">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Période des faits
                                     </label>
-                                    <input
-                                        pInputText
-                                        [formControl]="f['incidentPeriod']"
-                                        placeholder="Ex: Janvier - Juin 2024"
-                                        class="w-full" />
+                                    <div class="flex items-center gap-2 border border-surface-200 rounded-lg px-3">
+                                        <i class="pi pi-calendar text-surface-300 text-sm"></i>
+                                        <input pInputText [formControl]="f['incidentPeriod']"
+                                            placeholder="Ex: Janvier - Juin 2024"
+                                            class="flex-1 border-none shadow-none outline-none bg-transparent py-2 text-sm" />
+                                    </div>
                                 </div>
-
                             </div>
 
-                            <!-- Montant estimé -->
-                            <div class="flex flex-col gap-1">
-                                <label class="text-sm font-medium">
+                            <!-- Montant -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                     Montant estimé du préjudice (FCFA)
                                 </label>
-                                <p-inputnumber
-                                    [formControl]="f['estimatedLoss']"
-                                    [useGrouping]="true"
-                                    placeholder="0"
+                                <p-inputnumber [formControl]="f['estimatedLoss']"
+                                    [useGrouping]="true" placeholder="0"
                                     styleClass="w-full" />
+                                <small class="text-surface-400 text-xs">
+                                    Laisser vide si inconnu
+                                </small>
                             </div>
 
                             <!-- Confidentiel -->
-                            <div class="flex items-center gap-2">
-                                <p-checkbox
-                                    [formControl]="f['isConfidential']"
-                                    [binary]="true"
-                                    inputId="confidential" />
-                                <label for="confidential" class="text-sm">
-                                    Dossier confidentiel
+                            <div class="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-700 rounded-xl border border-surface-100 dark:border-surface-600">
+                                <p-checkbox [formControl]="f['isConfidential']"
+                                    [binary]="true" inputId="confidential" />
+                                <label for="confidential" class="flex items-center gap-2 cursor-pointer">
+                                    <i class="pi pi-lock text-surface-400 text-sm"></i>
+                                    <span class="text-sm font-medium text-surface-700 dark:text-surface-200">
+                                        Marquer ce dossier comme confidentiel
+                                    </span>
                                 </label>
                             </div>
 
-                            <div class="flex justify-end gap-2 pt-2">
-                                <p-button
-                                    label="Suivant"
-                                    icon="pi pi-arrow-right"
+                            <div class="flex justify-end pt-2">
+                                <p-button label="Suivant" icon="pi pi-arrow-right"
                                     iconPos="right"
                                     (onClick)="nextStep(activateCallback, 2)" />
                             </div>
+
                         </div>
                         </ng-template>
                     </p-step-panel>
 
-                    <!-- Panel 2 — Déclarant -->
+                    <!-- ═══ Étape 2 — Déclarant ═══ -->
                     <p-step-panel [value]="2">
                         <ng-template #content let-activateCallback="activateCallback">
-                        <div class="flex flex-col gap-4 p-2">
+                        <div class="flex flex-col gap-5 pt-4">
 
-                            <!-- Anonyme -->
-                            <div class="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                <p-checkbox
-                                    [formControl]="fd['anonymous']"
-                                    [binary]="true"
-                                    inputId="anonymous"
-                                    (onChange)="onAnonymousChange()" />
-                                <label for="anonymous" class="text-sm font-medium text-yellow-800">
-                                    Déclarant anonyme — identité masquée
-                                </label>
+                            <!-- Anonyme toggle -->
+                            <div class="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950 rounded-xl border border-amber-200 dark:border-amber-800 cursor-pointer"
+                                (click)="toggleAnonymous()">
+                                <p-checkbox [formControl]="fd['anonymous']"
+                                    [binary]="true" inputId="anonymous"
+                                    (click)="$event.stopPropagation()" />
+                                <div class="flex items-center gap-2">
+                                    <i class="pi pi-eye-slash text-amber-600"></i>
+                                    <div>
+                                        <div class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                            Déclarant anonyme
+                                        </div>
+                                        <div class="text-xs text-amber-600 dark:text-amber-400">
+                                            L'identité du déclarant sera masquée
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div *ngIf="!fd['anonymous'].value">
+                            <!-- Formulaire déclarant (masqué si anonyme) -->
+                            <div *ngIf="!fd['anonymous'].value" class="flex flex-col gap-4">
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                    <!-- Type déclarant -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">
-                                            Type de déclarant *
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Type de déclarant
                                         </label>
-                                        <p-select
-                                            [formControl]="fd['typeDeclarant']"
+                                        <p-select [formControl]="fd['typeDeclarant']"
                                             [options]="declarantTypeOptions"
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            placeholder="Sélectionner"
-                                            styleClass="w-full" />
+                                            optionLabel="label" optionValue="value"
+                                            placeholder="Sélectionner" styleClass="w-full" />
                                     </div>
 
-                                    <!-- Qualité -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                             Qualité par rapport aux faits
                                         </label>
-                                        <p-select
-                                            [formControl]="fd['quality']"
+                                        <p-select [formControl]="fd['quality']"
                                             [options]="qualityOptions"
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            placeholder="Sélectionner"
-                                            styleClass="w-full"
+                                            optionLabel="label" optionValue="value"
+                                            placeholder="Sélectionner" styleClass="w-full"
                                             [showClear]="true" />
                                     </div>
 
-                                    <!-- Prénom -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Prénom</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['firstName']"
-                                            placeholder="Prénom"
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Prénom
+                                        </label>
+                                        <input pInputText [formControl]="fd['firstName']"
+                                            placeholder="Prénom" class="w-full" />
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Nom
+                                        </label>
+                                        <input pInputText [formControl]="fd['lastName']"
+                                            placeholder="Nom de famille" class="w-full" />
+                                    </div>
+
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Email
+                                        </label>
+                                        <input pInputText [formControl]="fd['email']"
+                                            placeholder="email@exemple.bf" type="email"
                                             class="w-full" />
                                     </div>
 
-                                    <!-- Nom -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Nom</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['lastName']"
-                                            placeholder="Nom de famille"
-                                            class="w-full" />
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Téléphone
+                                        </label>
+                                        <input pInputText [formControl]="fd['phoneNumber']"
+                                            placeholder="+226 XX XX XX XX" class="w-full" />
                                     </div>
 
-                                    <!-- Email -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Email</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['email']"
-                                            placeholder="email@exemple.bf"
-                                            type="email"
-                                            class="w-full" />
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Commune
+                                        </label>
+                                        <input pInputText [formControl]="fd['commune']"
+                                            placeholder="Commune" class="w-full" />
                                     </div>
 
-                                    <!-- Téléphone -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Téléphone</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['phoneNumber']"
-                                            placeholder="+226 XX XX XX XX"
-                                            class="w-full" />
-                                    </div>
-
-                                    <!-- Commune -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Commune</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['commune']"
-                                            placeholder="Commune"
-                                            class="w-full" />
-                                    </div>
-
-                                    <!-- Province -->
-                                    <div class="flex flex-col gap-1">
-                                        <label class="text-sm font-medium">Province</label>
-                                        <input
-                                            pInputText
-                                            [formControl]="fd['province']"
-                                            placeholder="Province"
-                                            class="w-full" />
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                            Province
+                                        </label>
+                                        <input pInputText [formControl]="fd['province']"
+                                            placeholder="Province" class="w-full" />
                                     </div>
 
                                 </div>
 
                                 <!-- Consentements -->
-                                <div class="flex flex-col gap-2 mt-4 p-3 bg-surface-50 rounded-lg">
-                                    <div class="flex items-center gap-2">
-                                        <p-checkbox
-                                            [formControl]="fd['dataProcessingConsent']"
-                                            [binary]="true"
-                                            inputId="consent" />
-                                        <label for="consent" class="text-sm">
-                                            J'accepte le traitement de mes données personnelles *
+                                <div class="flex flex-col gap-3 p-4 bg-surface-50 dark:bg-surface-700 rounded-xl border border-surface-100 dark:border-surface-600">
+                                    <h4 class="text-sm font-semibold text-surface-600 dark:text-surface-300 flex items-center gap-2">
+                                        <i class="pi pi-shield text-primary-500"></i>
+                                        Consentements
+                                    </h4>
+                                    <div class="flex items-start gap-2">
+                                        <p-checkbox [formControl]="fd['dataProcessingConsent']"
+                                            [binary]="true" inputId="consent" />
+                                        <label for="consent" class="text-sm text-surface-700 dark:text-surface-200 cursor-pointer leading-relaxed">
+                                            J'accepte le traitement de mes données personnelles
+                                            <span class="text-red-500">*</span>
                                         </label>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <p-checkbox
-                                            [formControl]="fd['notificationsAccepted']"
-                                            [binary]="true"
-                                            inputId="notif" />
-                                        <label for="notif" class="text-sm">
-                                            J'accepte de recevoir des notifications
+                                    <div class="flex items-start gap-2">
+                                        <p-checkbox [formControl]="fd['notificationsAccepted']"
+                                            [binary]="true" inputId="notif" />
+                                        <label for="notif" class="text-sm text-surface-700 dark:text-surface-200 cursor-pointer leading-relaxed">
+                                            J'accepte de recevoir des notifications sur l'avancement
                                         </label>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <p-checkbox
-                                            [formControl]="fd['protectionRequested']"
-                                            [binary]="true"
-                                            inputId="protection" />
-                                        <label for="protection" class="text-sm">
-                                            Je demande une protection (lanceur d'alerte)
+                                    <div class="flex items-start gap-2">
+                                        <p-checkbox [formControl]="fd['protectionRequested']"
+                                            [binary]="true" inputId="protection" />
+                                        <label for="protection" class="text-sm text-surface-700 dark:text-surface-200 cursor-pointer leading-relaxed">
+                                            Je demande une protection en tant que lanceur d'alerte
                                         </label>
                                     </div>
                                 </div>
 
                             </div>
 
-                            <div class="flex justify-between gap-2 pt-2">
-                                <p-button
-                                    label="Précédent"
-                                    icon="pi pi-arrow-left"
-                                    severity="secondary"
-                                    outlined
-                                    (onClick)="activateCallback(1)" />
-                                <p-button
-                                    label="Suivant"
-                                    icon="pi pi-arrow-right"
-                                    iconPos="right"
-                                    (onClick)="activateCallback(3)" />
+                            <!-- Message si anonyme -->
+                            <div *ngIf="fd['anonymous'].value"
+                                class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-xl border border-blue-200 dark:border-blue-800">
+                                <i class="pi pi-info-circle text-blue-500 text-xl"></i>
+                                <div>
+                                    <div class="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                                        Mode anonyme activé
+                                    </div>
+                                    <div class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                                        Votre identité sera protégée. Conservez votre code d'accès B4 pour suivre votre dossier.
+                                    </div>
+                                </div>
                             </div>
+
+                            <div class="flex justify-between pt-2">
+                                <p-button label="Précédent" icon="pi pi-arrow-left"
+                                    severity="secondary" outlined
+                                    (onClick)="prevStep(activateCallback, 1)" />
+                                <p-button label="Suivant" icon="pi pi-arrow-right"
+                                    iconPos="right"
+                                    (onClick)="nextStep(activateCallback, 3)" />
+                            </div>
+
                         </div>
                         </ng-template>
                     </p-step-panel>
 
-                    <!-- Panel 3 — Confirmation -->
+                    <!-- ═══ Étape 3 — Confirmation ═══ -->
                     <p-step-panel [value]="3">
                         <ng-template #content let-activateCallback="activateCallback">
-                        <div class="flex flex-col gap-4 p-2">
+                        <div class="flex flex-col gap-5 pt-4">
 
-                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                <h3 class="font-semibold text-blue-900 mb-3">
-                                    Récapitulatif du dossier
-                                </h3>
-                                <div class="grid grid-cols-2 gap-2 text-sm">
-                                    <span class="text-blue-600 font-medium">Type :</span>
-                                    <span>{{ getTypeLabel(f['type'].value) }}</span>
-                                    <span class="text-blue-600 font-medium">Canal :</span>
-                                    <span>{{ getModeLabel(f['submissionMode'].value) }}</span>
-                                    <span class="text-blue-600 font-medium">Objet :</span>
-                                    <span>{{ f['object'].value }}</span>
-                                    <span class="text-blue-600 font-medium">Déclarant :</span>
-                                    <span>
-                                        {{ fd['anonymous'].value ? 'Anonyme' :
-                                           (fd['firstName'].value + ' ' + fd['lastName'].value) || 'Non renseigné' }}
-                                    </span>
+                            <!-- Récapitulatif -->
+                            <div class="bg-surface-50 dark:bg-surface-700 rounded-xl border border-surface-100 dark:border-surface-600 overflow-hidden">
+                                <div class="px-4 py-3 bg-primary-50 dark:bg-primary-950 border-b border-primary-100 dark:border-primary-900">
+                                    <h3 class="font-semibold text-primary-800 dark:text-primary-200 flex items-center gap-2">
+                                        <i class="pi pi-list-check text-primary-600"></i>
+                                        Récapitulatif du dossier
+                                    </h3>
+                                </div>
+
+                                <div class="p-4 grid grid-cols-1 gap-3">
+
+                                    <div class="flex items-start gap-3 pb-3 border-b border-surface-100 dark:border-surface-600">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-tag text-blue-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Type</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
+                                                {{ getTypeLabel(f['type'].value) }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3 pb-3 border-b border-surface-100 dark:border-surface-600">
+                                        <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-share-alt text-green-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Canal</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
+                                                {{ getModeLabel(f['submissionMode'].value) }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3 pb-3 border-b border-surface-100 dark:border-surface-600">
+                                        <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-file-edit text-purple-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Objet</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
+                                                {{ f['object'].value }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3 pb-3 border-b border-surface-100 dark:border-surface-600">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-align-left text-amber-600 text-sm"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Description</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5 line-clamp-2">
+                                                {{ f['description'].value }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3 pb-3 border-b border-surface-100 dark:border-surface-600">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-map-marker text-teal-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Lieu / Période</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
+                                                {{ f['incidentLocation'].value || '—' }}
+                                                <span *ngIf="f['incidentPeriod'].value" class="text-surface-400"> · {{ f['incidentPeriod'].value }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-surface-200 flex items-center justify-center flex-shrink-0">
+                                            <i class="pi pi-user text-surface-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-surface-400 uppercase tracking-wide">Déclarant</div>
+                                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
+                                                {{ fd['anonymous'].value ? 'Anonyme' :
+                                                    (((fd['firstName'].value || '') + ' ' + (fd['lastName'].value || '')).trim() || 'Non renseigné') }}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
 
-                            <div class="flex justify-between gap-2 pt-2">
-                                <p-button
-                                    label="Précédent"
-                                    icon="pi pi-arrow-left"
-                                    severity="secondary"
-                                    outlined
-                                    (onClick)="activateCallback(2)" />
+                            <!-- Succès -->
+                            <div *ngIf="submitSuccess"
+                                class="flex items-center gap-4 p-5 bg-green-50 dark:bg-green-950 rounded-xl border border-green-200 dark:border-green-800">
+                                <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <i class="pi pi-check-circle text-green-600 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-green-800 dark:text-green-200">
+                                        Dossier enregistré avec succès !
+                                    </div>
+                                    <div class="text-sm text-green-700 dark:text-green-300 mt-1">
+                                        Code d'accès B4 :
+                                        <span class="font-mono font-bold bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded ml-1">
+                                            {{ accessCode }}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                                        <i class="pi pi-spin pi-spinner text-xs"></i>
+                                        Redirection vers la liste...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between pt-2">
+                                <p-button label="Précédent" icon="pi pi-arrow-left"
+                                    severity="secondary" outlined
+                                    [disabled]="submitting || submitSuccess"
+                                    (onClick)="prevStep(activateCallback, 2)" />
                                 <p-button
                                     label="Soumettre le Dossier"
                                     icon="pi pi-check"
                                     [loading]="submitting"
+                                    [disabled]="submitSuccess"
                                     (onClick)="submit()" />
                             </div>
+
                         </div>
                         </ng-template>
                     </p-step-panel>
 
                 </p-step-panels>
             </p-stepper>
+
         </div>
 
-        <!-- Aide contextuelle -->
-        <div class="flex flex-col gap-3">
+        <!-- ── Aide contextuelle ───────────────────────────── -->
+        <div class="flex flex-col gap-4">
 
-            <div class="bg-green-50 rounded-xl p-4 border border-green-200">
-                <h4 class="font-semibold text-green-800 mb-2">
-                    <i class="pi pi-info-circle mr-2"></i>
-                    Après soumission
+            <!-- Étapes -->
+            <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border border-surface-100 dark:border-surface-700">
+                <h4 class="text-sm font-semibold text-surface-600 dark:text-surface-300 mb-4 flex items-center gap-2">
+                    <i class="pi pi-list-check text-primary-500"></i>
+                    Progression
                 </h4>
-                <ul class="text-sm text-green-700 flex flex-col gap-1">
-                    <li>✅ Code d'accès B4 généré</li>
-                    <li>✅ Numéro officiel attribué</li>
-                    <li>✅ Récépissé remis au déclarant</li>
-                    <li>✅ Délai de traitement : 7 jours</li>
-                </ul>
+                <div class="flex flex-col gap-3">
+                    <div *ngFor="let step of steps"
+                        class="flex items-center gap-3 p-2 rounded-lg transition-all"
+                        [class.bg-primary-50]="currentStep === step.id"
+                        [class.dark:bg-primary-950]="currentStep === step.id">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                            [class.bg-primary-600]="currentStep === step.id"
+                            [class.text-white]="currentStep === step.id"
+                            [class.bg-green-100]="currentStep > step.id"
+                            [class.text-green-600]="currentStep > step.id"
+                            [class.bg-surface-100]="currentStep < step.id"
+                            [class.text-surface-400]="currentStep < step.id">
+                            <i *ngIf="currentStep > step.id" class="pi pi-check text-xs"></i>
+                            <span *ngIf="currentStep <= step.id">{{ step.id }}</span>
+                        </div>
+                        <span class="text-sm"
+                            [class.font-semibold]="currentStep === step.id"
+                            [class.text-primary-700]="currentStep === step.id"
+                            [class.dark:text-primary-300]="currentStep === step.id"
+                            [class.text-surface-500]="currentStep !== step.id">
+                            {{ step.label }}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                <h4 class="font-semibold text-yellow-800 mb-2">
-                    <i class="pi pi-shield mr-2"></i>
-                    Confidentialité
+            <!-- Après soumission -->
+            <div class="bg-green-50 dark:bg-green-950 rounded-2xl p-5 border border-green-200 dark:border-green-800">
+                <h4 class="font-semibold text-green-800 dark:text-green-200 mb-3 flex items-center gap-2 text-sm">
+                    <i class="pi pi-info-circle text-green-600"></i>
+                    Après soumission
                 </h4>
-                <p class="text-sm text-yellow-700">
-                    Toutes les informations sont protégées
-                    conformément à la loi N°010-2004/AN
-                    sur la protection des lanceurs d'alerte.
+                <div class="flex flex-col gap-2">
+                    <div *ngFor="let item of afterSubmitItems"
+                        class="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                        <i class="pi pi-check-circle text-green-500 text-xs flex-shrink-0"></i>
+                        {{ item }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidentialité -->
+            <div class="bg-amber-50 dark:bg-amber-950 rounded-2xl p-5 border border-amber-200 dark:border-amber-800">
+                <h4 class="font-semibold text-amber-800 dark:text-amber-200 mb-2 flex items-center gap-2 text-sm">
+                    <i class="pi pi-shield text-amber-600"></i>
+                    Confidentialité garantie
+                </h4>
+                <p class="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                    Toutes les informations sont protégées conformément
+                    à la loi N°010-2004/AN sur la protection des lanceurs d'alerte.
                 </p>
             </div>
 
         </div>
 
     </div>
-
 </div>
     `
 })
 export class DossierForm {
 
-    private fb = inject(FormBuilder);
+    private fb             = inject(FormBuilder);
     private dossierService = inject(DossierService);
-    private router = inject(Router);
+    private router         = inject(Router);
     private messageService = inject(MessageService);
 
-    currentStep = 1;
-    submitting = false;
+    currentStep   = 1;
+    submitting    = false;
+    submitSuccess = false;
+    accessCode    = '';
 
-    // Formulaire dossier
+    readonly steps = [
+        { id: 1, label: 'Informations du dossier' },
+        { id: 2, label: 'Informations du déclarant' },
+        { id: 3, label: 'Confirmation et soumission' }
+    ];
+
+    readonly afterSubmitItems = [
+        'Code d\'accès B4 généré',
+        'Numéro officiel attribué',
+        'Récépissé remis au déclarant',
+        'Délai de traitement : 7 jours'
+    ];
+
+    // ── Formulaires ───────────────────────────────────────────
+
     dossierForm = this.fb.group({
-        type: ['COMPLAINT', Validators.required],
-        submissionMode: ['IN_PERSON', Validators.required],
-        object: ['', [Validators.required, Validators.minLength(10)]],
-        description: [''],
+        type:             ['COMPLAINT',  Validators.required],
+        submissionMode:   ['IN_PERSON',  Validators.required],
+        object:           ['',           [Validators.required, Validators.minLength(10)]],
+        description:      ['',           Validators.required],
         incidentLocation: [''],
-        incidentPeriod: [''],
-        estimatedLoss: [null],
-        isConfidential: [false]
+        incidentPeriod:   [''],
+        estimatedLoss:    [null as number | null],
+        isConfidential:   [false]
     });
 
-    // Formulaire déclarant
     declarantForm = this.fb.group({
-        typeDeclarant: ['CITIZEN'],
-        quality: [''],
-        firstName: [''],
-        lastName: [''],
-        email: [''],
-        phoneNumber: [''],
-        commune: [''],
-        province: [''],
-        anonymous: [false],
+        typeDeclarant:         ['CITIZEN'],
+        quality:               [''],
+        firstName:             [''],
+        lastName:              [''],
+        email:                 [''],
+        phoneNumber:           [''],
+        commune:               [''],
+        province:              [''],
+        anonymous:             [false],
         dataProcessingConsent: [true],
         notificationsAccepted: [true],
-        protectionRequested: [false]
+        protectionRequested:   [false]
     });
 
-    // Accès rapide aux controls
-    get f() { return this.dossierForm.controls; }
+    get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
+    // ── Options ───────────────────────────────────────────────
+
     typeOptions = [
-        { label: 'Plainte', value: 'COMPLAINT' },
+        { label: 'Plainte',      value: 'COMPLAINT'    },
         { label: 'Dénonciation', value: 'DENUNCIATION' },
-        { label: 'Auto-saisine', value: 'AUTO_REFERRAL' },
-        { label: 'Anonyme', value: 'ANONYMOUS' }
+        { label: 'Auto-saisine', value: 'AUTO_REFERRAL'},
+        { label: 'Anonyme',      value: 'ANONYMOUS'    }
     ];
 
     modeOptions = [
-        { label: 'Guichet BRPD', value: 'IN_PERSON' },
-        { label: 'Formulaire Web', value: 'WEB_FORM' },
-        { label: 'Email', value: 'EMAIL' },
-        { label: 'SMS', value: 'SMS' },
-        { label: 'Téléphone', value: 'PHONE' },
-        { label: 'Numéro Vert', value: 'GREEN_NUMBER' },
-        { label: 'Réseaux Sociaux', value: 'SOCIAL_MEDIA' },
-        { label: 'Comptoir Audio', value: 'AUDIO_COUNTER' },
-        { label: 'Formulaire Papier', value: 'PAPER_FORM' },
-        { label: 'Courrier Postal', value: 'POSTAL_MAIL' },
-        { label: 'Fax', value: 'FAX' }
+        { label: 'Guichet BRPD',      value: 'IN_PERSON'     },
+        { label: 'Formulaire Web',    value: 'WEB_FORM'      },
+        { label: 'Email',             value: 'EMAIL'         },
+        { label: 'SMS',               value: 'SMS'           },
+        { label: 'Téléphone',         value: 'PHONE'         },
+        { label: 'Numéro Vert',       value: 'GREEN_NUMBER'  },
+        { label: 'Réseaux Sociaux',   value: 'SOCIAL_MEDIA'  },
+        { label: 'Comptoir Audio',    value: 'AUDIO_COUNTER' },
+        { label: 'Formulaire Papier', value: 'PAPER_FORM'    },
+        { label: 'Courrier Postal',   value: 'POSTAL_MAIL'   },
+        { label: 'Fax',               value: 'FAX'           }
     ];
 
     declarantTypeOptions = [
-        { label: 'Citoyen', value: 'CITIZEN' },
-        { label: 'Entreprise', value: 'COMPANY' },
-        { label: 'Association', value: 'ASSOCIATION' },
+        { label: 'Citoyen',           value: 'CITIZEN'          },
+        { label: 'Entreprise',        value: 'COMPANY'          },
+        { label: 'Association',       value: 'ASSOCIATION'      },
         { label: 'Autorité publique', value: 'PUBLIC_AUTHORITY' }
     ];
 
     qualityOptions = [
-        { label: 'Victime', value: 'VICTIM' },
-        { label: 'Témoin', value: 'WITNESS' },
+        { label: 'Victime',      value: 'VICTIM'         },
+        { label: 'Témoin',       value: 'WITNESS'        },
         { label: 'Représentant', value: 'REPRESENTATIVE' }
     ];
+
+    // ── Navigation ────────────────────────────────────────────
 
     nextStep(activateCallback: any, step: number): void {
         if (step === 2 && this.dossierForm.invalid) {
             this.dossierForm.markAllAsTouched();
             this.messageService.add({
                 severity: 'warn',
-                summary: 'Validation',
-                detail: 'Veuillez remplir les champs obligatoires'
+                summary:  'Validation',
+                detail:   'Veuillez remplir tous les champs obligatoires'
             });
             return;
         }
@@ -529,19 +685,28 @@ export class DossierForm {
         activateCallback(step);
     }
 
-    onAnonymousChange(): void {
-        const isAnon = this.fd['anonymous'].value;
-        if (isAnon) {
+    prevStep(activateCallback: any, step: number): void {
+        this.currentStep = step;
+        activateCallback(step);
+    }
+
+    toggleAnonymous(): void {
+        const current = this.fd['anonymous'].value;
+        this.fd['anonymous'].setValue(!current);
+        if (!current) {
             this.fd['dataProcessingConsent'].setValue(true);
         }
     }
 
+    // ── Soumission ────────────────────────────────────────────
+
     submit(): void {
         if (this.dossierForm.invalid) {
+            this.dossierForm.markAllAsTouched();
             this.messageService.add({
-                severity: 'error',
-                summary: 'Erreur',
-                detail: 'Formulaire incomplet'
+                severity: 'warn',
+                summary:  'Validation',
+                detail:   'Veuillez remplir tous les champs obligatoires'
             });
             return;
         }
@@ -554,42 +719,49 @@ export class DossierForm {
                 ...this.declarantForm.value,
                 typeDeclarant: this.fd['anonymous'].value
                     ? 'ANONYMOUS'
-                    : this.fd['typeDeclarant'].value
+                    : (this.fd['typeDeclarant'].value ?? 'CITIZEN')
             }
         } as any;
 
-        this.dossierService.create(request).subscribe({
+        if (!request.estimatedLoss)    delete request.estimatedLoss;
+        if (!request.incidentLocation) delete request.incidentLocation;
+        if (!request.incidentPeriod)   delete request.incidentPeriod;
+
+        this.dossierService.submit(request).subscribe({
             next: dossier => {
-                this.submitting = false;
+                this.submitting    = false;
+                this.submitSuccess = true;
+                this.accessCode    = dossier.accessCode;
+
                 this.messageService.add({
                     severity: 'success',
-                    summary: 'Dossier créé',
-                    detail: `Code d'accès : ${dossier.accessCode}`
+                    summary:  'Dossier enregistré',
+                    detail:   `Code B4 : ${dossier.accessCode}`,
+                    life:     3000
                 });
-                setTimeout(() => {
-                    this.router.navigate(['/dossiers', dossier.id]);
-                }, 2000);
+
+                timer(3000).subscribe(() =>
+                    this.router.navigate(['/app/dossiers'])
+                );
             },
             error: err => {
                 this.submitting = false;
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Erreur',
-                    detail: err.error?.message || 'Impossible de créer le dossier'
+                    summary:  'Erreur',
+                    detail:   err.error?.message || 'Impossible de créer le dossier'
                 });
             }
         });
     }
-    
-    getTypeLabel(type: string | null): string {
-    if (!type) return '';
-    return this.typeOptions.find(o => o.value === type)
-        ?.label || type;
-}
 
-getModeLabel(mode: string | null): string {
-    if (!mode) return '';
-    return this.modeOptions.find(o => o.value === mode)
-        ?.label || mode;
-}
+    getTypeLabel(type: string | null): string {
+        if (!type) return '';
+        return this.typeOptions.find(o => o.value === type)?.label || type;
+    }
+
+    getModeLabel(mode: string | null): string {
+        if (!mode) return '';
+        return this.modeOptions.find(o => o.value === mode)?.label || mode;
+    }
 }

@@ -1,322 +1,784 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
+import { trigger, style, animate, transition } from '@angular/animations';
+import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
 
 @Component({
     selector: 'app-portail-accueil',
     standalone: true,
-    imports: [CommonModule, RouterModule, ButtonModule, CardModule],
-    template: `
-<div class="min-h-screen bg-white">
+    imports: [CommonModule, RouterModule, ButtonModule],
+    animations: [
+        trigger('fadeIn', [
+            transition(':enter', [
+                style({ opacity: 0, transform: 'translateY(24px)' }),
+                animate('500ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+            ])
+        ])
+    ],
+    styles: [`
+        :host {
+            --red:   #EF2B2D;
+            --green: #009A44;
+            --gold:  #FFD700;
+            --dark:  #111827;
+            display: block;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
 
-    <!-- Barre de navigation portail -->
-    <nav class="bg-green-700 text-white px-6 py-4 shadow-lg">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <i class="pi pi-shield text-green-700 text-lg"></i>
-                </div>
-                <div>
-                    <div class="font-bold text-lg leading-tight">ASCE-LC</div>
-                    <div class="text-green-200 text-xs">
-                        Autorité Supérieure de Contrôle d'État
-                    </div>
-                </div>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ── Topbar ── */
+        .topbar {
+            position: relative;
+            background: linear-gradient(90deg,
+                rgba(239,43,45,.95) 0%,
+                rgba(239,43,45,.9) 45%,
+                rgba(0,154,68,.9) 55%,
+                rgba(0,154,68,.95) 100%);
+            color: #fff;
+            display: flex; align-items: center; justify-content: space-between;
+            min-height: 60px; padding: 0 2rem; overflow: hidden;
+        }
+        .topbar::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(255,215,0,.25) 0%, transparent 55%),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,255,255,.03) 50px, rgba(255,255,255,.03) 51px);
+            pointer-events: none;
+        }
+        .topbar-left  { display:flex; align-items:center; gap:1rem; position:relative; z-index:1; }
+        .topbar-text  { font-size:.875rem; font-weight:600; letter-spacing:.5px; text-shadow:0 1px 4px rgba(0,0,0,.3); }
+        .topbar-right { position:relative; z-index:1; }
+        .hotline {
+            background:rgba(255,215,0,.95); color:var(--dark);
+            padding:8px 20px; border-radius:24px;
+            font-weight:800; font-size:.9rem;
+            display:flex; align-items:center; gap:8px;
+            box-shadow:0 4px 12px rgba(0,0,0,.2);
+        }
+        .hotline i { color:var(--red); font-size:1rem; }
+        .star-deco {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%);
+            font-size:36px; color:#FFD700;
+            text-shadow:0 0 20px rgba(255,215,0,.6);
+            z-index:0; animation:pulse-star 3s infinite;
+        }
+        @keyframes pulse-star {
+            0%,100% { opacity:.8; transform:translate(-50%,-50%) scale(1); }
+            50%      { opacity:1;  transform:translate(-50%,-50%) scale(1.12); }
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            background:#fff; padding:1rem 2rem;
+            display:flex; align-items:center; justify-content:space-between;
+            box-shadow:0 2px 12px rgba(0,0,0,.07);
+            position:sticky; top:0; z-index:200; transition:box-shadow .3s;
+        }
+        .navbar.scrolled { box-shadow:0 4px 20px rgba(0,0,0,.12); }
+        .navbar-brand { display:flex; align-items:center; gap:1rem; }
+        .navbar-logo {
+            width:64px; height:64px; border-radius:50%;
+            border:3px solid var(--gold); overflow:hidden;
+            background:#fff; display:flex; align-items:center; justify-content:center;
+        }
+        .navbar-logo img { width:100%; height:100%; object-fit:contain; }
+        .brand-text { font-size:2rem; font-weight:900; letter-spacing:2px; display:flex; align-items:center; }
+        .brand-red   { color:var(--red); }
+        .brand-green { color:var(--green); }
+        .brand-plus  { color:var(--gold); margin-left:3px; font-size:2.25rem; animation:pulse-plus 2s infinite; }
+        @keyframes pulse-plus {
+            0%,100% { transform:scale(1); }
+            50%      { transform:scale(1.18); }
+        }
+        .nav-actions { display:flex; align-items:center; gap:.875rem; }
+        .btn-nav-track {
+            background:transparent; border:2px solid var(--green);
+            color:var(--green); padding:10px 22px; border-radius:8px;
+            font-weight:700; font-size:.875rem; cursor:pointer;
+            display:inline-flex; align-items:center; gap:8px; transition:all .2s;
+        }
+        .btn-nav-track:hover { background:var(--green); color:#fff; }
+        .btn-nav-report {
+            background:var(--red); color:#fff;
+            padding:11px 26px; border-radius:8px; border:none;
+            font-weight:700; font-size:.875rem; cursor:pointer;
+            display:inline-flex; align-items:center; gap:8px; transition:all .2s;
+        }
+        .btn-nav-report:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(239,43,45,.4); }
+
+        /* ── Hero ── */
+        .hero {
+            position:relative;
+            background:linear-gradient(135deg, var(--green) 0%, #00b050 60%, #007a35 100%);
+            min-height:520px; display:flex; align-items:center; overflow:hidden;
+        }
+        .hero::before {
+            content:''; position:absolute; inset:0;
+            background:url('/assets/banner.jpg') center/cover no-repeat;
+            opacity:.12;
+        }
+        .hero-circles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+        .hc {
+            position:absolute; border-radius:50%;
+            background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+        }
+        .hc1 { width:400px; height:400px; top:-100px; right:-80px; }
+        .hc2 { width:250px; height:250px; bottom:-60px; left:10%; }
+        .hc3 { width:120px; height:120px; top:40%; left:5%; }
+        .hero-content {
+            position:relative; z-index:1;
+            max-width:1100px; margin:0 auto;
+            padding:5rem 2rem; width:100%; text-align:center;
+        }
+        .hero-badge {
+            display:inline-flex; align-items:center; gap:.5rem;
+            background:rgba(255,255,255,.15); backdrop-filter:blur(8px);
+            color:#fff; border:1px solid rgba(255,255,255,.25);
+            padding:6px 18px; border-radius:24px;
+            font-size:.8rem; font-weight:700; letter-spacing:1px;
+            text-transform:uppercase; margin-bottom:1.5rem;
+        }
+        .hero-title {
+            font-size:3rem; font-weight:900; color:#fff;
+            text-transform:uppercase; text-shadow:0 4px 16px rgba(0,0,0,.25);
+            margin-bottom:1.25rem; line-height:1.15;
+        }
+        .hero-title span { color:var(--gold); }
+        .hero-subtitle {
+            font-size:1.1rem; color:rgba(255,255,255,.92);
+            max-width:600px; margin:0 auto 2.5rem; line-height:1.75;
+        }
+
+        /* Stats hero */
+        .hero-stats {
+            display:flex; justify-content:center; gap:2.5rem;
+            margin-bottom:3rem; flex-wrap:wrap;
+        }
+        .hero-stat { text-align:center; }
+        .hero-stat-num {
+            font-size:2.25rem; font-weight:900; color:var(--gold);
+            min-width:80px; display:block;
+        }
+        .hero-stat-num.loading {
+            background:rgba(255,255,255,.2); border-radius:8px;
+            animation:shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0%,100% { opacity:.6; } 50% { opacity:1; }
+        }
+        .hero-stat-lbl {
+            font-size:.75rem; color:rgba(255,255,255,.8);
+            text-transform:uppercase; letter-spacing:1px;
+        }
+        .stat-divider {
+            width:1px; background:rgba(255,255,255,.2);
+            align-self:stretch; margin:4px 0;
+        }
+
+        /* Pills */
+        .action-pills { display:flex; justify-content:center; gap:0; flex-wrap:wrap; }
+        .pill {
+            height:68px; padding:0 3rem; border:none; cursor:pointer;
+            display:flex; align-items:center; gap:1rem;
+            font-weight:800; font-size:.95rem; text-transform:uppercase;
+            transition:all .3s; box-shadow:0 6px 20px rgba(0,0,0,.2);
+        }
+        .pill:hover { transform:translateY(-4px); box-shadow:0 12px 30px rgba(0,0,0,.3); }
+        .pill-left  { background:var(--red); color:#fff; border-radius:34px 0 0 34px; padding-left:3.5rem; }
+        .pill-right { background:#005c2a; color:#fff; border-radius:0 34px 34px 0; padding-right:3.5rem; margin-left:-1.5rem; }
+        .pill-icon  {
+            width:46px; height:46px; border-radius:50%; background:#fff;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .pill-left  .pill-icon i { color:var(--red);    font-size:1.3rem; }
+        .pill-right .pill-icon i { color:#005c2a; font-size:1.3rem; }
+
+        /* ── Sections communes ── */
+        .section-label {
+            font-size:.7rem; font-weight:900; color:var(--green);
+            letter-spacing:3px; text-transform:uppercase; margin-bottom:.5rem;
+        }
+        .section-title { font-size:2rem; font-weight:900; color:var(--dark); margin-bottom:.75rem; }
+        .section-sub   { font-size:.95rem; color:#6b7280; max-width:500px; margin:0 auto 3rem; }
+
+        /* ── Comment ça marche ── */
+        .how { padding:5rem 2rem; background:#fff; text-align:center; }
+        .steps-row {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:1.5rem; max-width:1000px; margin:0 auto; position:relative;
+        }
+        .steps-row::before {
+            content:'';
+            position:absolute; top:52px;
+            left:calc(12.5% + 24px); right:calc(12.5% + 24px);
+            height:2px; background:linear-gradient(90deg, var(--green), var(--gold));
+            z-index:0;
+        }
+        .how-step { position:relative; z-index:1; }
+        .step-icon-wrap {
+            width:72px; height:72px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; box-shadow:0 8px 20px rgba(0,0,0,.12);
+        }
+        .step-icon-wrap i { font-size:1.75rem; color:#fff; }
+        .how-step-title { font-weight:800; font-size:.95rem; color:var(--dark); margin-bottom:.375rem; }
+        .how-step-desc  { font-size:.8rem; color:#9ca3af; line-height:1.6; }
+
+        /* ── Trust ── */
+        .trust {
+            background:linear-gradient(135deg,#f0fdf4 0%,#f8fafc 100%);
+            padding:4rem 2rem; text-align:center;
+        }
+        .trust-grid {
+            display:grid; grid-template-columns:repeat(3,1fr);
+            gap:1.5rem; max-width:860px; margin:2rem auto 0;
+        }
+        .trust-card {
+            background:#fff; border-radius:20px; padding:2rem;
+            border:1.5px solid #e5e7eb;
+            box-shadow:0 4px 16px rgba(0,0,0,.05); transition:all .3s;
+        }
+        .trust-card:hover { transform:translateY(-6px); box-shadow:0 12px 28px rgba(0,0,0,.1); }
+        .trust-icon {
+            width:68px; height:68px; border-radius:18px;
+            display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;
+        }
+        .trust-icon i { font-size:1.75rem; }
+        .trust-card h3 { font-weight:800; font-size:1rem; color:var(--dark); margin-bottom:.375rem; }
+        .trust-card p  { font-size:.8rem; color:#9ca3af; line-height:1.6; }
+
+        /* ── Canaux ── */
+        .channels { padding:4rem 2rem; background:#fff; }
+        .channels-inner { max-width:1000px; margin:0 auto; }
+        .channels-grid {
+            display:grid; grid-template-columns:repeat(3,1fr);
+            gap:1rem; margin-top:2.5rem;
+        }
+        .channel-card {
+            border:1.5px solid #e5e7eb; border-radius:16px; padding:1.5rem;
+            display:flex; align-items:flex-start; gap:1rem;
+            transition:all .25s; cursor:default;
+        }
+        .channel-card:hover { border-color:var(--green); background:#f0fdf4; transform:translateY(-3px); }
+        .channel-icon {
+            width:48px; height:48px; border-radius:12px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .channel-icon i { font-size:1.25rem; }
+        .channel-name { font-weight:700; font-size:.875rem; color:var(--dark); }
+        .channel-desc { font-size:.775rem; color:#9ca3af; margin-top:3px; }
+
+        /* ── CTA Banner ── */
+        .cta-banner {
+            background:linear-gradient(135deg, var(--red) 0%, #c81e20 100%);
+            padding:4rem 2rem; text-align:center; position:relative; overflow:hidden;
+        }
+        .cta-banner::before {
+            content:''; position:absolute; inset:0;
+            background:repeating-linear-gradient(45deg, transparent, transparent 30px,
+                rgba(255,255,255,.03) 30px, rgba(255,255,255,.03) 31px);
+        }
+        .cta-inner { position:relative; z-index:1; max-width:700px; margin:0 auto; }
+        .cta-banner h2 { font-size:2rem; font-weight:900; color:#fff; margin-bottom:.75rem; }
+        .cta-banner p  { color:rgba(255,255,255,.85); font-size:.95rem; margin-bottom:2rem; }
+        .cta-buttons { display:flex; justify-content:center; gap:1rem; flex-wrap:wrap; }
+        .btn-cta-white {
+            background:#fff; color:var(--red); padding:14px 32px; border-radius:10px;
+            font-weight:800; font-size:.95rem; cursor:pointer; border:none;
+            display:inline-flex; align-items:center; gap:8px;
+            box-shadow:0 4px 16px rgba(0,0,0,.2); transition:all .2s;
+        }
+        .btn-cta-white:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
+        .btn-cta-outline {
+            background:transparent; color:#fff; padding:13px 32px; border-radius:10px;
+            font-weight:700; font-size:.95rem; cursor:pointer;
+            border:2px solid rgba(255,255,255,.6);
+            display:inline-flex; align-items:center; gap:8px; transition:all .2s;
+        }
+        .btn-cta-outline:hover { background:rgba(255,255,255,.15); border-color:#fff; }
+
+        /* ── Footer ── */
+        .footer {
+            background:linear-gradient(135deg,#005c2a 0%,#003d1c 100%);
+            color:#fff; padding:4rem 2rem 1.5rem;
+        }
+        .footer-inner {
+            max-width:1100px; margin:0 auto;
+            display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr;
+            gap:3rem; margin-bottom:2.5rem;
+        }
+        .footer-brand { display:flex; flex-direction:column; gap:1.25rem; }
+        .footer-logo {
+            width:90px; height:90px; border-radius:50%;
+            border:3px solid var(--gold); overflow:hidden; background:#fff;
+        }
+        .footer-logo img { width:100%; height:100%; object-fit:contain; }
+        .footer-brand p { color:rgba(255,255,255,.8); font-size:.8rem; line-height:1.7; }
+        .social-row { display:flex; gap:.625rem; }
+        .social-btn {
+            width:38px; height:38px; border-radius:8px;
+            background:rgba(255,255,255,.1);
+            display:flex; align-items:center; justify-content:center;
+            color:#fff; font-size:1rem; cursor:pointer; transition:all .2s;
+        }
+        .social-btn:hover { background:var(--gold); color:var(--dark); transform:translateY(-3px); }
+        .footer-col h4 { font-size:1rem; font-weight:800; color:var(--gold); margin-bottom:1.25rem; }
+        .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:.75rem; }
+        .footer-col a {
+            color:rgba(255,255,255,.8); font-size:.825rem;
+            display:flex; align-items:center; gap:.5rem; transition:all .2s;
+        }
+        .footer-col a:hover { color:var(--gold); padding-left:4px; }
+        .footer-col a i { color:var(--red); font-size:.75rem; }
+        .footer-phone { font-size:1.5rem; font-weight:900; color:var(--gold); display:flex; align-items:center; gap:.5rem; }
+        .footer-hr { border:none; border-top:1px solid rgba(255,255,255,.15); margin-bottom:1.25rem; }
+        .footer-bottom {
+            max-width:1100px; margin:0 auto;
+            text-align:center; color:rgba(255,255,255,.6); font-size:.775rem;
+        }
+        .footer-bottom em { font-style:italic; color:var(--gold); }
+
+        /* ── Back to top ── */
+        .btt {
+            position:fixed; bottom:2rem; right:2rem;
+            width:48px; height:48px; border-radius:50%;
+            background:var(--gold); color:var(--dark);
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.25);
+            transition:all .3s; z-index:300; opacity:0; pointer-events:none;
+        }
+        .btt.visible { opacity:1; pointer-events:all; }
+        .btt:hover { transform:translateY(-4px); }
+
+        /* ── Dialog ── */
+        .overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,.55);
+            display:flex; align-items:center; justify-content:center;
+            z-index:9999; backdrop-filter:blur(6px); padding:1rem;
+        }
+        .dialog {
+            background:#fff; border-radius:24px; padding:3rem 2.5rem;
+            max-width:520px; width:100%; text-align:center;
+            box-shadow:0 24px 60px rgba(0,0,0,.3); position:relative;
+            animation:dialog-in .35s ease-out;
+        }
+        @keyframes dialog-in {
+            from { opacity:0; transform:scale(.92) translateY(20px); }
+            to   { opacity:1; transform:scale(1)   translateY(0);    }
+        }
+        .dialog-close {
+            position:absolute; top:1rem; right:1.25rem;
+            width:32px; height:32px; border-radius:50%;
+            background:#f3f4f6; border:none; font-size:.95rem;
+            cursor:pointer; color:#6b7280;
+            display:flex; align-items:center; justify-content:center; transition:all .2s;
+        }
+        .dialog-close:hover { background:#e5e7eb; color:#111827; }
+        .dialog h2     { font-size:1.35rem; font-weight:900; color:#111827; margin-bottom:.375rem; }
+        .dialog-sub    { font-size:.875rem; color:#9ca3af; margin-bottom:2rem; }
+        .dialog-choices { display:flex; gap:1.25rem; justify-content:center; }
+        .d-choice {
+            flex:1; min-width:160px; max-width:200px;
+            border:2.5px solid #e5e7eb; border-radius:18px; padding:2rem 1.25rem;
+            cursor:pointer; transition:all .25s; background:#fff;
+            display:flex; flex-direction:column; align-items:center; gap:.875rem;
+        }
+        .d-choice:hover { transform:translateY(-8px); box-shadow:0 16px 32px rgba(0,0,0,.1); }
+        .d-choice.c-form:hover  { border-color:var(--green); background:#f0fdf4; }
+        .d-choice.c-audio:hover { border-color:var(--red);   background:#fff5f5; }
+        .d-icon {
+            width:72px; height:72px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .c-form  .d-icon { background:var(--green); }
+        .c-audio .d-icon { background:var(--red);   }
+        .d-icon i  { font-size:2rem; color:#fff; }
+        .d-label   { font-size:.95rem; font-weight:800; color:#111827; }
+        .d-hint    { font-size:.775rem; color:#9ca3af; line-height:1.5; }
+        .dialog-note {
+            margin-top:1.75rem; padding:.875rem 1.25rem;
+            background:#fffbeb; border-radius:12px; border-left:3px solid var(--gold);
+            font-size:.8rem; color:#6b7280; text-align:left;
+        }
+
+        @media (max-width:900px) {
+            .topbar { flex-direction:column; gap:10px; padding:12px 1rem; text-align:center; }
+            .hero-title { font-size:2rem; }
+            .hero-stats { gap:1.5rem; }
+            .stat-divider { display:none; }
+            .steps-row   { grid-template-columns:repeat(2,1fr); }
+            .steps-row::before { display:none; }
+            .trust-grid  { grid-template-columns:1fr; max-width:380px; }
+            .channels-grid { grid-template-columns:repeat(2,1fr); }
+            .footer-inner  { grid-template-columns:1fr; text-align:center; gap:2rem; }
+            .footer-brand  { align-items:center; }
+            .social-row    { justify-content:center; }
+            .brand-text    { font-size:1.5rem; }
+            .brand-plus    { font-size:1.75rem; }
+        }
+        @media (max-width:560px) {
+            .action-pills { flex-direction:column; align-items:center; gap:1rem; }
+            .pill { border-radius:34px !important; margin:0 !important; padding:0 2.5rem !important; }
+            .channels-grid { grid-template-columns:1fr; }
+            .dialog-choices { flex-direction:column; align-items:center; }
+            .d-choice { max-width:100%; width:100%; }
+            .steps-row { grid-template-columns:1fr; }
+            .nav-actions .btn-nav-track { display:none; }
+        }
+    `],
+    template: `
+<div>
+
+    <!-- ── Topbar ── -->
+    <div class="topbar" @fadeIn>
+        <div class="star-deco">★</div>
+        <div class="topbar-left">
+            <span class="topbar-text">
+                ASCE-LC — Au nom de notre intégrité, luttons contre la corruption
+            </span>
+        </div>
+        <div class="topbar-right">
+            <div class="hotline">
+                <i class="pi pi-phone"></i>
+                <span>N° VERT : 80 00 11 11</span>
             </div>
-            <div class="flex gap-3">
-                <p-button
-                    label="Suivre mon dossier"
-                    icon="pi pi-search"
-                    severity="contrast"
-                    outlined
-                    size="small"
-                    routerLink="/portail/suivi" />
-                <p-button
-                    label="Déposer une plainte"
-                    icon="pi pi-plus"
-                    size="small"
-                    styleClass="bg-white text-green-700 border-white"
-                    routerLink="/portail/deposer" />
+        </div>
+    </div>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar" [class.scrolled]="scrolled" @fadeIn>
+        <div class="navbar-brand">
+            <div class="navbar-logo">
+                <img src="/assets/logo-integrite.png" alt="Intégrité+" />
             </div>
+            <div class="brand-text">
+                <span class="brand-red">INTÉG</span>
+                <span class="brand-green">RITÉ</span>
+                <span class="brand-plus">+</span>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <button class="btn-nav-track" routerLink="/portail/suivi">
+                <i class="pi pi-search"></i> Suivre mon dossier
+            </button>
+            <button class="btn-nav-report" (click)="showDialog = true">
+                <i class="pi pi-flag"></i> Faire un signalement
+            </button>
         </div>
     </nav>
 
-    <!-- Hero section -->
-    <div class="bg-gradient-to-br from-green-700 via-green-600 to-green-800 text-white py-20 px-6">
-        <div class="max-w-4xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 bg-green-600 bg-opacity-50 rounded-full px-4 py-2 mb-6 text-sm">
-                <i class="pi pi-verified"></i>
-                <span>Service officiel du gouvernement du Burkina Faso</span>
-            </div>
-            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-                Signalez la corruption,
-                <br>
-                <span class="text-yellow-300">protégez votre pays</span>
-            </h1>
-            <p class="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-                Déposez votre plainte ou dénonciation en ligne de manière
-                sécurisée et confidentielle. Votre identité est protégée
-                par la loi.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <p-button
-                    label="Déposer une plainte"
-                    icon="pi pi-file-plus"
-                    size="large"
-                    styleClass="bg-yellow-400 text-gray-900 border-yellow-400 hover:bg-yellow-300 font-bold px-8"
-                    routerLink="/portail/deposer" />
-                <p-button
-                    label="Suivre mon dossier"
-                    icon="pi pi-search"
-                    size="large"
-                    severity="contrast"
-                    outlined
-                    routerLink="/portail/suivi" />
-            </div>
+    <!-- ── Hero ── -->
+    <section class="hero">
+        <div class="hero-circles">
+            <div class="hc hc1"></div>
+            <div class="hc hc2"></div>
+            <div class="hc hc3"></div>
         </div>
-    </div>
+        <div class="hero-content">
 
-    <!-- Statistiques -->
-    <div class="bg-gray-900 text-white py-10 px-6">
-        <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div>
-                <div class="text-3xl font-bold text-yellow-400">100%</div>
-                <div class="text-gray-400 text-sm mt-1">Confidentiel</div>
+            <div class="hero-badge" @fadeIn>
+                <i class="pi pi-shield" style="font-size:.8rem;"></i>
+                Plateforme officielle sécurisée
             </div>
-            <div>
-                <div class="text-3xl font-bold text-yellow-400">7j</div>
-                <div class="text-gray-400 text-sm mt-1">Délai de traitement</div>
-            </div>
-            <div>
-                <div class="text-3xl font-bold text-yellow-400">24/7</div>
-                <div class="text-gray-400 text-sm mt-1">Disponible en ligne</div>
-            </div>
-            <div>
-                <div class="text-3xl font-bold text-yellow-400">Loi</div>
-                <div class="text-gray-400 text-sm mt-1">Protection garantie</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Comment ça marche -->
-    <div class="py-16 px-6 bg-gray-50">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-3">
-                Comment ça marche ?
+            <h2 class="hero-title" @fadeIn>
+                Dénonciations des actes<br>de <span>corruption</span>
             </h2>
-            <p class="text-center text-gray-500 mb-12">
-                4 étapes simples pour déposer votre plainte
+
+            <p class="hero-subtitle" @fadeIn>
+                La corruption n'est pas une fatalité. Votre voix compte.
+                Signalez en toute sécurité et confidentialité.
             </p>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div *ngFor="let step of howItWorks; let i = index"
-                     class="text-center">
-                    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
-                         [class]="step.bgClass">
-                        <i [class]="step.icon + ' text-2xl ' + step.iconClass"></i>
+            <!-- Stats réelles -->
+            <div class="hero-stats" @fadeIn>
+    <div class="hero-stat">
+        <span class="hero-stat-num" [class.loading]="statsLoading">
+            {{ statsLoading ? '—' : (stats.dossiersTraites | number) + '+' }}
+        </span>
+        <span class="hero-stat-lbl">Dossiers traités</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="hero-stat">
+        <span class="hero-stat-num" [class.loading]="statsLoading">
+            {{ statsLoading ? '—' : (stats.dossiersNouveaux | number) }}
+        </span>
+        <span class="hero-stat-lbl">Nouveaux</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="hero-stat">
+        <span class="hero-stat-num" [class.loading]="statsLoading">
+            {{ statsLoading ? '—' : (stats.dossiersEnCours | number) }}
+        </span>
+        <span class="hero-stat-lbl">En cours</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="hero-stat">
+        <span class="hero-stat-num" [class.loading]="statsLoading">
+            {{ statsLoading ? '—' : stats.confidentiel }}
+        </span>
+        <span class="hero-stat-lbl">Confidentiel</span>
+    </div>
+</div>
+
+            <div class="action-pills" @fadeIn>
+                <button class="pill pill-left" (click)="showDialog = true">
+                    <div class="pill-icon"><i class="pi pi-volume-up"></i></div>
+                    DÉNONCER
+                </button>
+                <button class="pill pill-right" routerLink="/portail/suivi">
+                    <div class="pill-icon"><i class="pi pi-shield"></i></div>
+                    SUIVRE MA DÉNONCIATION
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── Comment ça marche ── -->
+    <section class="how">
+        <div class="section-label">PROCESSUS</div>
+        <h2 class="section-title">Comment ça marche ?</h2>
+        <p class="section-sub">Un processus simple, sécurisé et confidentiel en 4 étapes</p>
+
+        <div class="steps-row">
+            <div class="how-step" *ngFor="let step of howSteps">
+                <div class="step-icon-wrap" [style.background]="step.bg">
+                    <i [class]="step.icon"></i>
+                </div>
+                <div class="how-step-title">{{ step.title }}</div>
+                <div class="how-step-desc">{{ step.desc }}</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Confiance ── -->
+    <section class="trust">
+        <div class="section-label">GARANTIES</div>
+        <h2 class="section-title">Pourquoi nous faire confiance ?</h2>
+        <div class="trust-grid">
+            <div class="trust-card" *ngFor="let t of trustItems">
+                <div class="trust-icon" [style.background]="t.bg">
+                    <i [class]="t.icon" [style.color]="t.color"></i>
+                </div>
+                <h3>{{ t.title }}</h3>
+                <p>{{ t.desc }}</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Canaux ── -->
+    <section class="channels">
+        <div class="channels-inner">
+            <div style="text-align:center;">
+                <div class="section-label">CANAUX</div>
+                <h2 class="section-title">Comment nous contacter ?</h2>
+                <p class="section-sub">Plusieurs façons de soumettre votre signalement</p>
+            </div>
+            <div class="channels-grid">
+                <div class="channel-card" *ngFor="let c of channels">
+                    <div class="channel-icon" [style.background]="c.bg">
+                        <i [class]="c.icon" [style.color]="c.color"></i>
                     </div>
-                    <div class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-3">
-                        {{ i + 1 }}
+                    <div>
+                        <div class="channel-name">{{ c.name }}</div>
+                        <div class="channel-desc">{{ c.desc }}</div>
                     </div>
-                    <h3 class="font-semibold text-gray-900 mb-2">{{ step.title }}</h3>
-                    <p class="text-gray-500 text-sm">{{ step.description }}</p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Types de signalement -->
-    <div class="py-16 px-6">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-3">
-                Que pouvez-vous signaler ?
-            </h2>
-            <p class="text-center text-gray-500 mb-12">
-                L'ASCE-LC traite tous les cas de corruption et de mauvaise gouvernance
-            </p>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div *ngFor="let type of reportTypes"
-                     class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                         [class]="type.bgClass">
-                        <i [class]="type.icon + ' text-xl ' + type.iconClass"></i>
-                    </div>
-                    <h3 class="font-semibold text-gray-900 mb-2">{{ type.title }}</h3>
-                    <p class="text-gray-500 text-sm">{{ type.description }}</p>
-                </div>
+    <!-- ── CTA ── -->
+    <section class="cta-banner">
+        <div class="cta-inner">
+            <h2>Prêt à agir contre la corruption ?</h2>
+            <p>Chaque signalement compte. Votre témoignage peut changer les choses.</p>
+            <div class="cta-buttons">
+                <button class="btn-cta-white" (click)="showDialog = true">
+                    <i class="pi pi-flag"></i>
+                    Faire un signalement maintenant
+                </button>
+                <button class="btn-cta-outline" routerLink="/portail/suivi">
+                    <i class="pi pi-search"></i>
+                    Suivre mon dossier
+                </button>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Vos droits -->
-    <div class="py-16 px-6 bg-green-50">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">
-                Vos droits sont protégés
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl p-6 shadow-sm text-center">
-                    <i class="pi pi-eye-slash text-4xl text-green-600 mb-4 block"></i>
-                    <h3 class="font-semibold mb-2">Anonymat garanti</h3>
-                    <p class="text-gray-500 text-sm">
-                        Vous pouvez déposer votre dossier
-                        de façon totalement anonyme.
-                    </p>
-                </div>
-                <div class="bg-white rounded-xl p-6 shadow-sm text-center">
-                    <i class="pi pi-shield text-4xl text-green-600 mb-4 block"></i>
-                    <h3 class="font-semibold mb-2">Protection légale</h3>
-                    <p class="text-gray-500 text-sm">
-                        Loi N°010-2004/AN protège les
-                        lanceurs d'alerte au Burkina Faso.
-                    </p>
-                </div>
-                <div class="bg-white rounded-xl p-6 shadow-sm text-center">
-                    <i class="pi pi-lock text-4xl text-green-600 mb-4 block"></i>
-                    <h3 class="font-semibold mb-2">Confidentialité totale</h3>
-                    <p class="text-gray-500 text-sm">
-                        Vos données sont cryptées et
-                        accessibles uniquement aux agents autorisés.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- ── Footer ── -->
+    <footer class="footer">
+        <div class="footer-inner">
 
-    <!-- CTA final -->
-    <div class="bg-green-700 text-white py-16 px-6 text-center">
-        <h2 class="text-3xl font-bold mb-4">
-            Prêt à signaler ?
-        </h2>
-        <p class="text-green-100 mb-8 max-w-xl mx-auto">
-            Votre signalement contribue à construire
-            un Burkina Faso plus juste et plus transparent.
-        </p>
-        <p-button
-            label="Déposer ma plainte maintenant"
-            icon="pi pi-file-plus"
-            size="large"
-            styleClass="bg-yellow-400 text-gray-900 border-yellow-400 font-bold px-10"
-            routerLink="/portail/deposer" />
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-10 px-6">
-        <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-                <div class="text-white font-bold mb-3">ASCE-LC</div>
-                <p class="text-sm">
-                    Autorité Supérieure de Contrôle d'État
-                    et de Lutte contre la Corruption
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <img src="/assets/logo-asce.png" alt="ASCE-LC" />
+                </div>
+                <p>
+                    Autorité Supérieure de Contrôle d'État<br>
+                    et de Lutte contre la Corruption<br>
+                    Prévention et Lutte contre la Corruption<br>
+                    et les Infractions Assimilées
                 </p>
-                <p class="text-sm mt-2">Burkina Faso</p>
-            </div>
-            <div>
-                <div class="text-white font-bold mb-3">Contact</div>
-                <p class="text-sm">03 BP 7204 Ouagadougou 03</p>
-                <p class="text-sm mt-1">Numéro vert : 80 00 11 57</p>
-                <p class="text-sm mt-1">contact&#64;asce-lc.bf</p>
-            </div>
-            <div>
-                <div class="text-white font-bold mb-3">Liens utiles</div>
-                <div class="flex flex-col gap-1 text-sm">
-                    <a routerLink="/portail/deposer"
-                       class="hover:text-white cursor-pointer">
-                        Déposer une plainte
-                    </a>
-                    <a routerLink="/portail/suivi"
-                       class="hover:text-white cursor-pointer">
-                        Suivre mon dossier
-                    </a>
+                <div class="social-row">
+                    <div class="social-btn"><i class="pi pi-facebook"></i></div>
+                    <div class="social-btn"><i class="pi pi-twitter"></i></div>
+                    <div class="social-btn"><i class="pi pi-linkedin"></i></div>
+                    <div class="social-btn"><i class="pi pi-youtube"></i></div>
                 </div>
             </div>
+
+            <div class="footer-col">
+                <h4>LIENS RAPIDES</h4>
+                <ul>
+                    <li><a style="cursor:pointer" (click)="showDialog = true">
+                        <i class="pi pi-angle-right"></i>Faire un signalement</a></li>
+                    <li><a routerLink="/portail/suivi">
+                        <i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
+                    <li><a href="#">
+                        <i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a href="#">
+                        <i class="pi pi-angle-right"></i>Textes juridiques</a></li>
+                    <li><a href="#">
+                        <i class="pi pi-angle-right"></i>FAQ</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>CONTACT</h4>
+                <ul>
+                    <li><div class="footer-phone">
+                        <i class="pi pi-phone"></i> 80 00 11 11</div></li>
+                    <li><a href="mailto:contact@asce-lc.bf">
+                        <i class="pi pi-envelope"></i>contact@asce-lc.bf</a></li>
+                    <li><a href="https://www.asce-lc.bf" target="_blank">
+                        <i class="pi pi-globe"></i>www.asce-lc.bf</a></li>
+                    <li><a href="#">
+                        <i class="pi pi-map-marker"></i>Ouagadougou, Burkina Faso</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>INFORMATIONS</h4>
+                <ul>
+                    <li><a href="#"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
+                    <li><a href="#"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
+                    <li><a href="#"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
+                    <li><a href="#"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
+                </ul>
+            </div>
+
         </div>
-        <div class="max-w-4xl mx-auto border-t border-gray-800 mt-8 pt-6 text-center text-sm">
-            © 2026 ASCE-LC — Tous droits réservés
+        <hr class="footer-hr" />
+        <div class="footer-bottom">
+            <p>© 2025 ASCE-LC Burkina Faso — Tous droits réservés</p>
+            <p style="margin-top:6px;"><em>"La Patrie ou la Mort, nous vaincrons"</em></p>
         </div>
     </footer>
+
+    <!-- Back to top -->
+    <div class="btt" [class.visible]="scrolled" (click)="scrollToTop()">
+        <i class="pi pi-arrow-up"></i>
+    </div>
+
+    <!-- ── Dialog choix dépôt ── -->
+    <div class="overlay" *ngIf="showDialog" (click)="showDialog = false">
+        <div class="dialog" (click)="$event.stopPropagation()">
+            <button class="dialog-close" (click)="showDialog = false">
+                <i class="pi pi-times"></i>
+            </button>
+            <h2>Comment voulez-vous déposer ?</h2>
+            <p class="dialog-sub">Les deux options sont totalement confidentielles</p>
+
+            <div class="dialog-choices">
+                <div class="d-choice c-form" (click)="goTo('/portail/deposer')">
+                    <div class="d-icon"><i class="pi pi-file-edit"></i></div>
+                    <div class="d-label">Formulaire écrit</div>
+                    <div class="d-hint">Remplir un formulaire<br>avec pièces jointes</div>
+                </div>
+                <div class="d-choice c-audio" (click)="goTo('/portail/vocal')">
+                    <div class="d-icon"><i class="pi pi-microphone"></i></div>
+                    <div class="d-label">Témoignage vocal</div>
+                    <div class="d-hint">Enregistrer votre voix<br>directement</div>
+                </div>
+            </div>
+
+            <div class="dialog-note">
+                <i class="pi pi-shield" style="color:#009A44;margin-right:6px;"></i>
+                <strong>Confidentialité garantie</strong> —
+                Votre identité est protégée conformément à la loi N°010-2004/AN.
+            </div>
+        </div>
+    </div>
 
 </div>
     `
 })
-export class PortailAccueil {
+export class PortailAccueil implements OnInit {
 
-    howItWorks = [
-        {
-            title: 'Remplissez le formulaire',
-            description: 'Décrivez les faits en détail avec les preuves disponibles.',
-            icon: 'pi pi-file-edit',
-            bgClass: 'bg-blue-100',
-            iconClass: 'text-blue-600'
-        },
-        {
-            title: 'Soumettez en ligne',
-            description: 'Envoyez votre dossier de façon sécurisée depuis chez vous.',
-            icon: 'pi pi-send',
-            bgClass: 'bg-green-100',
-            iconClass: 'text-green-600'
-        },
-        {
-            title: 'Recevez votre code',
-            description: 'Un code unique vous permet de suivre l\'avancement de votre dossier.',
-            icon: 'pi pi-key',
-            bgClass: 'bg-yellow-100',
-            iconClass: 'text-yellow-600'
-        },
-        {
-            title: 'Suivez votre dossier',
-            description: 'Consultez le statut de votre dossier à tout moment.',
-            icon: 'pi pi-chart-line',
-            bgClass: 'bg-purple-100',
-            iconClass: 'text-purple-600'
-        }
+    private router         = inject(Router);
+    private statsService   = inject(StatistiqueService);
+
+    showDialog   = false;
+    scrolled     = false;
+    statsLoading = true;
+
+    
+stats: PublicStats = {
+    totalDossiers:    0,
+    dossiersNouveaux: 0,
+    dossiersEnCours:  0,
+    dossiersTraites:  0,
+    confidentiel:     '100%',
+    delaiJours:       7
+};
+
+    @HostListener('window:scroll')
+    onScroll(): void {
+        this.scrolled = window.scrollY > 80;
+    }
+
+    ngOnInit(): void {
+        this.statsService.getPublicStats().subscribe({
+            next:  s  => { this.stats = s; this.statsLoading = false; },
+            error: () => { this.statsLoading = false; }
+        });
+    }
+
+    readonly howSteps = [
+        { icon: 'pi pi-file-edit',    bg: '#16a34a', title: 'Soumission',    desc: 'Remplissez le formulaire ou enregistrez votre témoignage vocal' },
+        { icon: 'pi pi-check-circle', bg: '#2563eb', title: 'Enregistrement',desc: 'Votre dossier reçoit un numéro officiel et un code de suivi B4' },
+        { icon: 'pi pi-search',       bg: '#d97706', title: 'Instruction',   desc: "Un agent instruit le dossier et mène l'enquête si nécessaire" },
+        { icon: 'pi pi-gavel',        bg: '#7c3aed', title: 'Décision',      desc: 'Une décision officielle est rendue et vous est communiquée' }
     ];
 
-    reportTypes = [
-        {
-            title: 'Corruption et détournement',
-            description: 'Détournement de fonds publics, pots-de-vin, concussion, malversations dans les marchés publics.',
-            icon: 'pi pi-dollar',
-            bgClass: 'bg-red-100',
-            iconClass: 'text-red-600'
-        },
-        {
-            title: 'Fraude et faux',
-            description: 'Faux et usage de faux, fraude documentaire, usurpation de fonctions, escroquerie.',
-            icon: 'pi pi-ban',
-            bgClass: 'bg-orange-100',
-            iconClass: 'text-orange-600'
-        },
-        {
-            title: 'Mauvaise gouvernance',
-            description: 'Abus de pouvoir, favoritisme, népotisme, gaspillage des ressources publiques.',
-            icon: 'pi pi-exclamation-triangle',
-            bgClass: 'bg-yellow-100',
-            iconClass: 'text-yellow-600'
-        },
-        {
-            title: 'Conflit d\'intérêts',
-            description: 'Situations où l\'intérêt personnel influence les décisions d\'un agent public.',
-            icon: 'pi pi-users',
-            bgClass: 'bg-blue-100',
-            iconClass: 'text-blue-600'
-        },
-        {
-            title: 'Enrichissement illicite',
-            description: 'Accroissement injustifié du patrimoine d\'un agent public sans source légitime.',
-            icon: 'pi pi-chart-bar',
-            bgClass: 'bg-purple-100',
-            iconClass: 'text-purple-600'
-        },
-        {
-            title: 'Autres infractions',
-            description: 'Tout autre fait contraire à la probité, à l\'intégrité et à la bonne gouvernance.',
-            icon: 'pi pi-folder',
-            bgClass: 'bg-green-100',
-            iconClass: 'text-green-600'
-        }
+    readonly trustItems = [
+        { icon: 'pi pi-lock',         color: '#16a34a', bg: '#dcfce7', title: 'Anonymat garanti',       desc: 'Votre identité est strictement protégée. Vous pouvez déposer sans révéler qui vous êtes.' },
+        { icon: 'pi pi-shield',       color: '#2563eb', bg: '#dbeafe', title: 'Plateforme sécurisée',   desc: 'Toutes les données sont chiffrées. Aucune information ne peut être interceptée.' },
+        { icon: 'pi pi-check-circle', color: '#7c3aed', bg: '#ede9fe', title: 'Institution officielle', desc: "Organe d'État habilité par la loi à recevoir et traiter les plaintes anticorruption." }
     ];
+
+    readonly channels = [
+        { icon: 'pi pi-globe',      color: '#16a34a', bg: '#dcfce7', name: 'Formulaire Web',   desc: "Déposez en ligne 24h/24 depuis n'importe quel appareil" },
+        { icon: 'pi pi-microphone', color: '#ef4444', bg: '#fee2e2', name: 'Témoignage Vocal', desc: 'Enregistrez votre voix dans votre langue maternelle' },
+        { icon: 'pi pi-phone',      color: '#d97706', bg: '#fef3c7', name: 'Numéro Vert',      desc: 'Appelez gratuitement le 80 00 11 11 — disponible 24h/24' },
+        { icon: 'pi pi-building',   color: '#2563eb', bg: '#dbeafe', name: 'Guichet BRPD',     desc: 'Venez en personne au Bureau de Réception des Plaintes' },
+        { icon: 'pi pi-envelope',   color: '#7c3aed', bg: '#ede9fe', name: 'Email',            desc: 'Envoyez vos documents à contact@asce-lc.bf' },
+        { icon: 'pi pi-send',       color: '#0891b2', bg: '#cffafe', name: 'Courrier Postal',  desc: 'Envoyez votre témoignage écrit par courrier officiel' }
+    ];
+
+    goTo(path: string): void {
+        this.showDialog = false;
+        this.router.navigate([path]);
+    }
+
+    scrollToTop(): void {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
