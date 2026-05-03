@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -18,6 +18,7 @@ import { NotificationService } from '../../core/services/notification.service';
     ],
     template: `
 <div class="layout-topbar">
+
     <div class="layout-topbar-logo-container">
         <button class="layout-menu-button layout-topbar-action"
                 (click)="layoutService.onMenuToggle()">
@@ -93,17 +94,14 @@ import { NotificationService } from '../../core/services/notification.service';
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-semibold">Notifications</h3>
                             <span class="text-xs text-surface-400">
-                                {{ notificationService.unreadCount() }}
-                                non lue(s)
+                                {{ notificationService.unreadCount() }} non lue(s)
                             </span>
                         </div>
-
                         <div *ngIf="recentNotifs.length === 0"
                              class="text-center py-6 text-surface-400 text-sm">
                             <i class="pi pi-bell-slash text-2xl mb-2 block"></i>
                             Aucune notification
                         </div>
-
                         <div *ngFor="let notif of recentNotifs"
                              class="flex gap-3 p-2 rounded-lg hover:bg-surface-50 cursor-pointer border-b border-surface-100 last:border-0"
                              [routerLink]="notif.dossierId
@@ -123,12 +121,10 @@ import { NotificationService } from '../../core/services/notification.service';
                                     {{ notif.subject }}
                                 </div>
                                 <div class="text-xs text-surface-400 truncate">
-                                    {{ (notif.content || '')
-                                        .substring(0, 60) }}...
+                                    {{ (notif.content || '').substring(0, 60) }}...
                                 </div>
                             </div>
                         </div>
-
                         <p-button
                             label="Voir toutes"
                             severity="secondary"
@@ -151,43 +147,44 @@ import { NotificationService } from '../../core/services/notification.service';
             </div>
         </div>
     </div>
+
 </div>
     `
 })
-export class AppTopbar implements OnInit {
+export class AppTopbar implements OnInit, OnDestroy {
 
     items!: MenuItem[];
     recentNotifs: any[] = [];
 
-    layoutService = inject(LayoutService);
+    layoutService       = inject(LayoutService);
     notificationService = inject(NotificationService);
 
-    ngOnInit(): void {
-        // Charger notifications au démarrage
-        this.notificationService.loadUnread();
+    // Stocker l'intervalle pour le nettoyer à la destruction
+    private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
-        // Charger les 5 dernières
-        this.notificationService
-            .getMyNotifications(0, 5)
-            .subscribe({
-                next: page => {
-                    this.recentNotifs = page.content || [];
-                },
-                error: () => {}
-            });
+    ngOnInit(): void {
+        this.notificationService.loadUnread();
+        this.loadRecentNotifs();
 
         // Rafraîchir toutes les 30 secondes
-        setInterval(() => {
+        this.pollingInterval = setInterval(() => {
             this.notificationService.loadUnread();
-            this.notificationService
-                .getMyNotifications(0, 5)
-                .subscribe({
-                    next: page => {
-                        this.recentNotifs = page.content || [];
-                    },
-                    error: () => {}
-                });
-        }, 30000);
+            this.loadRecentNotifs();
+        }, 30_000);
+    }
+
+    ngOnDestroy(): void {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
+
+    private loadRecentNotifs(): void {
+        this.notificationService.getMyNotifications(0, 5).subscribe({
+            next:  page => { this.recentNotifs = page.content || []; },
+            error: ()   => {}
+        });
     }
 
     toggleDarkMode(): void {

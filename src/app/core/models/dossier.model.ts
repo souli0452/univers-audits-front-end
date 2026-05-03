@@ -1,7 +1,3 @@
-/**
- * Modèles TypeScript alignés avec les DTOs Spring Boot.
- */
-
 export type DossierStatus =
     | 'SOUMIS'
     | 'RECU'
@@ -23,16 +19,28 @@ export type TypeSaisine =
     | 'AUTO_REFERRAL'
     | 'ANONYMOUS';
 
+
 export type SubmissionMode =
-    | 'IN_PERSON' | 'AUDIO_COUNTER' | 'WEB_FORM'
-    | 'PAPER_FORM' | 'EMAIL' | 'SMS' | 'FAX'
-    | 'PHONE' | 'GREEN_NUMBER' | 'SOCIAL_MEDIA'
-    | 'PRESS_MEDIA' | 'AUDIT_REPORT' | 'POSTAL_MAIL'
-    | 'GMAIL_IMPORT';
+    | 'IN_PERSON'
+    | 'AUDIO_COUNTER'
+    | 'WEB_FORM'
+    | 'PAPER_FORM'
+    | 'EMAIL'
+    | 'SMS'
+    | 'PHONE'
+    | 'GREEN_NUMBER'
+    | 'SOCIAL_MEDIA'
+    | 'PRESS_MEDIA'
+    | 'AUDIT_REPORT'
+    | 'POSTAL_MAIL';
 
 export type TypeDeclarant =
-    | 'CITIZEN' | 'COMPANY' | 'ASSOCIATION'
-    | 'PUBLIC_AUTHORITY' | 'ANONYMOUS' | 'ASCE_SELF_REFERRAL';
+    | 'CITIZEN'
+    | 'COMPANY'
+    | 'ASSOCIATION'
+    | 'PUBLIC_AUTHORITY'
+    | 'ANONYMOUS'
+    | 'ASCE_SELF_REFERRAL';
 
 export interface DeclarantResponse {
     id: string;
