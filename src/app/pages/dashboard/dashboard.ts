@@ -330,27 +330,30 @@ export class Dashboard implements OnInit {
     }
 
     private loadStats(): void {
-        const now   = new Date();
-        const start = new Date(now.getFullYear(), 0, 1).toISOString();
-        const end   = now.toISOString();
+    const now   = new Date();
+    const start = new Date(now.getFullYear(), 0, 1).toISOString();
+    const end   = now.toISOString();
 
-        this.statistiqueService.getDashboard(start, end).subscribe({
-            next: stats => {
-                this.stats = stats;
-                this.buildStatusChart(stats);
-                this.buildModeChart(stats);
-                this.buildStatusSegments(stats);
-                this.loading = false;
-            },
-            error: () => {
-                this.loading = false;
+    this.statistiqueService.getDashboard(start, end).subscribe({
+        next: stats => {
+            this.stats = stats;
+            this.buildStatusChart(stats);
+            this.buildModeChart(stats);
+            this.buildStatusSegments(stats);
+            this.loading = false;
+        },
+        error: (err) => {
+            this.loading = false;
+            if (err.status !== 403) {
                 this.messageService.add({
-                    severity: 'warn', summary: 'Statistiques',
-                    detail: 'Impossible de charger les statistiques'
+                    severity: 'warn',
+                    summary:  'Statistiques',
+                    detail:   'Impossible de charger les statistiques'
                 });
             }
-        });
-    }
+        }
+    });
+}
 
     private loadRecentDossiers(): void {
         this.dossierService.findAll(0, 5).subscribe({

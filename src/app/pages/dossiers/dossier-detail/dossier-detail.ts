@@ -19,7 +19,8 @@ import { AttachmentService, AttachmentResponse } from '../../../core/services/at
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { InvestigationDetail as InvPanel } from '../../investigations/investigation-detail/investigation-detail';
+import { InvestigationDetail } from '../../investigations/investigation-detail/investigation-detail';
+import * as mammoth from 'mammoth';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
@@ -40,7 +41,7 @@ interface WorkflowStep {
         ButtonModule, TagModule, TimelineModule,
         DialogModule, TextareaModule, ToastModule,
         SkeletonModule, ConfirmDialogModule, TooltipModule,
-        InvPanel
+        InvestigationDetail
     ],
     providers: [MessageService, ConfirmationService],
     template: `
@@ -55,7 +56,8 @@ interface WorkflowStep {
     [style]="{width: '500px'}"
     [draggable]="false">
     <div class="flex flex-col gap-4 py-2">
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2">
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl
+                    flex items-start gap-2">
             <i class="pi pi-info-circle text-blue-500 mt-0.5"></i>
             <p class="text-sm text-blue-700">{{ transitionPlaceholder }}</p>
         </div>
@@ -77,30 +79,6 @@ interface WorkflowStep {
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog PDF ─────────────────────────────────────────── -->
-<p-dialog
-    [(visible)]="showPdfViewer"
-    header="Visualisation document"
-    [modal]="true"
-    [style]="{width: '90vw', height: '90vh'}"
-    [draggable]="false"
-    [maximizable]="true">
-    <div class="w-full h-full" style="min-height: 70vh;">
-        <object *ngIf="currentPdfUrl" [data]="currentPdfUrl"
-            type="application/pdf" class="w-full border-0"
-            style="min-height: 70vh; height: 100%;">
-            <div class="flex flex-col items-center justify-center h-full gap-3 text-surface-400">
-                <i class="pi pi-file-pdf text-4xl text-red-400"></i>
-                <p class="text-sm">Votre navigateur ne peut pas afficher ce PDF.</p>
-                <a [href]="currentPdfUrl" target="_blank"
-                    class="text-primary-600 underline text-sm">
-                    Ouvrir dans un nouvel onglet
-                </a>
-            </div>
-        </object>
-    </div>
-</p-dialog>
-
 <!-- ── Contenu principal ──────────────────────────────────── -->
 <div *ngIf="!loading; else loadingSkeleton" class="flex flex-col gap-6">
 
@@ -111,7 +89,8 @@ interface WorkflowStep {
                 text routerLink="/app/dossiers" />
             <div>
                 <div class="flex items-center gap-3 flex-wrap">
-                    <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">
+                    <h1 class="text-3xl font-bold text-surface-900
+                               dark:text-surface-0">
                         {{ dossier?.number || 'En attente de numéro' }}
                     </h1>
                     <p-tag *ngIf="dossier"
@@ -125,31 +104,53 @@ interface WorkflowStep {
         </div>
 
         <!-- Actions workflow -->
-        <div class="flex gap-2 flex-wrap justify-end flex-shrink-0" *ngIf="dossier">
-            <p-button *ngIf="dossier.status === 'SOUMIS' && hasRole(['AGENT_BRPD'])"
-                label="Enregistrer" icon="pi pi-check" severity="success" size="small"
+        <div class="flex gap-2 flex-wrap justify-end flex-shrink-0"
+             *ngIf="dossier">
+            <p-button
+                *ngIf="dossier.status === 'SOUMIS' && hasRole(['AGENT_BRPD'])"
+                label="Enregistrer" icon="pi pi-check"
+                severity="success" size="small"
                 (onClick)="openRegister()" />
-            <p-button *ngIf="dossier.status === 'RECU' && hasRole(['CONSEILLER_JURIDIQUE','CGEA'])"
-                label="Démarrer étude" icon="pi pi-play" severity="info" size="small"
+            <p-button
+                *ngIf="dossier.status === 'RECU'
+                       && hasRole(['CONSEILLER_JURIDIQUE','CGEA'])"
+                label="Démarrer étude" icon="pi pi-play"
+                severity="info" size="small"
                 (onClick)="openStartStudy()" />
-            <p-button *ngIf="dossier.status === 'EN_ETUDE_OPPORTUNITE' && hasRole(['CONSEILLER_JURIDIQUE'])"
-                label="Demander complément" icon="pi pi-question-circle" severity="warn" size="small"
+            <p-button
+                *ngIf="dossier.status === 'EN_ETUDE_OPPORTUNITE'
+                       && hasRole(['CONSEILLER_JURIDIQUE'])"
+                label="Demander complément" icon="pi pi-question-circle"
+                severity="warn" size="small"
                 (onClick)="openRequestComplement()" />
-            <p-button *ngIf="dossier.status === 'EN_ETUDE_OPPORTUNITE' && hasRole(['CONSEILLER_JURIDIQUE'])"
+            <p-button
+                *ngIf="dossier.status === 'EN_ETUDE_OPPORTUNITE'
+                       && hasRole(['CONSEILLER_JURIDIQUE'])"
                 label="Soumettre CTADP" icon="pi pi-send" size="small"
                 (onClick)="openSubmitCtadp()" />
-            <p-button *ngIf="dossier.status === 'EN_REVUE_CTADP' && hasRole(['CGE','CGEA'])"
-                label="Recevable" icon="pi pi-check-circle" severity="success" size="small"
+            <p-button
+                *ngIf="dossier.status === 'EN_REVUE_CTADP'
+                       && hasRole(['CGE','CGEA'])"
+                label="Recevable" icon="pi pi-check-circle"
+                severity="success" size="small"
                 (onClick)="openDeclareAdmissible()" />
-            <p-button *ngIf="dossier.status === 'EN_REVUE_CTADP' && hasRole(['CGE','CGEA'])"
-                label="Irrecevable" icon="pi pi-times-circle" severity="danger" size="small"
+            <p-button
+                *ngIf="dossier.status === 'EN_REVUE_CTADP'
+                       && hasRole(['CGE','CGEA'])"
+                label="Irrecevable" icon="pi pi-times-circle"
+                severity="danger" size="small"
                 (onClick)="openDeclareInadmissible()" />
-            <p-button *ngIf="dossier.status === 'DECISION_RENDUE' && hasRole(['CGE','CGEA'])"
-                label="Clôturer" icon="pi pi-lock" severity="secondary" size="small"
+            <p-button
+                *ngIf="dossier.status === 'DECISION_RENDUE'
+                       && hasRole(['CGE','CGEA'])"
+                label="Clôturer" icon="pi pi-lock"
+                severity="secondary" size="small"
                 (onClick)="openClose()" />
-            <p-button *ngIf="dossier" label="PDF" icon="pi pi-file-pdf"
+            <p-button
+                label="PDF" icon="pi pi-file-pdf"
                 severity="secondary" outlined size="small"
-                pTooltip="Exporter en PDF" (onClick)="exportPdf()" />
+                pTooltip="Exporter en PDF"
+                (onClick)="exportPdf()" />
         </div>
     </div>
 
@@ -159,9 +160,13 @@ interface WorkflowStep {
         <div class="lg:col-span-2 flex flex-col gap-4">
 
             <!-- Informations du dossier -->
-            <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
-                <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-700 flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+            <div class="bg-white dark:bg-surface-800 rounded-2xl
+                        border border-surface-100 dark:border-surface-700
+                        overflow-hidden">
+                <div class="px-5 py-4 border-b border-surface-100
+                            dark:border-surface-700 flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary-100
+                                flex items-center justify-center">
                         <i class="pi pi-file text-primary-600 text-sm"></i>
                     </div>
                     <h3 class="font-semibold text-surface-900 dark:text-surface-0">
@@ -203,7 +208,8 @@ interface WorkflowStep {
                             </div>
                         </div>
                         <div *ngIf="dossier?.estimatedLoss"
-                            class="p-3 bg-red-50 dark:bg-red-950 rounded-xl border border-red-100 dark:border-red-900">
+                            class="p-3 bg-red-50 dark:bg-red-950 rounded-xl
+                                   border border-red-100 dark:border-red-900">
                             <div class="text-xs text-red-400 uppercase tracking-wide mb-1">Montant estimé</div>
                             <div class="font-bold text-sm text-red-600 dark:text-red-400">
                                 {{ dossier?.estimatedLoss | number }} FCFA
@@ -237,8 +243,6 @@ interface WorkflowStep {
                             </div>
                         </div>
                     </div>
-
-                    <!-- Description -->
                     <div *ngIf="dossier?.description"
                         class="mt-4 pt-4 border-t border-surface-100 dark:border-surface-700">
                         <div class="text-xs text-surface-400 uppercase tracking-wide mb-2">Description</div>
@@ -251,13 +255,19 @@ interface WorkflowStep {
 
             <!-- Déclarant -->
             <div *ngIf="dossier?.declarant"
-                class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
-                <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-700 flex items-center justify-between">
+                class="bg-white dark:bg-surface-800 rounded-2xl
+                       border border-surface-100 dark:border-surface-700
+                       overflow-hidden">
+                <div class="px-5 py-4 border-b border-surface-100
+                            dark:border-surface-700 flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <div class="w-8 h-8 rounded-lg bg-green-100
+                                    flex items-center justify-center">
                             <i class="pi pi-user text-green-600 text-sm"></i>
                         </div>
-                        <h3 class="font-semibold text-surface-900 dark:text-surface-0">Déclarant</h3>
+                        <h3 class="font-semibold text-surface-900 dark:text-surface-0">
+                            Déclarant
+                        </h3>
                     </div>
                     <p-tag *ngIf="dossier?.declarant?.anonymous"
                         value="Anonyme" severity="warn" styleClass="text-xs" />
@@ -301,11 +311,15 @@ interface WorkflowStep {
                 [dossierId]="dossier.id"
                 [dossierStatus]="dossier.status" />
 
-            <!-- Pièces jointes -->
-            <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
-                <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-700 flex items-center justify-between">
+            <!-- ── Pièces jointes ──────────────────────────── -->
+            <div class="bg-white dark:bg-surface-800 rounded-2xl
+                        border border-surface-100 dark:border-surface-700
+                        overflow-hidden">
+                <div class="px-5 py-4 border-b border-surface-100
+                            dark:border-surface-700 flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100
+                                    flex items-center justify-center">
                             <i class="pi pi-paperclip text-amber-600 text-sm"></i>
                         </div>
                         <h3 class="font-semibold text-surface-900 dark:text-surface-0">
@@ -313,95 +327,154 @@ interface WorkflowStep {
                         </h3>
                     </div>
                     <span *ngIf="attachments.length > 0"
-                        class="text-xs bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300 px-2 py-1 rounded-full font-medium">
+                        class="text-xs bg-surface-100 dark:bg-surface-700
+                               text-surface-600 dark:text-surface-300
+                               px-2 py-1 rounded-full font-medium">
                         {{ attachments.length }} fichier(s)
                     </span>
                 </div>
                 <div class="p-5">
 
-                    <!-- Vide -->
                     <div *ngIf="attachments.length === 0"
                         class="flex flex-col items-center justify-center py-8 text-surface-400">
-                        <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mb-3">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100
+                                    flex items-center justify-center mb-3">
                             <i class="pi pi-inbox text-xl text-surface-300"></i>
                         </div>
                         <p class="text-sm">Aucune pièce jointe</p>
                     </div>
 
-                    <!-- Liste — utilise mimeType et fileSizeBytes -->
-                    <div class="flex flex-col gap-3" *ngIf="attachments.length > 0">
+                    <div class="flex flex-col gap-4" *ngIf="attachments.length > 0">
                         <div *ngFor="let att of attachments"
-                            class="rounded-xl border border-surface-100 dark:border-surface-700 overflow-hidden">
+                            class="rounded-xl border border-surface-100
+                                   dark:border-surface-700 overflow-hidden">
 
                             <!-- En-tête fichier -->
-                            <div class="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-700">
-                                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    [class.bg-purple-100]="att.isAudio"
-                                    [class.bg-red-100]="!att.isAudio && att.mimeType?.includes('pdf')"
-                                    [class.bg-blue-100]="!att.isAudio && att.mimeType?.startsWith('image/')"
-                                    [class.bg-surface-200]="!att.isAudio && !att.mimeType?.includes('pdf') && !att.mimeType?.startsWith('image/')">
-                                    <i class="text-sm"
-                                        [class.pi]="true"
-                                        [class.pi-microphone]="att.isAudio"
-                                        [class.text-purple-600]="att.isAudio"
-                                        [class.pi-file-pdf]="!att.isAudio && att.mimeType?.includes('pdf')"
-                                        [class.text-red-600]="!att.isAudio && att.mimeType?.includes('pdf')"
-                                        [class.pi-image]="!att.isAudio && att.mimeType?.startsWith('image/')"
-                                        [class.text-blue-600]="!att.isAudio && att.mimeType?.startsWith('image/')"
-                                        [class.pi-file]="!att.isAudio && !att.mimeType?.includes('pdf') && !att.mimeType?.startsWith('image/')"
-                                        [class.text-surface-500]="!att.isAudio && !att.mimeType?.includes('pdf') && !att.mimeType?.startsWith('image/')">
+                            <div class="flex items-center gap-3 p-3
+                                        bg-surface-50 dark:bg-surface-700">
+                                <div class="w-10 h-10 rounded-lg flex items-center
+                                            justify-center flex-shrink-0"
+                                    [class.bg-purple-100]="isAudio(att)"
+                                    [class.bg-red-100]="isPdf(att)"
+                                    [class.bg-blue-100]="isImage(att)"
+                                    [class.bg-indigo-100]="isWord(att)"
+                                    [class.bg-green-100]="isVideo(att)"
+                                    [class.bg-surface-200]="isOther(att)">
+                                    <i class="text-sm pi"
+                                       [class.pi-microphone]="isAudio(att)"
+                                       [class.text-purple-600]="isAudio(att)"
+                                       [class.pi-file-pdf]="isPdf(att)"
+                                       [class.text-red-600]="isPdf(att)"
+                                       [class.pi-image]="isImage(att)"
+                                       [class.text-blue-600]="isImage(att)"
+                                       [class.pi-file-word]="isWord(att)"
+                                       [class.text-indigo-600]="isWord(att)"
+                                       [class.pi-video]="isVideo(att)"
+                                       [class.text-green-600]="isVideo(att)"
+                                       [class.pi-file]="isOther(att)"
+                                       [class.text-surface-500]="isOther(att)">
                                     </i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">
+                                    <div class="text-sm font-medium text-surface-900
+                                                dark:text-surface-0 truncate">
                                         {{ att.originalName }}
                                     </div>
-                                    <div class="text-xs text-surface-400 mt-0.5">
-                                        {{ formatSize(att.fileSizeBytes) }}
-                                        <span *ngIf="att.isAudio" class="text-purple-500 font-medium ml-2">Audio</span>
-                                        <span *ngIf="att.mimeType?.includes('pdf')" class="text-red-500 font-medium ml-2">PDF</span>
-                                        <span *ngIf="att.mimeType?.startsWith('image/')" class="text-blue-500 font-medium ml-2">Image</span>
+                                    <div class="text-xs text-surface-400 mt-0.5
+                                                flex items-center gap-2">
+                                        <span>{{ formatSize(att.fileSizeBytes) }}</span>
+                                        <span *ngIf="isAudio(att)" class="text-purple-500 font-medium">Audio</span>
+                                        <span *ngIf="isPdf(att)" class="text-red-500 font-medium">PDF</span>
+                                        <span *ngIf="isImage(att)" class="text-blue-500 font-medium">Image</span>
+                                        <span *ngIf="isWord(att)" class="text-indigo-500 font-medium">Word</span>
+                                        <span *ngIf="isVideo(att)" class="text-green-500 font-medium">Vidéo</span>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <p-button *ngIf="att.mimeType?.includes('pdf') && getBlobUrl(att.id)"
-                                        icon="pi pi-eye" severity="info" text size="small"
-                                        pTooltip="Visualiser" (onClick)="openPdfViewer(att)" />
+                                <div class="flex items-center gap-1 flex-shrink-0">
+                                    <p-button
+                                        *ngIf="getBlobUrl(att.id)"
+                                        [icon]="previewId === att.id ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                                        severity="info" text size="small"
+                                        [pTooltip]="previewId === att.id ? 'Fermer' : 'Visualiser'"
+                                        (onClick)="togglePreview(att)" />
+                                    <a *ngIf="getBlobUrl(att.id)"
+                                        [href]="getBlobUrl(att.id)"
+                                        [download]="att.originalName">
+                                        <p-button icon="pi pi-download"
+                                            severity="secondary" text size="small"
+                                            pTooltip="Télécharger" />
+                                    </a>
                                     <i *ngIf="!getBlobUrl(att.id)"
                                         class="pi pi-spin pi-spinner text-surface-300 text-sm"></i>
                                 </div>
                             </div>
 
-                            <!-- Audio player -->
-                            <div *ngIf="att.isAudio" class="p-3 bg-white dark:bg-surface-800">
-                                <audio *ngIf="getBlobUrl(att.id); else audioLoading"
-                                    [src]="getBlobUrl(att.id)" controls
-                                    controlsList="nodownload nofullscreen noremoteplayback"
-                                    disablePictureInPicture class="w-full" style="height: 36px;">
-                                </audio>
-                                <ng-template #audioLoading>
-                                    <div class="flex items-center gap-2 text-xs text-surface-400 py-1">
-                                        <i class="pi pi-spin pi-spinner"></i>
-                                        Chargement audio...
+                            <!-- Preview inline -->
+                            <div *ngIf="previewId === att.id">
+
+                                <!-- Audio -->
+                                <div *ngIf="isAudio(att)"
+                                    class="p-3 bg-white dark:bg-surface-800">
+                                    <audio [src]="getBlobUrl(att.id)" controls
+                                        controlsList="nodownload nofullscreen"
+                                        class="w-full" style="height:36px;">
+                                    </audio>
+                                </div>
+
+                                <!-- Image -->
+                                <div *ngIf="isImage(att)"
+                                    class="bg-surface-900 flex items-center
+                                           justify-center p-2"
+                                    style="max-height:400px;overflow:auto;">
+                                    <img [src]="getBlobUrl(att.id)"
+                                        class="max-w-full object-contain rounded"
+                                        style="max-height:380px;"
+                                        alt="Pièce jointe" />
+                                </div>
+
+                                <!-- PDF -->
+                                <div *ngIf="isPdf(att)" style="height:500px;">
+                                    <iframe [src]="getSafeUrl(att.id)"
+                                        class="w-full h-full border-0"
+                                        title="Document PDF">
+                                    </iframe>
+                                </div>
+
+                                <!-- Vidéo -->
+                                <div *ngIf="isVideo(att)"
+                                    class="bg-surface-900 p-2">
+                                    <video [src]="getBlobUrl(att.id)" controls
+                                        class="w-full rounded"
+                                        style="max-height:400px;">
+                                    </video>
+                                </div>
+
+                                <!-- Word DOCX -->
+                                <div *ngIf="isWord(att)">
+                                    <div *ngIf="docxHtml[att.id]; else docxLoading"
+                                        class="p-5 bg-white overflow-auto
+                                               text-sm leading-relaxed"
+                                        style="max-height:500px;"
+                                        [innerHTML]="docxHtml[att.id]">
                                     </div>
-                                </ng-template>
-                            </div>
+                                    <ng-template #docxLoading>
+                                        <div class="flex items-center gap-2 p-4
+                                                    text-xs text-surface-400">
+                                            <i class="pi pi-spin pi-spinner"></i>
+                                            Conversion du document...
+                                        </div>
+                                    </ng-template>
+                                </div>
 
-                            <!-- Preview image -->
-                            <div *ngIf="att.mimeType?.startsWith('image/') && getBlobUrl(att.id)"
-                                class="overflow-hidden" style="max-height: 300px;">
-                                <img [src]="getBlobUrl(att.id)" class="w-full object-contain"
-                                    style="max-height: 300px; pointer-events: none;"
-                                    alt="Document confidentiel" />
-                            </div>
+                                <!-- Autre -->
+                                <div *ngIf="isOther(att)"
+                                    class="p-4 text-center text-sm
+                                           text-surface-400 bg-surface-50">
+                                    <i class="pi pi-download text-lg mb-2 block"></i>
+                                    Ce type de fichier ne peut pas être prévisualisé.
+                                </div>
 
-                            <!-- Chargement image/PDF -->
-                            <div *ngIf="(att.mimeType?.startsWith('image/') || att.mimeType?.includes('pdf')) && !getBlobUrl(att.id)"
-                                class="flex items-center gap-2 text-xs text-surface-400 px-3 py-2">
-                                <i class="pi pi-spin pi-spinner"></i>
-                                Chargement...
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -413,7 +486,8 @@ interface WorkflowStep {
         <div class="flex flex-col gap-4">
 
             <!-- Code d'accès -->
-            <div class="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-5 text-white">
+            <div class="bg-gradient-to-br from-primary-600 to-primary-700
+                        rounded-2xl p-5 text-white">
                 <div class="flex items-center gap-2 mb-3">
                     <i class="pi pi-qrcode text-primary-200 text-sm"></i>
                     <span class="text-primary-200 text-xs font-medium uppercase tracking-wide">
@@ -430,9 +504,13 @@ interface WorkflowStep {
             </div>
 
             <!-- Workflow -->
-            <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
-                <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-700 flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center">
+            <div class="bg-white dark:bg-surface-800 rounded-2xl
+                        border border-surface-100 dark:border-surface-700
+                        overflow-hidden">
+                <div class="px-5 py-4 border-b border-surface-100
+                            dark:border-surface-700 flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary-100
+                                flex items-center justify-center">
                         <i class="pi pi-list text-primary-600 text-sm"></i>
                     </div>
                     <h3 class="font-semibold text-surface-900 dark:text-surface-0">
@@ -443,9 +521,10 @@ interface WorkflowStep {
                     <div class="flex flex-col gap-0">
                         <div *ngFor="let step of workflowSteps; let last = last"
                             class="flex gap-3">
-                            <!-- Indicateur -->
                             <div class="flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0 transition-all"
+                                <div class="w-8 h-8 rounded-full flex items-center
+                                            justify-center border-2 flex-shrink-0
+                                            transition-all"
                                     [class.bg-green-500]="step.completed"
                                     [class.border-green-500]="step.completed"
                                     [class.bg-primary-500]="step.active"
@@ -453,8 +532,10 @@ interface WorkflowStep {
                                     [class.animate-pulse]="step.active"
                                     [class.bg-surface-100]="!step.completed && !step.active"
                                     [class.border-surface-200]="!step.completed && !step.active">
-                                    <i *ngIf="step.completed" class="pi pi-check text-white text-xs"></i>
-                                    <i *ngIf="!step.completed" [class]="step.icon + ' text-xs'"
+                                    <i *ngIf="step.completed"
+                                        class="pi pi-check text-white text-xs"></i>
+                                    <i *ngIf="!step.completed"
+                                        [class]="step.icon + ' text-xs'"
                                         [class.text-white]="step.active"
                                         [class.text-surface-400]="!step.active"></i>
                                 </div>
@@ -463,7 +544,6 @@ interface WorkflowStep {
                                     [class.bg-green-400]="step.completed"
                                     [class.bg-surface-200]="!step.completed"></div>
                             </div>
-                            <!-- Label -->
                             <div class="pb-4 flex-1 min-w-0">
                                 <div class="text-sm font-medium leading-tight"
                                     [class.text-green-600]="step.completed"
@@ -483,19 +563,25 @@ interface WorkflowStep {
 
             <!-- Agent en charge -->
             <div *ngIf="dossier?.agentInCharge"
-                class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 p-5">
-                <h3 class="font-semibold mb-4 text-sm flex items-center gap-2 text-surface-900 dark:text-surface-0">
-                    <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
+                class="bg-white dark:bg-surface-800 rounded-2xl
+                       border border-surface-100 dark:border-surface-700 p-5">
+                <h3 class="font-semibold mb-4 text-sm flex items-center gap-2
+                           text-surface-900 dark:text-surface-0">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100
+                                flex items-center justify-center">
                         <i class="pi pi-user-edit text-teal-600 text-sm"></i>
                     </div>
                     Agent en charge
                 </h3>
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center font-bold text-primary-600">
+                    <div class="w-10 h-10 bg-primary-100 rounded-full
+                                flex items-center justify-center
+                                font-bold text-primary-600">
                         {{ dossier?.agentInCharge?.firstName?.[0] }}{{ dossier?.agentInCharge?.lastName?.[0] }}
                     </div>
                     <div>
-                        <div class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+                        <div class="text-sm font-semibold text-surface-900
+                                    dark:text-surface-0">
                             {{ dossier?.agentInCharge?.firstName }}
                             {{ dossier?.agentInCharge?.lastName }}
                         </div>
@@ -545,21 +631,20 @@ export class DossierDetail implements OnInit {
     private attachmentService = inject(AttachmentService);
     private sanitizer         = inject(DomSanitizer);
 
-    dossier:      DossierResponse | null = null;
-    loading       = true;
-    transitioning = false;
-    attachments:  AttachmentResponse[] = [];
+    dossier:         DossierResponse | null = null;
+    loading          = true;
+    transitioning    = false;
+    attachments:     AttachmentResponse[] = [];
     attachmentBlobs: { [id: string]: string } = {};
-    showPdfViewer  = false;
-    currentPdfUrl: SafeResourceUrl | null = null;
+    previewId:       string | null = null;
+    docxHtml:        { [id: string]: string } = {};
 
     showTransitionDialog   = false;
     transitionDialogTitle  = '';
     transitionPlaceholder  = '';
     transitionReason       = '';
     currentTransitionType  = '';
-
-    workflowSteps: WorkflowStep[] = [];
+    workflowSteps:         WorkflowStep[] = [];
 
     private readonly investigationStatuses: DossierStatus[] = [
         'RECEVABLE', 'EN_INVESTIGATION',
@@ -589,11 +674,14 @@ export class DossierDetail implements OnInit {
             error: () => {
                 this.loading = false;
                 this.messageService.add({
-                    severity: 'error', summary: 'Erreur', detail: 'Dossier introuvable'
+                    severity: 'error', summary: 'Erreur',
+                    detail: 'Dossier introuvable'
                 });
             }
         });
     }
+
+    // ── Blob / Preview ────────────────────────────────────────
 
     loadBlob(att: AttachmentResponse): void {
         const url = this.attachmentService.getDownloadUrl(att.id);
@@ -612,40 +700,93 @@ export class DossierDetail implements OnInit {
         return this.attachmentBlobs[id] || '';
     }
 
-    openPdfViewer(att: AttachmentResponse): void {
-        const blobUrl = this.attachmentBlobs[att.id];
-        if (blobUrl) {
-            this.currentPdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
-            this.showPdfViewer = true;
+    getSafeUrl(id: string): SafeResourceUrl {
+        return this.sanitizer.bypassSecurityTrustResourceUrl(
+            this.attachmentBlobs[id] || ''
+        );
+    }
+
+    togglePreview(att: AttachmentResponse): void {
+        if (this.previewId === att.id) {
+            this.previewId = null;
+        } else {
+            this.previewId = att.id;
+            if (this.isWord(att) && !this.docxHtml[att.id]) {
+                this.convertDocx(att);
+            }
         }
     }
+
+    private convertDocx(att: AttachmentResponse): void {
+        const blobUrl = this.attachmentBlobs[att.id];
+        if (!blobUrl) return;
+        fetch(blobUrl)
+            .then(r => r.arrayBuffer())
+            .then(buf => (mammoth as any).convertToHtml({ arrayBuffer: buf }))
+            .then((res: any) => {
+                this.docxHtml = { ...this.docxHtml, [att.id]: res.value };
+            })
+            .catch(() => {
+                this.docxHtml = {
+                    ...this.docxHtml,
+                    [att.id]: '<p style="color:#ef4444;padding:16px;">Impossible de convertir ce document.</p>'
+                };
+            });
+    }
+
+    // ── Helpers type fichier ──────────────────────────────────
+
+    isAudio(att: AttachmentResponse): boolean {
+        return att.mimeType.startsWith('audio/') || att.isAudio;
+    }
+    isPdf(att: AttachmentResponse): boolean {
+        return att.mimeType.includes('pdf');
+    }
+    isImage(att: AttachmentResponse): boolean {
+        return att.mimeType.startsWith('image/');
+    }
+    isWord(att: AttachmentResponse): boolean {
+        return att.mimeType.includes('word')
+            || att.mimeType.includes('officedocument.wordprocessingml')
+            || att.originalName.toLowerCase().endsWith('.docx')
+            || att.originalName.toLowerCase().endsWith('.doc');
+    }
+    isVideo(att: AttachmentResponse): boolean {
+        return att.mimeType.startsWith('video/');
+    }
+    isOther(att: AttachmentResponse): boolean {
+        return !this.isAudio(att) && !this.isPdf(att)
+            && !this.isImage(att) && !this.isWord(att)
+            && !this.isVideo(att);
+    }
+
+    // ── Workflow ──────────────────────────────────────────────
 
     private buildWorkflowSteps(dossier: DossierResponse): void {
         const order: DossierStatus[] = [
             'SOUMIS', 'RECU', 'EN_ETUDE_OPPORTUNITE', 'EN_REVUE_CTADP',
-            'RECEVABLE', 'EN_INVESTIGATION', 'RAPPORT_PRODUIT', 'DECISION_RENDUE', 'CLOS'
+            'RECEVABLE', 'EN_INVESTIGATION', 'RAPPORT_PRODUIT',
+            'DECISION_RENDUE', 'CLOS'
         ];
         const labels: Record<string, string> = {
-            SOUMIS:               'Soumis',
-            RECU:                 'Reçu — B4 remis',
+            SOUMIS: 'Soumis', RECU: 'Reçu — B4 remis',
             EN_ETUDE_OPPORTUNITE: 'Étude opportunité',
-            EN_REVUE_CTADP:       'Revue CTADP',
-            RECEVABLE:            'Déclaré recevable',
-            EN_INVESTIGATION:     'En investigation',
-            RAPPORT_PRODUIT:      'Rapport produit',
-            DECISION_RENDUE:      'Décision rendue',
-            CLOS:                 'Dossier clôturé'
+            EN_REVUE_CTADP: 'Revue CTADP',
+            RECEVABLE: 'Déclaré recevable',
+            EN_INVESTIGATION: 'En investigation',
+            RAPPORT_PRODUIT: 'Rapport produit',
+            DECISION_RENDUE: 'Décision rendue',
+            CLOS: 'Dossier clôturé'
         };
         const icons: Record<string, string> = {
-            SOUMIS:               'pi pi-upload',
-            RECU:                 'pi pi-inbox',
+            SOUMIS: 'pi pi-upload', RECU: 'pi pi-inbox',
             EN_ETUDE_OPPORTUNITE: 'pi pi-search',
-            EN_REVUE_CTADP:       'pi pi-users',
-            RECEVABLE:            'pi pi-check',
-            EN_INVESTIGATION:     'pi pi-eye',
-            RAPPORT_PRODUIT:      'pi pi-file',
-            DECISION_RENDUE:      'pi pi-gavel',
-            CLOS:                 'pi pi-lock'
+            EN_REVUE_CTADP: 'pi pi-users',
+            RECEVABLE: 'pi pi-check',
+            EN_INVESTIGATION: 'pi pi-eye',
+            RAPPORT_PRODUIT: 'pi pi-file',
+            DECISION_RENDUE: 'pi pi-gavel',
+            CLOS: 'pi pi-lock'
         };
         const currentIndex = order.indexOf(dossier.status);
         this.workflowSteps = order.map((status, index) => ({
@@ -659,6 +800,8 @@ export class DossierDetail implements OnInit {
                      : undefined
         }));
     }
+
+    // ── Transitions ───────────────────────────────────────────
 
     openTransition(type: string, title: string, placeholder: string): void {
         this.currentTransitionType = type;
@@ -701,9 +844,8 @@ export class DossierDetail implements OnInit {
                 this.transitioning        = false;
                 this.showTransitionDialog = false;
                 this.messageService.add({
-                    severity: 'success',
-                    summary:  'Statut mis à jour',
-                    detail:   this.getStatusLabel(updated.status)
+                    severity: 'success', summary: 'Statut mis à jour',
+                    detail: this.getStatusLabel(updated.status)
                 });
             },
             error: (err: any) => {
@@ -716,10 +858,38 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    hasRole(roles: string[]): boolean { return this.keycloakService.hasAnyRole(roles); }
+    // ── Export PDF ────────────────────────────────────────────
+
+    exportPdf(): void {
+        if (!this.dossier) return;
+        const url = `${environment.apiUrl}/pdf/dossier/${this.dossier.id}`;
+        this.http.get(url, { responseType: 'blob' as 'json' }).subscribe({
+            next: (blob: any) => {
+                const link    = document.createElement('a');
+                link.href     = URL.createObjectURL(blob);
+                link.download = `dossier-${this.dossier!.number || this.dossier!.id}.pdf`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            },
+            error: () => this.messageService.add({
+                severity: 'error', summary: 'Erreur',
+                detail: 'Impossible de générer le PDF'
+            })
+        });
+    }
+
+    // ── Utilitaires ───────────────────────────────────────────
+
+    hasRole(roles: string[]): boolean {
+        return this.keycloakService.hasAnyRole(roles);
+    }
 
     isInvestigationVisible(): boolean {
         return this.investigationStatuses.includes(this.dossier?.status as DossierStatus);
+    }
+
+    formatSize(bytes: number): string {
+        return this.attachmentService.formatSize(bytes);
     }
 
     getStatusLabel(status: string): string {
@@ -737,8 +907,9 @@ export class DossierDetail implements OnInit {
     getStatusSeverity(status: string): TagSeverity {
         const map: Record<string, TagSeverity> = {
             SOUMIS: 'info', RECU: 'info',
-            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn', EN_REVUE_CTADP: 'warn',
-            RECEVABLE: 'success', IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
+            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn',
+            EN_REVUE_CTADP: 'warn', RECEVABLE: 'success',
+            IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
             EN_INVESTIGATION: 'warn', RAPPORT_PRODUIT: 'info',
             DECISION_RENDUE: 'success', CLOS: 'success', CLASSE: 'secondary'
         };
@@ -763,26 +934,5 @@ export class DossierDetail implements OnInit {
             AUDIT_REPORT: 'Rapport Audit'
         };
         return labels[mode] || mode;
-    }
-
-    formatSize(bytes: number): string {
-        return this.attachmentService.formatSize(bytes);
-    }
-
-    exportPdf(): void {
-        if (!this.dossier) return;
-        const url = `${environment.apiUrl}/pdf/dossier/${this.dossier.id}`;
-        this.http.get(url, { responseType: 'blob' as 'json' }).subscribe({
-            next: (blob: any) => {
-                const link    = document.createElement('a');
-                link.href     = URL.createObjectURL(blob);
-                link.download = `dossier-${this.dossier!.number || this.dossier!.id}.pdf`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-            },
-            error: () => this.messageService.add({
-                severity: 'error', summary: 'Erreur', detail: 'Impossible de générer le PDF'
-            })
-        });
     }
 }
