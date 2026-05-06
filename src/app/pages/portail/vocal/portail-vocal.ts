@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -41,7 +41,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             background: linear-gradient(160deg, #f0fdf4 0%, #f8fafc 60%);
         }
 
-        /* ── Navbar ── */
         .top-nav {
             height: 56px;
             background: #16a34a;
@@ -67,10 +66,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             letter-spacing:1.5px; color:#fff;
         }
 
-        /* ── Content ── */
         .content { max-width:560px; margin:0 auto; padding:1.5rem 1rem 3rem; }
 
-        /* ── Header ── */
         .page-header { text-align:center; margin-bottom:2rem; animation: slide-up .5s ease; }
         .header-icon {
             width:96px; height:96px; border-radius:50%;
@@ -87,7 +84,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             color:#6b7280; font-size:.9rem; line-height:1.7;
         }
 
-        /* ── Steps indicator ── */
         .steps-bar {
             display:flex; align-items:center;
             justify-content:center; gap:6px;
@@ -114,7 +110,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .step-line.done { background:#22c55e; }
 
-        /* ── Step card ── */
         .step-card {
             background:#fff; border-radius:20px;
             padding:1.75rem; border:1px solid #f0fdf4;
@@ -129,7 +124,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             justify-content:center; gap:.5rem;
         }
 
-        /* ── Record zones ── */
         .record-idle {
             text-align:center; padding:2.5rem 1.5rem;
             border-radius:16px; border:2.5px dashed #86efac;
@@ -181,7 +175,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             font-size:.8rem; letter-spacing:2px;
         }
 
-        /* Audio bars */
         .bars-row {
             display:flex; align-items:flex-end;
             gap:4px; height:36px; justify-content:center;
@@ -193,7 +186,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             transition:height .12s ease;
         }
 
-        /* Recorded success */
         .audio-done {
             display:flex; align-items:center; gap:1rem;
             padding:.875rem 1rem; border-radius:14px;
@@ -207,7 +199,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .done-icon i { color:#fff; font-size:1.25rem; }
 
-        /* Photos */
         .photos-grid {
             display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
         }
@@ -224,10 +215,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             display:flex; align-items:center; justify-content:center;
         }
 
-        /* Phone step */
-        .phone-hero {
-            text-align:center; margin-bottom:1.5rem;
-        }
+        .phone-hero { text-align:center; margin-bottom:1.5rem; }
         .phone-icon {
             width:80px; height:80px; border-radius:50%;
             background:linear-gradient(135deg,#0ea5e9,#38bdf8);
@@ -237,7 +225,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .phone-icon i { font-size:2.25rem; color:#fff; }
 
-        /* Recap */
         .recap-item {
             display:flex; align-items:center; gap:.875rem;
             padding:.875rem 1rem; border-radius:14px;
@@ -254,7 +241,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .recap-title { font-weight:700; font-size:.875rem; color:#111827; }
         .recap-sub   { font-size:.775rem; color:#6b7280; margin-top:2px; }
 
-        /* Step footer */
         .step-footer {
             display:flex; justify-content:space-between;
             align-items:center; gap:.75rem;
@@ -262,7 +248,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .footer-right { display:flex; gap:.5rem; align-items:center; }
 
-        /* Success dialog */
         .success-wrap { padding:.5rem; text-align:center; }
         .success-icon-wrap {
             width:88px; height:88px; border-radius:50%;
@@ -287,7 +272,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .code-hint { font-size:.75rem; color:#15803d; margin-top:.5rem; }
 
-        /* Footer page */
         .page-foot {
             text-align:center; margin-top:2rem;
             color:#9ca3af; font-size:.75rem;
@@ -336,10 +320,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     <ng-template pTemplate="footer">
         <div style="display:flex;gap:.5rem;justify-content:center;">
             <p-button label="Suivre mon dossier" icon="pi pi-search"
-                severity="success" routerLink="/portail/suivi"
-                (onClick)="showSuccess = false" />
+                severity="success"
+                (onClick)="goToSuivi()" />
             <p-button label="Accueil" severity="secondary" outlined
-                routerLink="/portail" (onClick)="showSuccess = false" />
+                (onClick)="goToAccueil()" />
         </div>
     </ng-template>
 </p-dialog>
@@ -347,23 +331,22 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 <!-- ── Page ───────────────────────────────────────────────── -->
 <div class="page-wrapper">
 
-    <!-- Navbar -->
     <nav class="top-nav">
         <div class="nav-left">
             <p-button icon="pi pi-arrow-left" severity="contrast"
-                text routerLink="/portail" />
+                text (onClick)="router.navigate(['/portail'])" />
             <div class="nav-logo">
                 <img src="/assets/logo-integrite.png" alt="Intégrité+" />
             </div>
             <span class="nav-brand">INTÉGRITÉ+</span>
         </div>
         <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-            outlined size="small" routerLink="/portail/suivi" />
+            outlined size="small"
+            (onClick)="router.navigate(['/portail/suivi'])" />
     </nav>
 
     <div class="content">
 
-        <!-- Header -->
         <div class="page-header">
             <div class="header-icon">
                 <i class="pi pi-microphone"></i>
@@ -396,7 +379,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 1 — Enregistrement ═══ -->
+        <!-- ═══ Étape 1 ═══ -->
         <div *ngIf="currentStep === 1" class="step-card">
 
             <div class="step-card-title">
@@ -435,9 +418,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <span class="rec-dot"></span>
                     <span class="rec-label">REC</span>
                 </div>
-                <!-- Barres animées -->
                 <div class="bars-row">
-                    <div *ngFor="let b of audioBars" class="bar" [style.height]="b + 'px'"></div>
+                    <div *ngFor="let b of audioBars" class="bar"
+                        [style.height]="b + 'px'"></div>
                 </div>
                 <p-button label="ARRÊTER" icon="pi pi-stop-circle"
                     severity="danger" size="large" (onClick)="stopRecording()" />
@@ -495,7 +478,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         (onClick)="galleryInput.click()" />
                 </div>
                 <div *ngIf="photos.length > 0" class="photos-grid">
-                    <div *ngFor="let photo of photos; let i = index" class="photo-thumb">
+                    <div *ngFor="let photo of photos; let i = index"
+                        class="photo-thumb">
                         <img [src]="getPhotoPreview(photo)" alt="Photo" />
                         <button class="photo-remove" (click)="removePhoto(i)">×</button>
                     </div>
@@ -513,7 +497,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 2 — Téléphone ═══ -->
+        <!-- ═══ Étape 2 ═══ -->
         <div *ngIf="currentStep === 2" class="step-card">
 
             <div class="step-card-title">
@@ -527,9 +511,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <div class="phone-icon">
                     <i class="pi pi-mobile"></i>
                 </div>
-                <p style="color:#6b7280;font-size:.875rem;line-height:1.7;max-width:320px;margin:0 auto;">
+                <p style="color:#6b7280;font-size:.875rem;line-height:1.7;
+                    max-width:320px;margin:0 auto;">
                     Pour recevoir votre code de suivi par SMS.<br>
-                    <strong style="color:#374151;">Vous pouvez passer cette étape.</strong>
+                    <strong style="color:#374151;">
+                        Vous pouvez passer cette étape.
+                    </strong>
                 </p>
             </div>
 
@@ -560,7 +547,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 3 — Confirmation ═══ -->
+        <!-- ═══ Étape 3 ═══ -->
         <div *ngIf="currentStep === 3" class="step-card">
 
             <div class="step-card-title">
@@ -572,7 +559,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div style="display:flex;flex-direction:column;gap:.625rem;margin-bottom:1.5rem;">
 
-                <!-- Audio -->
                 <div class="recap-item" [class.ok]="audioUrl">
                     <div class="recap-icon"
                         [style.background]="audioUrl ? '#dcfce7' : '#f3f4f6'">
@@ -584,7 +570,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div style="flex:1;">
                         <div class="recap-title">Témoignage audio</div>
                         <div class="recap-sub">
-                            {{ audioUrl ? 'Enregistré — ' + formatDuration(recordingDuration) : 'Manquant (obligatoire)' }}
+                            {{ audioUrl
+                                ? 'Enregistré — ' + formatDuration(recordingDuration)
+                                : 'Manquant (obligatoire)' }}
                         </div>
                     </div>
                     <span [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'"
@@ -595,7 +583,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </span>
                 </div>
 
-                <!-- Photos -->
                 <div class="recap-item" [class.ok]="photos.length > 0">
                     <div class="recap-icon"
                         [style.background]="photos.length > 0 ? '#dcfce7' : '#f3f4f6'">
@@ -607,7 +594,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div style="flex:1;">
                         <div class="recap-title">Fichiers joints</div>
                         <div class="recap-sub">
-                            {{ photos.length > 0 ? photos.length + ' fichier(s) sélectionné(s)' : 'Aucun (optionnel)' }}
+                            {{ photos.length > 0
+                                ? photos.length + ' fichier(s) sélectionné(s)'
+                                : 'Aucun (optionnel)' }}
                         </div>
                     </div>
                     <span style="background:#f3f4f6;color:#6b7280;font-size:.75rem;
@@ -616,7 +605,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </span>
                 </div>
 
-                <!-- SMS -->
                 <div class="recap-item" [class.info]="phoneNumber">
                     <div class="recap-icon"
                         [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'">
@@ -655,7 +643,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- Pied -->
         <div class="page-foot">
             <i class="pi pi-shield"></i>
             ASCE-LC — Plateforme sécurisée — Burkina Faso
@@ -666,6 +653,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     `
 })
 export class PortailVocal {
+
+    // ✅ Router public pour accès depuis le template
+    router = inject(Router);
 
     private dossierService    = inject(DossierService);
     private attachmentService = inject(AttachmentService);
@@ -688,6 +678,20 @@ export class PortailVocal {
 
     photos:        File[]   = [];
     photoPreviews: string[] = [];
+
+    // ── Navigation depuis le dialog ───────────────────────────
+
+    goToSuivi(): void {
+        this.showSuccess = false;
+        setTimeout(() => this.router.navigate(['/portail/suivi']), 150);
+    }
+
+    goToAccueil(): void {
+        this.showSuccess = false;
+        setTimeout(() => this.router.navigate(['/portail']), 150);
+    }
+
+    // ── Enregistrement ────────────────────────────────────────
 
     async startRecording(): Promise<void> {
         try {
@@ -729,6 +733,7 @@ export class PortailVocal {
     }
 
     deleteAudio(): void {
+        if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
         this.audioBlob         = null;
         this.audioUrl          = null;
         this.recordingDuration = 0;
@@ -753,15 +758,22 @@ export class PortailVocal {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    onPhotoSelect(event: any): void { this.addPhotos(Array.from(event.target.files)); }
-    onFileSelect(event: any):  void { this.addPhotos(Array.from(event.target.files)); }
+    // ── Photos ────────────────────────────────────────────────
+
+    onPhotoSelect(event: any): void {
+        this.addPhotos(Array.from(event.target.files));
+    }
+    onFileSelect(event: any): void {
+        this.addPhotos(Array.from(event.target.files));
+    }
 
     private addPhotos(files: File[]): void {
-        files.forEach(f => {
+        files.forEach((f: File) => {
             if (this.photos.length < 10) {
                 this.photos.push(f);
                 const reader = new FileReader();
-                reader.onload = e => this.photoPreviews.push(e.target?.result as string);
+                reader.onload = e =>
+                    this.photoPreviews.push(e.target?.result as string);
                 reader.readAsDataURL(f);
             }
         });
@@ -775,6 +787,8 @@ export class PortailVocal {
         this.photos.splice(index, 1);
         this.photoPreviews.splice(index, 1);
     }
+
+    // ── Soumission ────────────────────────────────────────────
 
     submit(): void {
         if (!this.audioBlob) return;
@@ -798,6 +812,7 @@ export class PortailVocal {
         this.dossierService.submit(request).subscribe({
             next: dossier => {
                 this.createdAccessCode = dossier.accessCode;
+
                 const allFiles: File[] = [];
                 if (this.audioBlob) {
                     allFiles.push(new File(

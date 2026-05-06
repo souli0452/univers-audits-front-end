@@ -111,7 +111,7 @@ import { AgentService, AgentResponse } from '../../../core/services/agent.servic
             <div class="bg-white dark:bg-surface-800 rounded-xl p-6 border border-surface-200">
                 <h3 class="font-semibold mb-1 flex items-center gap-2">
                     <i class="pi pi-shield text-primary-600"></i>
-                    Rôles Keycloak
+                    Gérer les Permissions
                 </h3>
                 <p class="text-surface-400 text-xs mb-4">
                     Les rôles sélectionnés seront assignés directement dans Keycloak.
@@ -170,7 +170,7 @@ import { AgentService, AgentResponse } from '../../../core/services/agent.servic
                 <p-button label="Annuler" severity="secondary" outlined
                     routerLink="/app/administration/agents" />
                 <p-button
-                    [label]="isEdit ? 'Enregistrer les modifications' : 'Creer agent'"
+                    [label]="isEdit ? 'Enregistrer les modifications' : 'Creer'"
                     icon="pi pi-save" [loading]="saving" (onClick)="save()" />
             </div>
 

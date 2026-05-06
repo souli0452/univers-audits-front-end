@@ -1,39 +1,105 @@
-import { Component, OnInit, OnChanges, Input,
-         SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { DialogModule } from 'primeng/dialog';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { ToastModule } from 'primeng/toast';
-import { SkeletonModule } from 'primeng/skeleton';
-import { AvatarModule } from 'primeng/avatar';
+import {
+    Component, OnInit, OnChanges, OnDestroy,
+    Input, SimpleChanges, inject
+} from '@angular/core';
+import { CommonModule }                       from '@angular/common';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule }                        from '@angular/forms';
+import { DomSanitizer, SafeHtml }             from '@angular/platform-browser';
+import { Subject }                            from 'rxjs';
+import { takeUntil }                          from 'rxjs/operators';
+
+import { ButtonModule }     from 'primeng/button';
+import { TagModule }        from 'primeng/tag';
+import { DialogModule }     from 'primeng/dialog';
+import { TextareaModule }   from 'primeng/textarea';
+import { SelectModule }     from 'primeng/select';
+import { ToastModule }      from 'primeng/toast';
+import { SkeletonModule }   from 'primeng/skeleton';
+import { AvatarModule }     from 'primeng/avatar';
 import { DatePickerModule } from 'primeng/datepicker';
-import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { TooltipModule }    from 'primeng/tooltip';
+import { EditorModule }     from 'primeng/editor';
+import { MessageService }   from 'primeng/api';
+
 import {
     InvestigationService,
     InvestigationResponse,
     TeamRole,
     SubmitReportRequest
 } from '../../../core/services/investigation.service';
-import { AgentService } from '../../../core/services/agent.service';
-import { KeycloakService } from '../../../core/auth/keycloak.service';
+import { AgentService }      from '../../../core/services/agent.service';
+import { KeycloakService }   from '../../../core/auth/keycloak.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
-type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
+// ─── Types locaux ──────────────────────────────────────────────────────────────
+
+type TagSeverity =
+    | 'success' | 'info' | 'warn' | 'danger'
+    | 'secondary' | 'contrast' | null | undefined;
+
+type OutcomeValue =
+    | 'ADMINISTRATIVE_SANCTIONS'
+    | 'JUDICIAL_REFERRAL'
+    | 'ARCHIVED'
+    | 'PRESS_RELEASE'
+    | 'ANNUAL_REPORT';
+
+// ─── Interfaces exportées ──────────────────────────────────────────────────────
+
+export interface AgentSummaryInMember {
+    id:                string;
+    firstName:         string;
+    lastName:          string;
+    email?:            string;
+    matricule:         string;
+    departementLabel?: string;
+}
+
+export interface InvestigationMemberResponse {
+    id:               string;
+    agent:            AgentSummaryInMember;
+    teamRole:         TeamRole;
+    dateAttribution?: string;
+    active:           boolean;
+}
+
+// ─── Interfaces internes ───────────────────────────────────────────────────────
+
+interface AgentOption {
+    label: string;
+    value: string;
+}
+
+interface SelectOption<T extends string = string> {
+    label: string;
+    value: T;
+}
+
+interface ApprovalStep {
+    label:  string;
+    icon:   string;
+    delay:  string;
+    done:   boolean;
+    active: boolean;
+    date:   string | null | undefined;
+}
+
+interface ApiError {
+    error?: { message?: string };
+}
+
+// ─── Composant ─────────────────────────────────────────────────────────────────
 
 @Component({
-    selector: 'app-investigation-detail',
-    standalone: true,
+    selector:    'app-investigation-detail',
+    standalone:  true,
     imports: [
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
         TextareaModule, SelectModule, ToastModule,
-        SkeletonModule, AvatarModule, DatePickerModule, TooltipModule
+        SkeletonModule, AvatarModule, DatePickerModule,
+        TooltipModule, EditorModule
     ],
     providers: [MessageService],
     template: `
@@ -91,41 +157,84 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 <!-- ── Dialog rapport final ───────────────────────────── -->
 <p-dialog [(visible)]="showReportDialog"
     header="Soumettre le rapport final"
-    [modal]="true" [style]="{width:'650px'}"
-    [draggable]="false">
-    <div class="flex flex-col gap-4 py-2">
+    [modal]="true" [style]="{width:'700px'}" [draggable]="false">
+    <div class="flex flex-col gap-5 py-2">
 
-        <!-- Rapport -->
         <div>
             <label class="text-sm font-semibold text-surface-700 mb-2 block">
                 Rapport complet *
             </label>
-            <textarea pTextarea [(ngModel)]="reportRequest.finalReport"
-                placeholder="Rapport détaillé de l'investigation..."
-                rows="4" class="w-full resize-none"></textarea>
+            <p-editor [(ngModel)]="reportRequest.finalReport"
+                [style]="{'height':'180px'}"
+                placeholder="Rapport détaillé de l'investigation...">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <button class="ql-bold"      title="Gras"></button>
+                        <button class="ql-italic"    title="Italique"></button>
+                        <button class="ql-underline" title="Souligné"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <select class="ql-align" title="Alignement"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered" title="Liste numérotée"></button>
+                        <button class="ql-list" value="bullet"  title="Liste à puces"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean" title="Effacer la mise en forme"></button>
+                    </span>
+                </ng-template>
+            </p-editor>
         </div>
 
-        <!-- Conclusions -->
         <div>
             <label class="text-sm font-semibold text-surface-700 mb-2 block">
                 Conclusions *
             </label>
-            <textarea pTextarea [(ngModel)]="reportRequest.conclusions"
-                placeholder="Conclusions principales..."
-                rows="3" class="w-full resize-none"></textarea>
+            <p-editor [(ngModel)]="reportRequest.conclusions"
+                [style]="{'height':'140px'}"
+                placeholder="Conclusions principales...">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered"></button>
+                        <button class="ql-list" value="bullet"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean"></button>
+                    </span>
+                </ng-template>
+            </p-editor>
         </div>
 
-        <!-- Recommandations -->
         <div>
             <label class="text-sm font-semibold text-surface-700 mb-2 block">
                 Recommandations
             </label>
-            <textarea pTextarea [(ngModel)]="reportRequest.recommendations"
-                placeholder="Recommandations..."
-                rows="2" class="w-full resize-none"></textarea>
+            <p-editor [(ngModel)]="reportRequest.recommendations"
+                [style]="{'height':'120px'}"
+                placeholder="Recommandations...">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered"></button>
+                        <button class="ql-list" value="bullet"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-clean"></button>
+                    </span>
+                </ng-template>
+            </p-editor>
         </div>
 
-        <!-- Issue -->
         <div>
             <label class="text-sm font-semibold text-surface-700 mb-2 block">
                 Issue / Résultat *
@@ -137,19 +246,15 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 appendTo="body" />
         </div>
 
-        <!-- Upload documents -->
+        <!-- Zone upload -->
         <div class="border-t border-surface-100 pt-4">
             <div class="flex items-center gap-2 mb-3">
                 <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
                     <i class="pi pi-paperclip text-amber-600 text-xs"></i>
                 </div>
-                <span class="text-sm font-semibold text-surface-700">
-                    Documents joints
-                </span>
+                <span class="text-sm font-semibold text-surface-700">Documents joints</span>
                 <span class="text-xs text-surface-400">(optionnel)</span>
             </div>
-
-            <!-- Zone de drop -->
             <div class="border-2 border-dashed border-surface-200 rounded-xl p-4
                         hover:border-primary-300 transition-colors cursor-pointer"
                  (dragover)="$event.preventDefault()"
@@ -171,12 +276,12 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 </div>
             </div>
 
-            <!-- Liste fichiers sélectionnés -->
             <div *ngIf="reportFiles.length > 0" class="flex flex-col gap-2 mt-3">
                 <div *ngFor="let f of reportFiles; let i = index"
                      class="flex items-center gap-3 p-2.5 bg-surface-50
                             rounded-xl border border-surface-100">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    <div class="w-8 h-8 rounded-lg flex items-center
+                                justify-center flex-shrink-0"
                          [class.bg-red-100]="f.type.includes('pdf')"
                          [class.bg-blue-100]="f.type.startsWith('image/')"
                          [class.bg-purple-100]="f.type.startsWith('video/')"
@@ -199,19 +304,14 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                         </i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="text-xs font-medium text-surface-900 truncate">
-                            {{ f.name }}
-                        </div>
-                        <div class="text-xs text-surface-400">
-                            {{ formatFileSize(f.size) }}
-                        </div>
+                        <div class="text-xs font-medium text-surface-900 truncate">{{ f.name }}</div>
+                        <div class="text-xs text-surface-400">{{ formatFileSize(f.size) }}</div>
                     </div>
                     <p-button icon="pi pi-times" severity="danger" text
                         size="small" (onClick)="removeReportFile(i)" />
                 </div>
             </div>
 
-            <!-- Barre de progression upload -->
             <div *ngIf="uploadProgress > 0 && uploadProgress < 100" class="mt-3">
                 <div class="flex justify-between text-xs text-surface-400 mb-1">
                     <span>Upload en cours...</span>
@@ -223,13 +323,13 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 </div>
             </div>
         </div>
-
     </div>
+
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined
             (onClick)="cancelReport()" />
-        <p-button label="Soumettre le rapport" icon="pi pi-send"
-            severity="success" [loading]="actioning"
+        <p-button label="Soumettre le rapport" icon="pi pi-send" severity="success"
+            [loading]="actioning"
             [disabled]="!reportRequest.finalReport || !reportRequest.conclusions"
             (onClick)="executeSubmitReport()" />
     </ng-template>
@@ -261,9 +361,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
     [modal]="true" [style]="{width:'500px'}">
     <div class="flex flex-col gap-4 py-2">
         <div>
-            <label class="text-sm font-semibold text-surface-700 mb-2 block">
-                Agent *
-            </label>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">Agent *</label>
             <p-select [(ngModel)]="newMemberAgentId"
                 [options]="availableAgents"
                 optionLabel="label" optionValue="value"
@@ -271,13 +369,11 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 styleClass="w-full" [filter]="true" appendTo="body" />
         </div>
         <div>
-            <label class="text-sm font-semibold text-surface-700 mb-2 block">
-                Rôle *
-            </label>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">Rôle *</label>
             <p-select [(ngModel)]="newMemberRole"
                 [options]="roleOptions"
                 optionLabel="label" optionValue="value"
-                styleClass="w-full" />
+                styleClass="w-full" appendTo="body" />
         </div>
     </div>
     <ng-template pTemplate="footer">
@@ -294,7 +390,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
 <div *ngIf="!loading; else sk" class="flex flex-col gap-5">
 
-    <!-- ── En-tête page standalone ───────────────────────── -->
+    <!-- En-tête page standalone -->
     <div *ngIf="!isPanel" class="flex items-start justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
             <p-button icon="pi pi-arrow-left" severity="secondary" text
@@ -316,25 +412,22 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         </div>
     </div>
 
-    <!-- ── Actions page standalone ───────────────────────── -->
+    <!-- Actions page standalone -->
     <ng-container *ngIf="!isPanel && inv">
         <div class="flex gap-2 flex-wrap justify-end">
             <ng-container *ngTemplateOutlet="actionButtons; context: {inv: inv}" />
         </div>
     </ng-container>
 
-    <!-- ── En-tête panel ─────────────────────────────────── -->
+    <!-- En-tête panel -->
     <div *ngIf="isPanel"
         class="bg-white dark:bg-surface-800 rounded-2xl p-4
-               border border-surface-100 dark:border-surface-700 shadow-sm">
+               border border-surface-100 dark:border-surface-700">
         <div class="flex items-center justify-between flex-wrap gap-3">
-            <h3 class="font-bold text-surface-900 dark:text-surface-0
-                       flex items-center gap-2">
+            <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900
                             flex items-center justify-center">
-                    <i class="pi pi-search text-primary-600 text-sm"
-                       style="display:flex;align-items:center;
-                              justify-content:center;width:100%;height:100%;"></i>
+                    <i class="pi pi-search text-primary-600 text-sm"></i>
                 </div>
                 Investigation
                 <p-tag *ngIf="inv"
@@ -351,64 +444,48 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         </div>
     </div>
 
-    <!-- ── Template actions partagé ──────────────────────── -->
+    <!-- Template actions partagé -->
     <ng-template #actionButtons let-inv="inv">
-        <p-button
-            *ngIf="inv.status === 'INITIATED' && hasRole(['CGEA','ADMIN_DDIC'])"
+        <p-button *ngIf="inv.status === 'INITIATED' && hasRole(['CGEA','ADMIN_DDIC'])"
             label="Démarrer" icon="pi pi-play" severity="success" size="small"
             [loading]="actioning" (onClick)="executeStart()" />
-        <p-button
-            *ngIf="inv.status === 'IN_PROGRESS' && hasRole(['CGEA','CGE','ADMIN_DDIC'])"
+        <p-button *ngIf="inv.status === 'IN_PROGRESS' && hasRole(['CGEA','CGE','ADMIN_DDIC'])"
             label="Suspendre" icon="pi pi-pause" severity="warn" size="small"
             (onClick)="showSuspendDialog = true" />
-        <p-button
-            *ngIf="inv.status === 'SUSPENDED' && hasRole(['CGEA','CGE','ADMIN_DDIC'])"
+        <p-button *ngIf="inv.status === 'SUSPENDED' && hasRole(['CGEA','CGE','ADMIN_DDIC'])"
             label="Reprendre" icon="pi pi-play" severity="info" size="small"
             [loading]="actioning" (onClick)="executeResume()" />
-        <p-button
-            *ngIf="inv.status === 'IN_PROGRESS' && hasRole(['CGEA','ADMIN_DDIC'])"
+        <p-button *ngIf="inv.status === 'IN_PROGRESS' && hasRole(['CGEA','ADMIN_DDIC'])"
             label="Prolonger" icon="pi pi-calendar-plus"
             severity="secondary" outlined size="small"
             (onClick)="showExtendDialog = true" />
-        <p-button
-            *ngIf="inv.status === 'IN_PROGRESS'
-                   && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+        <p-button *ngIf="inv.status === 'IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
             label="Soumettre rapport" icon="pi pi-file-check" size="small"
             (onClick)="showReportDialog = true" />
-        <p-button
-            *ngIf="inv.status === 'COMPLETED'
-                   && !inv.deiApprovedAt
-                   && hasRole(['CGEA','ADMIN_DDIC'])"
-            label="Approuver DEI" icon="pi pi-check"
-            severity="success" size="small"
+        <p-button *ngIf="inv.status === 'COMPLETED' && !inv.deiApprovedAt
+                         && hasRole(['CGEA','ADMIN_DDIC'])"
+            label="Approuver DEI" icon="pi pi-check" severity="success" size="small"
             [loading]="actioning" (onClick)="executeApproveDei()" />
-        <p-button
-            *ngIf="inv.deiApprovedAt
-                   && !inv.legalAdvisorApprovedAt
-                   && hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
-            label="Approuver Juridique" icon="pi pi-shield"
-            severity="success" size="small"
+        <p-button *ngIf="inv.deiApprovedAt && !inv.legalAdvisorApprovedAt
+                         && hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+            label="Approuver Juridique" icon="pi pi-shield" severity="success" size="small"
             [loading]="actioning" (onClick)="executeApproveLegal()" />
-        <p-button
-            *ngIf="inv.legalAdvisorApprovedAt
-                   && !inv.cgeApprovedAt
-                   && hasRole(['CGE','ADMIN_DDIC'])"
-            label="Décision CGE" icon="pi pi-gavel"
-            severity="success" size="small"
+        <p-button *ngIf="inv.legalAdvisorApprovedAt && !inv.cgeApprovedAt
+                         && hasRole(['CGE','ADMIN_DDIC'])"
+            label="Décision CGE" icon="pi pi-gavel" severity="success" size="small"
             (onClick)="showCgeDialog = true" />
     </ng-template>
 
-    <!-- ── Grille principale ──────────────────────────────── -->
+    <!-- ════════════════════════════════════════════════════
+         GRILLE PRINCIPALE
+         ════════════════════════════════════════════════════ -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        <!-- Colonne gauche (2/3) -->
-        <div class="lg:col-span-2 flex flex-col gap-5">
-
-            <!-- Aucune investigation -->
-            <div *ngIf="!inv && isPanel"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-6
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <div class="text-center mb-5">
+        <!-- ══ CAS 1 : PAS d'investigation → pleine largeur ══ -->
+        <div *ngIf="!inv && isPanel" class="lg:col-span-3">
+            <div class="bg-white dark:bg-surface-800 rounded-2xl p-8
+                        border border-surface-100 dark:border-surface-700 max-w-2xl mx-auto">
+                <div class="text-center mb-6">
                     <div class="w-16 h-16 rounded-2xl bg-surface-100 dark:bg-surface-700
                                 flex items-center justify-center mx-auto mb-3">
                         <i class="pi pi-search text-2xl text-surface-300"></i>
@@ -418,34 +495,55 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     </p>
                 </div>
 
-                <!-- Dossier RECEVABLE + rôle CGEA -->
-                <div *ngIf="dossierStatus === 'RECEVABLE'
-                            && hasRole(['CGEA','ADMIN_DDIC'])"
-                    class="flex flex-col gap-3">
-                    <div class="p-3 bg-green-50 dark:bg-green-950 border border-green-200
-                                dark:border-green-800 rounded-xl text-sm text-green-700
-                                dark:text-green-300 text-center">
-                        <i class="pi pi-check-circle mr-2"></i>
-                        Le CGE a déclaré ce dossier recevable.
-                        Vous pouvez ouvrir l'investigation.
+                <!-- RECEVABLE + CGEA -->
+                <div *ngIf="dossierStatus === 'RECEVABLE' && hasRole(['CGEA','ADMIN_DDIC'])"
+                    class="flex flex-col gap-4">
+                    <div class="p-4 bg-green-50 dark:bg-green-950 border border-green-200
+                                dark:border-green-800 rounded-xl">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="pi pi-check-circle text-green-600"></i>
+                            <span class="text-sm font-semibold text-green-700 dark:text-green-300">
+                                Dossier déclaré recevable
+                            </span>
+                        </div>
+                        <p class="text-xs text-green-600 dark:text-green-400 ml-6">
+                            Le CGE a validé ce dossier. Vous pouvez ouvrir l'investigation.
+                        </p>
                     </div>
-                    <div class="flex flex-col gap-2">
-                        <label class="text-xs font-semibold text-surface-500
-                                      uppercase tracking-wide">
-                            Durée prévue (jours) — 90 minimum
+                    <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4 border
+                                border-surface-100 dark:border-surface-600">
+                        <label class="text-xs font-semibold text-surface-600 uppercase
+                                      tracking-wide mb-3 block">
+                            Durée prévue de l'investigation
                         </label>
-                        <input type="number" [(ngModel)]="openDays"
-                            min="90" max="180"
-                            class="p-inputtext w-full text-sm" />
+                        <div class="flex items-center gap-3 mb-3">
+                            <input type="number" [(ngModel)]="openDays"
+                                min="90" max="365"
+                                class="p-inputtext w-28 text-sm text-center font-mono font-bold" />
+                            <span class="text-sm text-surface-400">jours</span>
+                            <span class="text-xs text-surface-300 ml-auto">min 90 · max 365</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button *ngFor="let d of quickDays"
+                                class="text-xs px-3 py-1.5 rounded-lg border transition-colors cursor-pointer"
+                                [class.bg-primary-100]="openDays === d"
+                                [class.text-primary-700]="openDays === d"
+                                [class.border-primary-300]="openDays === d"
+                                [class.bg-surface-100]="openDays !== d"
+                                [class.text-surface-500]="openDays !== d"
+                                [class.border-surface-200]="openDays !== d"
+                                (click)="openDays = d">
+                                {{ d }}j
+                            </button>
+                        </div>
                     </div>
                     <p-button label="Ouvrir l'investigation" icon="pi pi-play"
-                        severity="success" styleClass="w-full"
+                        severity="success" styleClass="w-full justify-center"
                         [loading]="actioning" (onClick)="openInvestigation()" />
                 </div>
 
-                <!-- Dossier RECEVABLE, pas CGEA -->
-                <div *ngIf="dossierStatus === 'RECEVABLE'
-                            && !hasRole(['CGEA','ADMIN_DDIC'])"
+                <!-- RECEVABLE, pas CGEA -->
+                <div *ngIf="dossierStatus === 'RECEVABLE' && !hasRole(['CGEA','ADMIN_DDIC'])"
                     class="p-3 bg-blue-50 border border-blue-200 rounded-xl
                            text-sm text-blue-700 text-center">
                     <i class="pi pi-info-circle mr-2"></i>
@@ -460,299 +558,284 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                             && dossierStatus !== 'CLOS'"
                     class="p-3 bg-surface-50 border border-surface-200 rounded-xl
                            text-xs text-surface-400 text-center">
-                    L'investigation sera possible après la décision
-                    de recevabilité du CGE.
+                    L'investigation sera possible après la décision de recevabilité du CGE.
                 </div>
             </div>
-
-            <!-- Progression -->
-            <div *ngIf="inv"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-5
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
-                           flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900
-                                flex items-center justify-center">
-                        <i class="pi pi-chart-line text-blue-600 text-xs"></i>
-                    </div>
-                    Progression de l'enquête
-                </h3>
-
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-surface-400">Avancement temporel</span>
-                        <span class="font-bold text-surface-700 dark:text-surface-200">
-                            {{ getProgress() }}%
-                        </span>
-                    </div>
-                    <div class="h-3 bg-surface-100 dark:bg-surface-700
-                                rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500"
-                            [style.width]="getProgress() + '%'"
-                            [style.background]="getProgressGradient()">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3 text-sm">
-                    <div class="p-3 bg-surface-50 dark:bg-surface-700
-                                rounded-xl text-center">
-                        <div class="text-surface-400 text-xs mb-1">Début</div>
-                        <div class="font-semibold text-surface-900
-                                    dark:text-surface-0 text-xs">
-                            {{ inv.startDate
-                                ? (inv.startDate | date:'dd/MM/yyyy')
-                                : 'Non démarrée' }}
-                        </div>
-                    </div>
-                    <div class="p-3 bg-surface-50 dark:bg-surface-700
-                                rounded-xl text-center">
-                        <div class="text-surface-400 text-xs mb-1">Durée prévue</div>
-                        <div class="font-semibold text-surface-900 dark:text-surface-0">
-                            {{ inv.plannedDurationDays }}j
-                        </div>
-                    </div>
-                    <div class="p-3 rounded-xl text-center border"
-                        [style.background]="inv.overdue
-                            ? '#fff5f5'
-                            : (inv.remainingDays || 0) <= 10 ? '#fffbeb' : '#f0fdf4'"
-                        [style.border-color]="inv.overdue
-                            ? '#fca5a5'
-                            : (inv.remainingDays || 0) <= 10 ? '#fde68a' : '#86efac'">
-                        <div class="text-xs mb-1"
-                            [style.color]="inv.overdue ? '#ef4444' : '#9ca3af'">
-                            Délai restant
-                        </div>
-                        <div class="font-bold"
-                            [style.color]="inv.overdue
-                                ? '#dc2626'
-                                : (inv.remainingDays || 0) <= 10 ? '#d97706' : '#16a34a'">
-                            {{ inv.overdue
-                                ? 'Dépassé'
-                                : (inv.remainingDays || 0) + 'j' }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Circuit de validation -->
-            <div *ngIf="inv"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-5
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
-                           flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900
-                                flex items-center justify-center">
-                        <i class="pi pi-list-check text-purple-600 text-xs"></i>
-                    </div>
-                    Circuit de validation
-                </h3>
-                <div class="flex flex-col gap-2">
-                    <div *ngFor="let step of approvalSteps; let i = index"
-                        class="flex items-center gap-3 p-3 rounded-xl border
-                               transition-all"
-                        [style.background]="step.done
-                            ? '#f0fdf4' : step.active ? '#eff6ff' : '#f9fafb'"
-                        [style.border-color]="step.done
-                            ? '#86efac' : step.active ? '#bfdbfe' : '#e5e7eb'">
-                        <div class="w-9 h-9 rounded-full flex items-center
-                                    justify-center flex-shrink-0"
-                            [style.background]="step.done
-                                ? '#22c55e' : step.active ? '#3b82f6' : '#e5e7eb'">
-                            <i class="pi text-white text-xs"
-                                [class]="step.done ? 'pi-check' : step.icon"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="text-sm font-semibold"
-                                [style.color]="step.done
-                                    ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
-                                {{ step.label }}
-                                <span class="text-xs font-normal ml-1"
-                                      style="color:#9ca3af;">
-                                    {{ step.delay }}
-                                </span>
-                            </div>
-                            <div *ngIf="step.date"
-                                class="text-xs text-green-600 mt-0.5">
-                                ✓ {{ step.date | date:'dd/MM/yyyy HH:mm' }}
-                            </div>
-                            <div *ngIf="step.active && !step.date"
-                                style="display:inline-flex;align-items:center;
-                                       gap:4px;font-size:.7rem;color:#3b82f6;
-                                       margin-top:3px;background:#eff6ff;
-                                       padding:2px 8px;border-radius:20px;">
-                                <div style="width:5px;height:5px;border-radius:50%;
-                                    background:#3b82f6;
-                                    animation:pulse 1s infinite;"></div>
-                                En attente
-                            </div>
-                        </div>
-                        <span class="text-xs font-bold px-2 py-1 rounded-lg"
-                            [style.background]="step.done
-                                ? '#dcfce7' : step.active ? '#dbeafe' : '#f3f4f6'"
-                            [style.color]="step.done
-                                ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
-                            {{ i + 1 }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rapport d'investigation -->
-            <div *ngIf="inv && (inv.finalReport || inv.conclusions)"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-5
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
-                           flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900
-                                flex items-center justify-center">
-                        <i class="pi pi-file-edit text-amber-600 text-xs"></i>
-                    </div>
-                    Rapport d'investigation
-                </h3>
-                <div class="flex flex-col gap-4 text-sm">
-                    <div *ngIf="inv.finalReport">
-                        <div class="text-xs text-surface-400 uppercase
-                                    tracking-wide font-semibold mb-2">
-                            Rapport
-                        </div>
-                        <p class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
-                                  leading-relaxed text-surface-700 dark:text-surface-200
-                                  border border-surface-100">
-                            {{ inv.finalReport }}
-                        </p>
-                    </div>
-                    <div *ngIf="inv.conclusions">
-                        <div class="text-xs text-surface-400 uppercase
-                                    tracking-wide font-semibold mb-2">
-                            Conclusions
-                        </div>
-                        <p class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
-                                  leading-relaxed text-surface-700 dark:text-surface-200
-                                  border border-surface-100">
-                            {{ inv.conclusions }}
-                        </p>
-                    </div>
-                    <div *ngIf="inv.recommendations">
-                        <div class="text-xs text-surface-400 uppercase
-                                    tracking-wide font-semibold mb-2">
-                            Recommandations
-                        </div>
-                        <p class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
-                                  leading-relaxed text-surface-700 dark:text-surface-200
-                                  border border-surface-100">
-                            {{ inv.recommendations }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
-        <!-- Colonne droite (1/3) -->
-        <div class="flex flex-col gap-5">
+        <!-- ══ CAS 2 : investigation existe → layout 2/3 + 1/3 ══ -->
+        <ng-container *ngIf="inv">
 
-            <!-- Lien dossier associé -->
-            <div *ngIf="!isPanel && inv"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-4
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <h3 class="text-sm font-bold text-surface-700 dark:text-surface-200
-                           mb-3 flex items-center gap-2">
-                    <i class="pi pi-folder text-primary-600"></i>
-                    Dossier associé
-                </h3>
-                <p-button
-                    [label]="inv.dossierNumber || 'Voir le dossier'"
-                    icon="pi pi-external-link" iconPos="right"
-                    severity="info" text size="small"
-                    [routerLink]="['/app/dossiers', inv.dossierId]" />
+            <!-- Colonne gauche (2/3) -->
+            <div class="lg:col-span-2 flex flex-col gap-5">
+
+                <!-- Progression -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
+                               flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900
+                                    flex items-center justify-center">
+                            <i class="pi pi-chart-line text-blue-600 text-xs"></i>
+                        </div>
+                        Progression de l'enquête
+                    </h3>
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-surface-400">Avancement temporel</span>
+                            <span class="font-bold text-surface-700 dark:text-surface-200">
+                                {{ getProgress() }}%
+                            </span>
+                        </div>
+                        <div class="h-3 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500"
+                                [style.width]="getProgress() + '%'"
+                                [style.background]="getProgressGradient()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-sm">
+                        <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl text-center">
+                            <div class="text-surface-400 text-xs mb-1">Début</div>
+                            <div class="font-semibold text-surface-900 dark:text-surface-0 text-xs">
+                                {{ inv.startDate ? (inv.startDate | date:'dd/MM/yyyy') : 'Non démarrée' }}
+                            </div>
+                        </div>
+                        <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl text-center">
+                            <div class="text-surface-400 text-xs mb-1">Durée prévue</div>
+                            <div class="font-semibold text-surface-900 dark:text-surface-0">
+                                {{ inv.plannedDurationDays }}j
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl text-center border"
+                            [style.background]="inv.overdue ? '#fff5f5'
+                                : !inv.startDate ? '#f9fafb'
+                                : (inv.remainingDays || 0) <= 10 ? '#fffbeb' : '#f0fdf4'"
+                            [style.border-color]="inv.overdue ? '#fca5a5'
+                                : !inv.startDate ? '#e5e7eb'
+                                : (inv.remainingDays || 0) <= 10 ? '#fde68a' : '#86efac'">
+                            <div class="text-xs mb-1"
+                                [style.color]="inv.overdue ? '#ef4444' : '#9ca3af'">
+                                Délai restant
+                            </div>
+                            <div class="font-bold"
+                                [style.color]="inv.overdue ? '#dc2626'
+                                    : !inv.startDate ? '#9ca3af'
+                                    : (inv.remainingDays || 0) <= 10 ? '#d97706' : '#16a34a'">
+                                {{ inv.overdue ? 'Dépassé'
+                                    : !inv.startDate ? '—'
+                                    : (inv.remainingDays || 0) + 'j' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Circuit de validation -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
+                               flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900
+                                    flex items-center justify-center">
+                            <i class="pi pi-list-check text-purple-600 text-xs"></i>
+                        </div>
+                        Circuit de validation
+                    </h3>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let step of approvalSteps; let i = index"
+                            class="flex items-center gap-3 p-3 rounded-xl border transition-all"
+                            [style.background]="step.done ? '#f0fdf4' : step.active ? '#eff6ff' : '#f9fafb'"
+                            [style.border-color]="step.done ? '#86efac' : step.active ? '#bfdbfe' : '#e5e7eb'">
+                            <div class="w-9 h-9 rounded-full flex items-center
+                                        justify-center flex-shrink-0"
+                                [style.background]="step.done ? '#22c55e' : step.active ? '#3b82f6' : '#e5e7eb'">
+                                <i class="pi text-white text-xs"
+                                    [class]="step.done ? 'pi-check' : step.icon"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold"
+                                    [style.color]="step.done ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
+                                    {{ step.label }}
+                                    <span class="text-xs font-normal ml-1" style="color:#9ca3af;">
+                                        {{ step.delay }}
+                                    </span>
+                                </div>
+                                <div *ngIf="step.date" class="text-xs text-green-600 mt-0.5">
+                                    ✓ {{ step.date | date:'dd/MM/yyyy HH:mm' }}
+                                </div>
+                                <div *ngIf="step.active && !step.date"
+                                    style="display:inline-flex;align-items:center;gap:4px;
+                                           font-size:.7rem;color:#3b82f6;margin-top:3px;
+                                           background:#eff6ff;padding:2px 8px;border-radius:20px;">
+                                    <div style="width:5px;height:5px;border-radius:50%;
+                                        background:#3b82f6;animation:pulse 1s infinite;"></div>
+                                    En attente
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0"
+                                [style.background]="step.done ? '#dcfce7' : step.active ? '#dbeafe' : '#f3f4f6'"
+                                [style.color]="step.done ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
+                                {{ i + 1 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✅ Rapport — innerHTML assaini via DomSanitizer -->
+                <div *ngIf="safeReport">
+                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">
+                        Rapport
+                    </div>
+                    <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
+                                leading-relaxed text-surface-700 dark:text-surface-200
+                                border border-surface-100 overflow-hidden"
+                         [innerHTML]="safeReport">
+                    </div>
+                </div>
+
+                <div *ngIf="safeConclusions">
+                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">
+                        Conclusions
+                    </div>
+                    <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
+                                leading-relaxed text-surface-700 dark:text-surface-200
+                                border border-surface-100 overflow-hidden"
+                         [innerHTML]="safeConclusions">
+                    </div>
+                </div>
+
+                <div *ngIf="safeRecommendations">
+                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">
+                        Recommandations
+                    </div>
+                    <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4
+                                leading-relaxed text-surface-700 dark:text-surface-200
+                                border border-surface-100 overflow-hidden"
+                         [innerHTML]="safeRecommendations">
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Équipe d'investigation -->
-            <div *ngIf="inv"
-                class="bg-white dark:bg-surface-800 rounded-2xl p-5
-                       border border-surface-100 dark:border-surface-700 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-surface-900 dark:text-surface-0
-                               flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900
-                                    flex items-center justify-center">
-                            <i class="pi pi-users text-green-600 text-xs"></i>
-                        </div>
-                        Équipe
-                        <span class="text-xs bg-surface-100 dark:bg-surface-700
-                                     text-surface-500 px-2 py-0.5 rounded-full
-                                     font-normal">
-                            {{ inv.members?.length || 0 }} membre(s)
-                        </span>
+            <!-- Colonne droite (1/3) -->
+            <div class="flex flex-col gap-5">
+
+                <!-- Lien dossier associé (page standalone) -->
+                <div *ngIf="!isPanel"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-4
+                           border border-surface-100 dark:border-surface-700">
+                    <h3 class="text-sm font-bold text-surface-700 dark:text-surface-200
+                               mb-3 flex items-center gap-2">
+                        <i class="pi pi-folder text-primary-600"></i>
+                        Dossier associé
                     </h3>
-                    <p-button
-                        *ngIf="hasRole(['CGEA','ADMIN_DDIC'])
-                               && inv.status !== 'COMPLETED'
-                               && inv.status !== 'ARCHIVED'"
-                        icon="pi pi-user-plus" severity="success" text size="small"
-                        pTooltip="Ajouter un membre" tooltipPosition="left"
-                        (onClick)="showAddMemberDialog = true" />
+                    <p-button [label]="inv.dossierNumber || 'Voir le dossier'"
+                        icon="pi pi-external-link" iconPos="right"
+                        severity="info" text size="small"
+                        [routerLink]="['/app/dossiers', inv.dossierId]" />
                 </div>
 
-                <div *ngIf="!inv.members?.length" class="text-center py-6">
-                    <div class="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-700
-                                flex items-center justify-center mx-auto mb-3">
-                        <i class="pi pi-users text-xl text-surface-300"></i>
+                <!-- Bouton "Continuer dans Investigations" (mode panel) -->
+                <div *ngIf="isPanel"
+                    class="bg-gradient-to-br from-primary-50 to-primary-100
+                           dark:from-primary-950 dark:to-primary-900
+                           rounded-2xl p-4 border border-primary-200 dark:border-primary-800">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-7 h-7 rounded-lg bg-primary-200 dark:bg-primary-800
+                                    flex items-center justify-center">
+                            <i class="pi pi-arrow-right text-primary-700 dark:text-primary-200 text-xs"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-primary-800 dark:text-primary-200">
+                            Gérer l'investigation
+                        </span>
                     </div>
-                    <p class="text-surface-400 text-xs">
-                        Aucun membre dans l'équipe
+                    <p class="text-xs text-primary-600 dark:text-primary-300 mb-3 leading-relaxed">
+                        Pour ajouter des membres, soumettre un rapport ou suivre le
+                        circuit complet, accédez à la page dédiée.
                     </p>
-                    <p *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
-                        class="text-primary-500 text-xs mt-1 cursor-pointer"
-                        (click)="showAddMemberDialog = true">
-                        + Ajouter un membre
-                    </p>
+                    <p-button label="Ouvrir dans Investigations"
+                        icon="pi pi-external-link" iconPos="right"
+                        severity="info" size="small" styleClass="w-full justify-center"
+                        [routerLink]="['/app/investigations', inv.id]" />
                 </div>
 
-                <div class="flex flex-col gap-2" *ngIf="inv.members?.length">
-                    <div *ngFor="let m of inv.members"
-                        class="flex items-center gap-3 p-2.5 rounded-xl
-                               hover:bg-surface-50 dark:hover:bg-surface-700
-                               transition-colors">
-                        <div class="w-9 h-9 rounded-xl flex items-center
-                                    justify-center text-xs font-bold flex-shrink-0"
-                            [style.background]="m.teamRole === 'TEAM_LEADER'
-                                ? '#fef9c3' : '#dbeafe'"
-                            [style.color]="m.teamRole === 'TEAM_LEADER'
-                                ? '#854d0e' : '#1d4ed8'">
-                            {{ getInitials(m.agentName) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-xs font-semibold text-surface-900
-                                        dark:text-surface-0 truncate">
-                                {{ m.agentName }}
+                <!-- Équipe d'investigation -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0
+                                   flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900
+                                        flex items-center justify-center">
+                                <i class="pi pi-users text-green-600 text-xs"></i>
                             </div>
-                            <div class="text-xs text-surface-400 font-mono">
-                                {{ m.agentMatricule }}
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-1 flex-shrink-0">
-                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                [style.background]="m.teamRole === 'TEAM_LEADER'
-                                    ? '#fef9c3' : '#dbeafe'"
-                                [style.color]="m.teamRole === 'TEAM_LEADER'
-                                    ? '#854d0e' : '#1d4ed8'">
-                                {{ getRoleLabel(m.teamRole) }}
+                            Équipe
+                            <span class="text-xs bg-surface-100 dark:bg-surface-700
+                                         text-surface-500 px-2 py-0.5 rounded-full font-normal">
+                                {{ inv.members?.length || 0 }} membre(s)
                             </span>
+                        </h3>
+                        <p-button
+                            *ngIf="hasRole(['CGEA','ADMIN_DDIC'])
+                                   && inv.status !== 'COMPLETED'
+                                   && inv.status !== 'ARCHIVED'"
+                            icon="pi pi-user-plus" severity="success" text size="small"
+                            pTooltip="Ajouter un membre" tooltipPosition="left"
+                            (onClick)="showAddMemberDialog = true" />
+                    </div>
+
+                    <div *ngIf="!inv.members?.length" class="text-center py-6">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-700
+                                    flex items-center justify-center mx-auto mb-3">
+                            <i class="pi pi-users text-xl text-surface-300"></i>
+                        </div>
+                        <p class="text-surface-400 text-xs">Aucun membre dans l'équipe</p>
+                        <p *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
+                            class="text-primary-500 text-xs mt-1 cursor-pointer"
+                            (click)="showAddMemberDialog = true">
+                            + Ajouter un membre
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col gap-2" *ngIf="inv.members?.length">
+                        <div *ngFor="let m of inv.members"
+                            class="flex items-start gap-2 p-2.5 rounded-xl
+                                   hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
+                            <div class="w-8 h-8 rounded-lg flex items-center
+                                        justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                                [style.background]="m.teamRole === 'TEAM_LEADER' ? '#fef9c3' : '#dbeafe'"
+                                [style.color]="m.teamRole === 'TEAM_LEADER' ? '#854d0e' : '#1d4ed8'">
+                                {{ getInitials(m.agent.firstName + ' ' + m.agent.lastName) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-semibold text-surface-900
+                                            dark:text-surface-0 break-words leading-tight">
+                                    {{ m.agent.firstName + ' ' + m.agent.lastName }}
+                                </div>
+                                <div class="text-xs text-surface-400 font-mono mt-0.5">
+                                    {{ m.agent.matricule || '' }}
+                                </div>
+                                <span class="inline-block mt-1 text-xs px-2 py-0.5
+                                             rounded-full font-semibold"
+                                    [style.background]="m.teamRole === 'TEAM_LEADER' ? '#fef9c3' : '#dbeafe'"
+                                    [style.color]="m.teamRole === 'TEAM_LEADER' ? '#854d0e' : '#1d4ed8'">
+                                    {{ getRoleLabel(m.teamRole) }}
+                                </span>
+                            </div>
                             <p-button
                                 *ngIf="hasRole(['CGEA','ADMIN_DDIC'])
                                        && inv.status !== 'COMPLETED'
                                        && inv.status !== 'ARCHIVED'"
                                 icon="pi pi-times" severity="danger" text size="small"
                                 pTooltip="Retirer" tooltipPosition="left"
-                                (onClick)="executeRemoveMember(m.agentId)" />
+                                (onClick)="executeRemoveMember(m.agent.id)" />
                         </div>
                     </div>
                 </div>
-            </div>
 
-        </div>
+            </div>
+        </ng-container>
+
     </div>
 </div>
 
@@ -773,33 +856,49 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 </ng-template>
     `
 })
-export class InvestigationDetail implements OnInit, OnChanges {
+export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     @Input() dossierId:     string | null = null;
     @Input() dossierStatus: string | null = null;
 
     get isPanel(): boolean { return !!this.dossierId; }
 
-    private route                = inject(ActivatedRoute);
-    private investigationService = inject(InvestigationService);
-    private agentService         = inject(AgentService);
-    private keycloakService      = inject(KeycloakService);
-    private messageService       = inject(MessageService);
-    private attachmentService    = inject(AttachmentService);
+    // ── Injections ───────────────────────────────────────────────────────────────
+
+    private readonly route                = inject(ActivatedRoute);
+    private readonly router               = inject(Router);
+    private readonly investigationService = inject(InvestigationService);
+    private readonly agentService         = inject(AgentService);
+    private readonly keycloakService      = inject(KeycloakService);
+    private readonly messageService       = inject(MessageService);
+    private readonly attachmentService    = inject(AttachmentService);
+    private readonly sanitizer            = inject(DomSanitizer);
+
+    // ── Gestion mémoire ──────────────────────────────────────────────────────────
+    // ✅ FIX : toutes les subscriptions sont détruites dans ngOnDestroy
+
+    private readonly destroy$ = new Subject<void>();
+
+    // ── État ─────────────────────────────────────────────────────────────────────
 
     inv:      InvestigationResponse | null = null;
     loading   = true;
     actioning = false;
-    today     = new Date();
+    readonly today = new Date();
 
-    // ── Dialogs ───────────────────────────────────────────────
+    // HTML assaini — ✅ FIX sécurité : [innerHTML] ne doit jamais recevoir de string brute
+    safeReport:          SafeHtml | null = null;
+    safeConclusions:     SafeHtml | null = null;
+    safeRecommendations: SafeHtml | null = null;
+
+    // Dialogs
     showSuspendDialog   = false;
     showExtendDialog    = false;
     showReportDialog    = false;
     showCgeDialog       = false;
     showAddMemberDialog = false;
 
-    // ── Formulaires ───────────────────────────────────────────
+    // Champs formulaires
     suspendReason    = '';
     extendDate:      Date | null = null;
     extendReason     = '';
@@ -815,25 +914,31 @@ export class InvestigationDetail implements OnInit, OnChanges {
         outcome:         'ADMINISTRATIVE_SANCTIONS'
     };
 
-    // ── Upload rapport ────────────────────────────────────────
     reportFiles:    File[] = [];
-    uploadProgress: number = 0;
+    uploadProgress = 0;
 
-    availableAgents: any[] = [];
-    approvalSteps:   any[] = [];
+    // ── Données de référence ─────────────────────────────────────────────────────
 
-    readonly roleOptions = [
+    availableAgents: AgentOption[]  = [];
+    approvalSteps:   ApprovalStep[] = [];
+
+    // ✅ FIX : constantes inline dans le template remplacées par des propriétés typées
+    readonly quickDays: readonly number[] = [90, 120, 180];
+
+    readonly roleOptions: SelectOption<TeamRole>[] = [
         { label: 'Chef de mission', value: 'TEAM_LEADER' },
         { label: 'Investigateur',   value: 'MEMBER'      }
     ];
 
-    readonly outcomeOptions = [
+    readonly outcomeOptions: SelectOption<OutcomeValue>[] = [
         { label: 'Sanctions administratives', value: 'ADMINISTRATIVE_SANCTIONS' },
         { label: 'Saisine judiciaire',         value: 'JUDICIAL_REFERRAL'        },
         { label: 'Classé sans suite',          value: 'ARCHIVED'                 },
         { label: 'Communiqué de presse',       value: 'PRESS_RELEASE'            },
         { label: 'Rapport annuel',             value: 'ANNUAL_REPORT'            }
     ];
+
+    // ── Cycle de vie ─────────────────────────────────────────────────────────────
 
     ngOnInit(): void {
         if (this.dossierId) {
@@ -846,55 +951,95 @@ export class InvestigationDetail implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes['dossierId'] && !changes['dossierId'].firstChange) {
-            const newId = changes['dossierId'].currentValue;
+        const change = changes['dossierId'];
+        if (change && !change.firstChange) {
+            const newId = change.currentValue as string | null;
             if (newId) this.loadByDossier(newId);
         }
     }
 
-    // ── Chargement ────────────────────────────────────────────
+    // ✅ FIX mémoire : libération de toutes les subscriptions
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
+    // ── Chargement ───────────────────────────────────────────────────────────────
 
     private loadById(id: string): void {
         this.loading = true;
-        this.investigationService.findById(id).subscribe({
-            next: inv => {
-                this.inv = inv;
-                this.buildApprovalSteps(inv);
-                this.loading = false;
-            },
-            error: () => {
-                this.loading = false;
-                this.messageService.add({
-                    severity: 'error',
-                    summary:  'Erreur',
-                    detail:   'Investigation introuvable'
-                });
-            }
-        });
+        this.investigationService.findById(id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.loading = false;
+                },
+                error: () => {
+                    this.loading = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary:  'Erreur',
+                        detail:   'Investigation introuvable'
+                    });
+                }
+            });
     }
 
     private loadByDossier(dossierId: string): void {
         this.loading = true;
-        this.investigationService.findByDossier(dossierId).subscribe({
-            next: inv => {
-                this.inv = inv;
-                if (inv) this.buildApprovalSteps(inv);
-                this.loading = false;
-            },
-            error: () => { this.inv = null; this.loading = false; }
-        });
+        this.investigationService.findByDossier(dossierId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.loading = false;
+                },
+                error: () => {
+                    this.inv     = null;
+                    this.loading = false;
+                }
+            });
     }
 
     private loadAgents(): void {
-        this.agentService.findAll(0, 100).subscribe({
-            next: page => {
-                this.availableAgents = page.content.map((a: any) => ({
-                    label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
-                    value: a.id
-                }));
-            },
-            error: () => {}
-        });
+        this.agentService.findAll(0, 100)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (page: { content: AgentSummaryInMember[] }) => {
+                    this.availableAgents = page.content.map(a => ({
+                        label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
+                        value: a.id
+                    }));
+                },
+                error: () => { /* silencieux */ }
+            });
+    }
+
+    // ── Helpers d'état ───────────────────────────────────────────────────────────
+
+    /**
+     * ✅ FIX sécurité : appelé à chaque réception de données du serveur.
+     * Le HTML riche produit par p-editor (Quill) est assaini avant d'être
+     * injecté via [innerHTML].  bypassSecurityTrustHtml est justifié ici car
+     * le contenu provient exclusivement du back-end interne (pas de l'utilisateur final).
+     */
+    private setInv(inv: InvestigationResponse | null): void {
+        this.inv = inv;
+        if (inv) {
+            this.buildApprovalSteps(inv);
+            this.safeReport          = inv.finalReport
+                ? this.sanitizer.bypassSecurityTrustHtml(inv.finalReport)
+                : null;
+            this.safeConclusions     = inv.conclusions
+                ? this.sanitizer.bypassSecurityTrustHtml(inv.conclusions)
+                : null;
+            this.safeRecommendations = inv.recommendations
+                ? this.sanitizer.bypassSecurityTrustHtml(inv.recommendations)
+                : null;
+        } else {
+            this.safeReport = this.safeConclusions = this.safeRecommendations = null;
+        }
     }
 
     private buildApprovalSteps(inv: InvestigationResponse): void {
@@ -934,13 +1079,13 @@ export class InvestigationDetail implements OnInit, OnChanges {
         ];
     }
 
-    // ── Upload fichiers ───────────────────────────────────────
+    // ── Upload ───────────────────────────────────────────────────────────────────
 
     onFileSelect(event: Event): void {
         const input = event.target as HTMLInputElement;
         if (input.files) {
             this.addReportFiles(Array.from(input.files));
-            input.value = ''; // reset pour permettre re-sélection
+            input.value = '';
         }
     }
 
@@ -953,7 +1098,7 @@ export class InvestigationDetail implements OnInit, OnChanges {
 
     private addReportFiles(files: File[]): void {
         const maxSize = 10 * 1024 * 1024; // 10 Mo
-        files.forEach(f => {
+        for (const f of files) {
             if (f.size > maxSize) {
                 this.messageService.add({
                     severity: 'warn',
@@ -963,7 +1108,7 @@ export class InvestigationDetail implements OnInit, OnChanges {
             } else {
                 this.reportFiles.push(f);
             }
-        });
+        }
     }
 
     removeReportFile(index: number): void {
@@ -980,81 +1125,78 @@ export class InvestigationDetail implements OnInit, OnChanges {
         return this.attachmentService.formatSize(bytes);
     }
 
-    // ── Actions workflow ──────────────────────────────────────
+    // ── Actions ──────────────────────────────────────────────────────────────────
 
     openInvestigation(): void {
         if (!this.dossierId) return;
         this.actioning = true;
         this.investigationService
             .open(this.dossierId, { plannedDurationDays: this.openDays })
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv = inv;
-                    if (inv) this.buildApprovalSteps(inv);
+                    this.setInv(inv);
                     this.actioning = false;
                     this.messageService.add({
                         severity: 'success',
                         summary:  'Investigation ouverte',
-                        detail:   'Ajoutez les membres puis démarrez'
+                        detail:   'Redirection vers la page dédiée...'
                     });
+                    setTimeout(() => this.router.navigate(['/app/investigations', inv.id]), 800);
                 },
-                error: err => { this.actioning = false; this.showError(err); }
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
     executeStart(): void {
         if (!this.inv) return;
         this.actioning = true;
-        this.investigationService.start(this.inv.id).subscribe({
-            next: inv => {
-                this.inv = inv;
-                this.buildApprovalSteps(inv);
-                this.actioning = false;
-                this.messageService.add({
-                    severity: 'success',
-                    summary:  'Investigation démarrée',
-                    detail:   `Échéance : ${new Date(inv.plannedEndDate!)
-                        .toLocaleDateString('fr-FR')}`
-                });
-            },
-            error: err => { this.actioning = false; this.showError(err); }
-        });
+        this.investigationService.start(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.actioning = false;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary:  'Investigation démarrée',
+                        detail:   `Échéance : ${new Date(inv.plannedEndDate!).toLocaleDateString('fr-FR')}`
+                    });
+                },
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+            });
     }
 
     executeSuspend(): void {
         if (!this.inv || !this.suspendReason.trim()) return;
         this.actioning = true;
-        this.investigationService
-            .suspend(this.inv.id, this.suspendReason)
+        this.investigationService.suspend(this.inv.id, this.suspendReason)
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv = inv;
-                    this.buildApprovalSteps(inv);
-                    this.actioning        = false;
+                    this.setInv(inv);
+                    this.actioning         = false;
                     this.showSuspendDialog = false;
-                    this.suspendReason    = '';
-                    this.messageService.add({
-                        severity: 'warn', summary: 'Suspendue'
-                    });
+                    this.suspendReason     = '';
+                    this.messageService.add({ severity: 'warn', summary: 'Suspendue' });
                 },
-                error: err => { this.actioning = false; this.showError(err); }
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
     executeResume(): void {
         if (!this.inv) return;
         this.actioning = true;
-        this.investigationService.resume(this.inv.id).subscribe({
-            next: inv => {
-                this.inv = inv;
-                this.buildApprovalSteps(inv);
-                this.actioning = false;
-                this.messageService.add({
-                    severity: 'success', summary: 'Reprise'
-                });
-            },
-            error: err => { this.actioning = false; this.showError(err); }
-        });
+        this.investigationService.resume(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.actioning = false;
+                    this.messageService.add({ severity: 'success', summary: 'Reprise' });
+                },
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+            });
     }
 
     executeExtend(): void {
@@ -1065,82 +1207,65 @@ export class InvestigationDetail implements OnInit, OnChanges {
                 newDeadline: this.extendDate.toISOString(),
                 reason:      this.extendReason
             })
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv = inv;
-                    this.buildApprovalSteps(inv);
-                    this.actioning       = false;
-                    this.showExtendDialog = false;
-                    this.extendDate      = null;
-                    this.extendReason    = '';
-                    this.messageService.add({
-                        severity: 'success', summary: 'Délai prolongé'
-                    });
+                    this.setInv(inv);
+                    this.actioning         = false;
+                    this.showExtendDialog  = false;
+                    this.extendDate        = null;
+                    this.extendReason      = '';
+                    this.messageService.add({ severity: 'success', summary: 'Délai prolongé' });
                 },
-                error: err => { this.actioning = false; this.showError(err); }
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
     executeSubmitReport(): void {
-        if (!this.inv
-            || !this.reportRequest.finalReport
-            || !this.reportRequest.conclusions) return;
-
+        if (!this.inv || !this.reportRequest.finalReport || !this.reportRequest.conclusions) return;
         this.actioning = true;
 
         if (this.reportFiles.length > 0) {
-            // Upload fichiers d'abord
             this.uploadProgress = 10;
-            this.attachmentService
-                .upload(this.inv.dossierId, this.reportFiles)
+            this.attachmentService.upload(this.inv.dossierId, this.reportFiles)
+                .pipe(takeUntil(this.destroy$))
                 .subscribe({
-                    next: () => {
-                        this.uploadProgress = 80;
-                        this.submitReportData();
-                    },
-                    error: () => {
+                    next: () => { this.uploadProgress = 80; this.submitReportData(); },
+                    error: (err: ApiError) => {
                         this.actioning      = false;
                         this.uploadProgress = 0;
-                        this.messageService.add({
-                            severity: 'error',
-                            summary:  'Erreur upload',
-                            detail:   'Impossible d\'uploader les fichiers'
-                        });
+                        this.showError(err);
                     }
                 });
         } else {
-            // Pas de fichiers → soumettre directement
             this.submitReportData();
         }
     }
 
     private submitReportData(): void {
+        if (!this.inv) return;
         this.uploadProgress = 90;
-        this.investigationService
-            .submitReport(this.inv!.id, this.reportRequest)
+        this.investigationService.submitReport(this.inv.id, this.reportRequest)
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv              = inv;
-                    this.buildApprovalSteps(inv);
+                    this.setInv(inv);
                     this.actioning        = false;
                     this.uploadProgress   = 100;
                     this.showReportDialog = false;
                     this.reportRequest    = {
-                        finalReport:     '',
-                        conclusions:     '',
-                        recommendations: '',
-                        outcome:         'ADMINISTRATIVE_SANCTIONS'
+                        finalReport: '', conclusions: '',
+                        recommendations: '', outcome: 'ADMINISTRATIVE_SANCTIONS'
                     };
                     this.reportFiles = [];
                     setTimeout(() => { this.uploadProgress = 0; }, 1000);
                     this.messageService.add({
                         severity: 'success',
                         summary:  'Rapport soumis',
-                        detail:   'Fichiers joints enregistrés. ' +
-                                  'En attente d\'approbation DEI.'
+                        detail:   "En attente d'approbation DEI."
                     });
                 },
-                error: err => {
+                error: (err: ApiError) => {
                     this.actioning      = false;
                     this.uploadProgress = 0;
                     this.showError(err);
@@ -1151,54 +1276,51 @@ export class InvestigationDetail implements OnInit, OnChanges {
     executeApproveDei(): void {
         if (!this.inv) return;
         this.actioning = true;
-        this.investigationService.approveDei(this.inv.id).subscribe({
-            next: inv => {
-                this.inv = inv;
-                this.buildApprovalSteps(inv);
-                this.actioning = false;
-                this.messageService.add({
-                    severity: 'success', summary: 'Approuvé DEI'
-                });
-            },
-            error: err => { this.actioning = false; this.showError(err); }
-        });
+        this.investigationService.approveDei(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.actioning = false;
+                    this.messageService.add({ severity: 'success', summary: 'Approuvé DEI' });
+                },
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+            });
     }
 
     executeApproveLegal(): void {
         if (!this.inv) return;
         this.actioning = true;
-        this.investigationService.approveLegal(this.inv.id).subscribe({
-            next: inv => {
-                this.inv = inv;
-                this.buildApprovalSteps(inv);
-                this.actioning = false;
-                this.messageService.add({
-                    severity: 'success', summary: 'Approuvé juridique'
-                });
-            },
-            error: err => { this.actioning = false; this.showError(err); }
-        });
+        this.investigationService.approveLegal(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv);
+                    this.actioning = false;
+                    this.messageService.add({ severity: 'success', summary: 'Approuvé juridique' });
+                },
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+            });
     }
 
     executeApproveCge(): void {
         if (!this.inv || !this.cgeReason.trim()) return;
         this.actioning = true;
-        this.investigationService
-            .approveCge(this.inv.id, this.cgeReason)
+        this.investigationService.approveCge(this.inv.id, this.cgeReason)
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv = inv;
-                    this.buildApprovalSteps(inv);
-                    this.actioning    = false;
+                    this.setInv(inv);
+                    this.actioning     = false;
                     this.showCgeDialog = false;
-                    this.cgeReason    = '';
+                    this.cgeReason     = '';
                     this.messageService.add({
                         severity: 'success',
                         summary:  'Décision CGE rendue',
                         detail:   'Dossier → DÉCISION RENDUE'
                     });
                 },
-                error: err => { this.actioning = false; this.showError(err); }
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
@@ -1210,43 +1332,40 @@ export class InvestigationDetail implements OnInit, OnChanges {
                 agentId:  this.newMemberAgentId,
                 teamRole: this.newMemberRole
             })
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv              = inv;
-                    this.actioning        = false;
+                    this.setInv(inv);
+                    this.actioning           = false;
                     this.showAddMemberDialog = false;
-                    this.newMemberAgentId = '';
-                    this.newMemberRole    = 'MEMBER';
-                    this.messageService.add({
-                        severity: 'success', summary: 'Membre ajouté'
-                    });
+                    this.newMemberAgentId    = '';
+                    this.newMemberRole       = 'MEMBER';
+                    this.messageService.add({ severity: 'success', summary: 'Membre ajouté' });
                 },
-                error: err => { this.actioning = false; this.showError(err); }
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
     executeRemoveMember(agentId: string): void {
         if (!this.inv) return;
-        this.investigationService
-            .removeMember(this.inv.id, agentId)
+        this.investigationService.removeMember(this.inv.id, agentId)
+            .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: inv => {
-                    this.inv = inv;
-                    this.messageService.add({
-                        severity: 'info', summary: 'Membre retiré'
-                    });
+                    this.setInv(inv);
+                    this.messageService.add({ severity: 'info', summary: 'Membre retiré' });
                 },
-                error: err => this.showError(err)
+                error: (err: ApiError) => this.showError(err)
             });
     }
 
-    // ── Utilitaires ───────────────────────────────────────────
+    // ── Utilitaires ──────────────────────────────────────────────────────────────
 
     getProgress(): number {
         if (!this.inv?.startDate || !this.inv?.plannedEndDate) return 0;
         const start = new Date(this.inv.startDate).getTime();
         const end   = new Date(
-            this.inv.extendedDeadline || this.inv.plannedEndDate
+            this.inv.extendedDeadline ?? this.inv.plannedEndDate
         ).getTime();
         return Math.min(
             Math.max(Math.round(((Date.now() - start) / (end - start)) * 100), 0),
@@ -1255,18 +1374,9 @@ export class InvestigationDetail implements OnInit, OnChanges {
     }
 
     getProgressGradient(): string {
-        const p = this.getProgress();
-        if (this.inv?.overdue) return 'linear-gradient(90deg, #ef4444, #dc2626)';
-        if (p >= 80)           return 'linear-gradient(90deg, #f59e0b, #d97706)';
-        return 'linear-gradient(90deg, #22c55e, #16a34a)';
-    }
-
-    private showError(err: any): void {
-        this.messageService.add({
-            severity: 'error',
-            summary:  'Erreur',
-            detail:   err.error?.message || "Une erreur s'est produite"
-        });
+        if (this.inv?.overdue)       return 'linear-gradient(90deg,#ef4444,#dc2626)';
+        if (this.getProgress() >= 80) return 'linear-gradient(90deg,#f59e0b,#d97706)';
+        return 'linear-gradient(90deg,#22c55e,#16a34a)';
     }
 
     hasRole(roles: string[]): boolean {
@@ -1276,7 +1386,7 @@ export class InvestigationDetail implements OnInit, OnChanges {
     getInitials(name: string): string {
         return (name || '')
             .split(' ')
-            .map(n => n[0] || '')
+            .map(n => n[0] ?? '')
             .join('')
             .substring(0, 2)
             .toUpperCase();
@@ -1287,18 +1397,18 @@ export class InvestigationDetail implements OnInit, OnChanges {
     }
 
     getStatusLabel(status: string): string {
-        const labels: Record<string, string> = {
+        const labels: Readonly<Record<string, string>> = {
             INITIATED:   'Initiée',
             IN_PROGRESS: 'En cours',
             SUSPENDED:   'Suspendue',
             COMPLETED:   'Rapport soumis',
             ARCHIVED:    'Archivée'
         };
-        return labels[status] || status;
+        return labels[status] ?? status;
     }
 
     getStatusSeverity(status: string): TagSeverity {
-        const map: Record<string, TagSeverity> = {
+        const map: Readonly<Record<string, TagSeverity>> = {
             INITIATED:   'info',
             IN_PROGRESS: 'success',
             SUSPENDED:   'warn',
@@ -1306,5 +1416,13 @@ export class InvestigationDetail implements OnInit, OnChanges {
             ARCHIVED:    'secondary'
         };
         return map[status] ?? 'info';
+    }
+
+    private showError(err: ApiError): void {
+        this.messageService.add({
+            severity: 'error',
+            summary:  'Erreur',
+            detail:   err.error?.message ?? "Une erreur s'est produite"
+        });
     }
 }

@@ -27,6 +27,24 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         ProgressSpinnerModule, TooltipModule
     ],
     providers: [MessageService],
+    styles: [`
+        /* Force la hauteur uniforme sur tous les champs PrimeNG */
+        :host ::ng-deep .filter-select .p-select {
+            height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+        :host ::ng-deep .filter-select .p-select .p-select-label {
+            padding: 0 !important;
+            font-size: 0.875rem !important;
+        }
+        :host ::ng-deep .filter-select .p-select .p-select-dropdown {
+            width: 1.5rem !important;
+        }
+    `],
     template: `
 <p-toast />
 
@@ -39,18 +57,22 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 Dossiers
             </h1>
             <p class="text-surface-400 text-sm mt-1">
-                {{ stats.totalDossiers }} dossier(s) enregistré(s)
+                {{ filteredDossiers.length }} dossier(s)
+                <span *ngIf="isFiltering()" class="text-primary-500">
+                    sur {{ allDossiers.length }} au total
+                </span>
             </p>
         </div>
         <p-button label="Nouveau Dossier" icon="pi pi-plus"
             routerLink="/app/dossiers/nouveau" />
     </div>
 
-    <!-- ── Cartes statistiques — données réelles API ──────── -->
+    <!-- ── Cartes statistiques ────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border
+                    border-surface-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center
+                        justify-center flex-shrink-0">
                 <i class="pi pi-inbox text-blue-600"></i>
             </div>
             <div>
@@ -60,9 +82,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div class="text-xs text-surface-400 uppercase tracking-wide">Nouveaux</div>
             </div>
         </div>
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border
+                    border-surface-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center
+                        justify-center flex-shrink-0">
                 <i class="pi pi-clock text-amber-600"></i>
             </div>
             <div>
@@ -72,9 +95,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div class="text-xs text-surface-400 uppercase tracking-wide">En cours</div>
             </div>
         </div>
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border
+                    border-surface-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center
+                        justify-center flex-shrink-0">
                 <i class="pi pi-check-circle text-green-600"></i>
             </div>
             <div>
@@ -84,9 +108,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div class="text-xs text-surface-400 uppercase tracking-wide">Traités</div>
             </div>
         </div>
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-surface-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border
+                    border-surface-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-surface-100 flex items-center
+                        justify-center flex-shrink-0">
                 <i class="pi pi-folder text-surface-500"></i>
             </div>
             <div>
@@ -96,68 +121,214 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div class="text-xs text-surface-400 uppercase tracking-wide">Total</div>
             </div>
         </div>
-
     </div>
 
-    <!-- ── Filtres ─────────────────────────────────────────── -->
-    <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100">
-        <div class="flex flex-wrap gap-3 items-end">
+    <!-- ══════════════════════════════════════════════════════
+         FILTRES — grille stricte, hauteur uniforme 40px
+         ══════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-surface-800 rounded-2xl border
+                border-surface-100 dark:border-surface-700 overflow-hidden">
 
-            <div class="flex-1 min-w-56">
-                <label class="text-xs text-surface-400 font-medium mb-1.5 block uppercase tracking-wide">
-                    Recherche
-                </label>
-                <div class="flex items-center gap-2 border border-surface-200 rounded-xl px-3 py-2">
-                    <i class="pi pi-search text-surface-300 text-sm"></i>
-                    <input pInputText [(ngModel)]="searchText"
-                        placeholder="Numéro, objet, déclarant..."
-                        class="flex-1 border-none shadow-none outline-none bg-transparent text-sm"
-                        (input)="onSearch()" />
-                    <i *ngIf="searchText"
-                        class="pi pi-times text-surface-300 text-xs cursor-pointer"
-                        (click)="clearSearch()"></i>
-                </div>
+        <!-- Barre de filtres : grid 4 colonnes + actions -->
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_180px_160px_160px_auto]
+                    divide-y md:divide-y-0 md:divide-x
+                    divide-surface-100 dark:divide-surface-700">
+
+            <!-- 1. Recherche texte — colonne flexible -->
+            <div class="flex items-center gap-2.5 px-4" style="height:48px;">
+                <i class="pi pi-search text-surface-300 text-sm flex-shrink-0"></i>
+                <input
+                    pInputText
+                    [(ngModel)]="searchText"
+                    placeholder="Numéro, objet, déclarant..."
+                    (ngModelChange)="applyFilters()"
+                    class="flex-1 h-full border-none shadow-none outline-none
+                           bg-transparent text-sm min-w-0"
+                    style="box-shadow:none !important; border:none !important;
+                           padding:0 !important;" />
+                <button *ngIf="searchText"
+                    (click)="clearSearch()"
+                    class="flex-shrink-0 w-5 h-5 flex items-center justify-center
+                           text-surface-300 hover:text-surface-600 transition-colors
+                           rounded-full hover:bg-surface-100">
+                    <i class="pi pi-times" style="font-size:10px;"></i>
+                </button>
             </div>
 
-            <div class="min-w-52">
-                <label class="text-xs text-surface-400 font-medium mb-1.5 block uppercase tracking-wide">
-                    Statut
-                </label>
-                <p-select [(ngModel)]="selectedStatus"
-                    [options]="statusOptions" optionLabel="label"
-                    optionValue="value" placeholder="Tous les statuts"
-                    [showClear]="true" styleClass="w-full"
-                    (onChange)="onStatusFilter()" />
+            <!-- 2. Filtre Statut -->
+            <div class="flex items-center gap-2 px-3 filter-select"
+                 style="height:48px;">
+                <i class="pi pi-tag text-surface-300 text-xs flex-shrink-0"></i>
+                <p-select
+                    [(ngModel)]="selectedStatus"
+                    [options]="statusOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Statut"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    appendTo="body"
+                    (onChange)="applyFilters()" />
             </div>
 
-            <p-button icon="pi pi-refresh" severity="secondary" outlined
-                pTooltip="Actualiser" (onClick)="refresh()" />
+            <!-- 3. Filtre Type -->
+            <div class="flex items-center gap-2 px-3 filter-select"
+                 style="height:48px;">
+                <i class="pi pi-file text-surface-300 text-xs flex-shrink-0"></i>
+                <p-select
+                    [(ngModel)]="selectedType"
+                    [options]="typeOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Type"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    appendTo="body"
+                    (onChange)="applyFilters()" />
+            </div>
 
+            <!-- 4. Filtre Canal -->
+            <div class="flex items-center gap-2 px-3 filter-select"
+                 style="height:48px;">
+                <i class="pi pi-globe text-surface-300 text-xs flex-shrink-0"></i>
+                <p-select
+                    [(ngModel)]="selectedMode"
+                    [options]="modeOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Canal"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    appendTo="body"
+                    (onChange)="applyFilters()" />
+            </div>
+
+            <!-- 5. Actions -->
+            <div class="flex items-center justify-center gap-1 px-3"
+                 style="height:48px;">
+                <button *ngIf="isFiltering()"
+                    (click)="resetFilters()"
+                    class="flex items-center gap-1 text-xs text-surface-400
+                           hover:text-surface-700 transition-colors px-2 py-1.5
+                           rounded-lg hover:bg-surface-50 whitespace-nowrap">
+                    <i class="pi pi-filter-slash text-xs"></i>
+                    Effacer
+                </button>
+                <button
+                    (click)="refresh()"
+                    title="Actualiser"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg
+                           text-surface-400 hover:text-surface-700
+                           hover:bg-surface-50 transition-colors flex-shrink-0">
+                    <i class="pi pi-refresh text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bande filtres actifs -->
+        <div *ngIf="isFiltering()"
+            class="flex items-center gap-2 px-4 py-2 bg-surface-50
+                   dark:bg-surface-700/50 border-t border-surface-100
+                   dark:border-surface-600 flex-wrap">
+
+            <span class="text-xs font-semibold text-surface-500 flex-shrink-0">
+                {{ filteredDossiers.length }}
+                résultat{{ filteredDossiers.length > 1 ? 's' : '' }}
+            </span>
+            <span class="text-surface-200 text-xs flex-shrink-0">·</span>
+
+            <!-- Badge recherche -->
+            <span *ngIf="searchText"
+                class="inline-flex items-center gap-1 text-xs bg-white
+                       dark:bg-surface-800 text-surface-600 border border-surface-200
+                       dark:border-surface-600 px-2 py-0.5 rounded-full shadow-sm
+                       max-w-48">
+                <i class="pi pi-search flex-shrink-0" style="font-size:9px;"></i>
+                <span class="truncate">"{{ searchText }}"</span>
+                <button (click)="clearSearch()"
+                    class="flex-shrink-0 ml-0.5 text-surface-300
+                           hover:text-surface-600 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
+
+            <!-- Badge statut -->
+            <span *ngIf="selectedStatus"
+                class="inline-flex items-center gap-1 text-xs bg-amber-50
+                       text-amber-700 border border-amber-200 px-2 py-0.5
+                       rounded-full shadow-sm">
+                <i class="pi pi-tag text-amber-400 flex-shrink-0"
+                    style="font-size:9px;"></i>
+                {{ getStatusLabel(selectedStatus) }}
+                <button (click)="clearStatus()"
+                    class="flex-shrink-0 ml-0.5 text-amber-400
+                           hover:text-amber-700 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
+
+            <!-- Badge type -->
+            <span *ngIf="selectedType"
+                class="inline-flex items-center gap-1 text-xs bg-purple-50
+                       text-purple-700 border border-purple-200 px-2 py-0.5
+                       rounded-full shadow-sm">
+                <i class="pi pi-file text-purple-400 flex-shrink-0"
+                    style="font-size:9px;"></i>
+                {{ getTypeLabel(selectedType) }}
+                <button (click)="clearType()"
+                    class="flex-shrink-0 ml-0.5 text-purple-400
+                           hover:text-purple-700 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
+
+            <!-- Badge canal -->
+            <span *ngIf="selectedMode"
+                class="inline-flex items-center gap-1 text-xs bg-green-50
+                       text-green-700 border border-green-200 px-2 py-0.5
+                       rounded-full shadow-sm">
+                <i class="pi pi-globe text-green-400 flex-shrink-0"
+                    style="font-size:9px;"></i>
+                {{ getModeLabel(selectedMode) }}
+                <button (click)="clearMode()"
+                    class="flex-shrink-0 ml-0.5 text-green-400
+                           hover:text-green-700 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
         </div>
     </div>
 
-    <!-- ── Spinner ────────────────────────────────────────── -->
+    <!-- ── Spinner ─────────────────────────────────────────── -->
     <div *ngIf="loading" class="flex justify-center py-12">
         <p-progressSpinner strokeWidth="4" />
     </div>
 
     <!-- ── Tableau ─────────────────────────────────────────── -->
     <div *ngIf="!loading"
-        class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 overflow-hidden">
+        class="bg-white dark:bg-surface-800 rounded-2xl border
+               border-surface-100 overflow-hidden">
 
-        <p-table [value]="dossiers"
-            [paginator]="dossiers.length > 0" [rows]="pageSize"
+        <p-table
+            [value]="filteredDossiers"
+            [paginator]="filteredDossiers.length > pageSize"
+            [rows]="pageSize"
             [rowsPerPageOptions]="[10, 20, 50]"
-            dataKey="id" styleClass="p-datatable-sm" [rowHover]="true">
+            dataKey="id"
+            styleClass="p-datatable-sm"
+            [rowHover]="true">
 
             <ng-template pTemplate="header">
                 <tr>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-36">Numéro</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4">Dossier</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-28">Type</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-36">Statut</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-28">Canal</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-32">Date</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-40">Numéro</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4">Dossier</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-28">Type</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-36">Statut</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-28">Canal</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-32">Date</th>
                     <th class="w-16"></th>
                 </tr>
             </ng-template>
@@ -170,18 +341,22 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                         <div class="flex items-center gap-2">
                             <div class="w-1.5 h-8 rounded-full flex-shrink-0"
                                 [ngClass]="getStatusBarClass(d.status)"></div>
-                            <span class="font-mono text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded-md border border-primary-100">
+                            <span class="font-mono text-xs font-semibold text-primary-600
+                                         bg-primary-50 px-2 py-1 rounded-md
+                                         border border-primary-100">
                                 {{ d.number || '—' }}
                             </span>
                         </div>
                     </td>
 
                     <td class="px-4 py-3">
-                        <div class="font-medium text-sm text-surface-900 truncate max-w-xs">
+                        <div class="font-medium text-sm text-surface-900
+                                    truncate max-w-xs">
                             {{ d.object }}
                         </div>
                         <div *ngIf="d.declarant"
-                            class="flex items-center gap-1 text-xs text-surface-400 mt-0.5">
+                            class="flex items-center gap-1 text-xs
+                                   text-surface-400 mt-0.5">
                             <i class="pi pi-user text-xs"></i>
                             {{ d.declarant?.displayName }}
                         </div>
@@ -189,8 +364,11 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-1.5">
-                            <i [ngClass]="getTypeIcon(d.type)" class="text-xs text-surface-400"></i>
-                            <span class="text-xs text-surface-600">{{ getTypeLabel(d.type) }}</span>
+                            <i [ngClass]="getTypeIcon(d.type)"
+                                class="text-xs text-surface-400"></i>
+                            <span class="text-xs text-surface-600">
+                                {{ getTypeLabel(d.type) }}
+                            </span>
                         </div>
                     </td>
 
@@ -202,13 +380,18 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-1.5">
-                            <i [ngClass]="getModeIcon(d.submissionMode)" class="text-xs text-surface-300"></i>
-                            <span class="text-xs text-surface-500">{{ getModeLabel(d.submissionMode) }}</span>
+                            <i [ngClass]="getModeIcon(d.submissionMode)"
+                                class="text-xs text-surface-300"></i>
+                            <span class="text-xs text-surface-500">
+                                {{ getModeLabel(d.submissionMode) }}
+                            </span>
                         </div>
                     </td>
 
                     <td class="px-4 py-3">
-                        <span class="text-xs text-surface-400">{{ d.createdAt | date:'dd/MM/yyyy' }}</span>
+                        <span class="text-xs text-surface-400">
+                            {{ d.createdAt | date:'dd/MM/yyyy' }}
+                        </span>
                     </td>
 
                     <td class="px-4 py-3" (click)="$event.stopPropagation()">
@@ -224,11 +407,19 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <tr>
                     <td colspan="7">
                         <div class="flex flex-col items-center justify-center py-16">
-                            <div class="w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-4">
+                            <div class="w-16 h-16 rounded-2xl bg-surface-100
+                                        flex items-center justify-center mb-4">
                                 <i class="pi pi-inbox text-2xl text-surface-300"></i>
                             </div>
-                            <p class="font-medium text-surface-500">Aucun dossier trouvé</p>
-                            <p-button *ngIf="searchText || selectedStatus"
+                            <p class="font-medium text-surface-500">
+                                Aucun dossier trouvé
+                            </p>
+                            <p class="text-xs text-surface-400 mt-1">
+                                {{ isFiltering()
+                                    ? 'Aucun résultat pour les filtres appliqués'
+                                    : 'Aucun dossier enregistré' }}
+                            </p>
+                            <p-button *ngIf="isFiltering()"
                                 label="Réinitialiser les filtres"
                                 severity="secondary" text size="small"
                                 styleClass="mt-3" (onClick)="resetFilters()" />
@@ -245,20 +436,22 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 })
 export class DossiersList implements OnInit {
 
-    private dossierService   = inject(DossierService);
-    private messageService   = inject(MessageService);
+    private dossierService     = inject(DossierService);
+    private messageService     = inject(MessageService);
     private statistiqueService = inject(StatistiqueService);
 
-    dossiers:     DossierResponse[] = [];
-    loading       = true;
-    statsLoading  = true;
-    totalRecords  = 0;
-    pageSize      = 20;
-    currentPage   = 0;
-    searchText    = '';
-    selectedStatus: DossierStatus | null = null;
+    allDossiers:      DossierResponse[] = [];
+    filteredDossiers: DossierResponse[] = [];
 
-    // Stats réelles depuis l'API
+    loading      = true;
+    statsLoading = true;
+    pageSize     = 20;
+
+    searchText      = '';
+    selectedStatus: DossierStatus | null = null;
+    selectedType:   string | null        = null;
+    selectedMode:   string | null        = null;
+
     stats: PublicStats = {
         totalDossiers:    0,
         dossiersNouveaux: 0,
@@ -268,48 +461,68 @@ export class DossiersList implements OnInit {
         delaiJours:       7
     };
 
-    statusOptions = [
-        { label: 'Soumis',                value: 'SOUMIS' },
-        { label: 'Reçu',                  value: 'RECU' },
-        { label: 'En étude opportunité',  value: 'EN_ETUDE_OPPORTUNITE' },
+    readonly statusOptions = [
+        { label: 'Soumis',                value: 'SOUMIS'                },
+        { label: 'Reçu',                  value: 'RECU'                  },
+        { label: 'En étude opportunité',  value: 'EN_ETUDE_OPPORTUNITE'  },
         { label: 'En attente complément', value: 'EN_ATTENTE_COMPLEMENT' },
-        { label: 'En revue CTADP',        value: 'EN_REVUE_CTADP' },
-        { label: 'Recevable',             value: 'RECEVABLE' },
-        { label: 'Irrecevable',           value: 'IRRECEVABLE' },
-        { label: 'Transféré',             value: 'TRANSFERE' },
-        { label: 'En investigation',      value: 'EN_INVESTIGATION' },
-        { label: 'Rapport produit',       value: 'RAPPORT_PRODUIT' },
-        { label: 'Décision rendue',       value: 'DECISION_RENDUE' },
-        { label: 'Clôturé',               value: 'CLOS' },
-        { label: 'Classé',                value: 'CLASSE' }
+        { label: 'En revue CTADP',        value: 'EN_REVUE_CTADP'        },
+        { label: 'Recevable',             value: 'RECEVABLE'             },
+        { label: 'Irrecevable',           value: 'IRRECEVABLE'           },
+        { label: 'Transféré',             value: 'TRANSFERE'             },
+        { label: 'En investigation',      value: 'EN_INVESTIGATION'      },
+        { label: 'Rapport produit',       value: 'RAPPORT_PRODUIT'       },
+        { label: 'Décision rendue',       value: 'DECISION_RENDUE'       },
+        { label: 'Clôturé',               value: 'CLOS'                  },
+        { label: 'Classé',                value: 'CLASSE'                }
+    ];
+
+    readonly typeOptions = [
+        { label: 'Plainte',      value: 'COMPLAINT'    },
+        { label: 'Dénonciation', value: 'DENUNCIATION' },
+        { label: 'Auto-saisine', value: 'AUTO_REFERRAL'},
+        { label: 'Anonyme',      value: 'ANONYMOUS'    }
+    ];
+
+    readonly modeOptions = [
+        { label: 'Guichet BRPD',     value: 'IN_PERSON'    },
+        { label: 'Formulaire Web',   value: 'WEB_FORM'     },
+        { label: 'Email',            value: 'EMAIL'        },
+        { label: 'SMS',              value: 'SMS'          },
+        { label: 'Téléphone',        value: 'PHONE'        },
+        { label: 'Numéro Vert',      value: 'GREEN_NUMBER' },
+        { label: 'Réseaux Sociaux',  value: 'SOCIAL_MEDIA' },
+        { label: 'Comptoir Audio',   value: 'AUDIO_COUNTER'},
+        { label: 'Formulaire Papier',value: 'PAPER_FORM'   },
+        { label: 'Courrier Postal',  value: 'POSTAL_MAIL'  },
+        { label: 'Presse',           value: 'PRESS_MEDIA'  },
+        { label: 'Rapport Audit',    value: 'AUDIT_REPORT' }
     ];
 
     ngOnInit(): void {
-        this.loadDossiers();
+        this.loadAllDossiers();
         this.loadStats();
     }
 
-    private loadStats(): void {
-        this.statsLoading = true;
-        this.statistiqueService.getPublicStats().subscribe({
-            next:  s  => { this.stats = s; this.statsLoading = false; },
-            error: () => { this.statsLoading = false; }
-        });
-    }
-
-    loadDossiers(): void {
+    private loadAllDossiers(): void {
         this.loading = true;
-
-        const obs = this.selectedStatus
-            ? this.dossierService.findByStatus(
-                this.selectedStatus, this.currentPage, this.pageSize)
-            : this.dossierService.findAll(this.currentPage, this.pageSize);
-
-        obs.subscribe({
+        this.dossierService.findAll(0, 500).subscribe({
             next: page => {
-                this.dossiers    = page.content;
-                this.totalRecords = page.totalElements;
-                this.loading     = false;
+                this.allDossiers = [...page.content].sort((a, b) => {
+                    // Tri principal : numéro décroissant (séquentiel → fait autorité)
+                    // { numeric: true } gère "000019" > "000018" peu importe le padding
+                    const numCompare = (b.number || '').localeCompare(
+                        a.number || '',
+                        undefined,
+                        { numeric: true }
+                    );
+                    if (numCompare !== 0) return numCompare;
+
+                    // Tri secondaire : date décroissante (si même numéro, cas rare)
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                });
+                this.applyFilters();
+                this.loading = false;
             },
             error: () => {
                 this.loading = false;
@@ -322,36 +535,58 @@ export class DossiersList implements OnInit {
         });
     }
 
-    // Recharge les dossiers ET les stats
+    private loadStats(): void {
+        this.statsLoading = true;
+        this.statistiqueService.getPublicStats().subscribe({
+            next:  s  => { this.stats = s; this.statsLoading = false; },
+            error: () => { this.statsLoading = false; }
+        });
+    }
+
     refresh(): void {
-        this.loadDossiers();
+        this.loadAllDossiers();
         this.loadStats();
     }
 
-    onSearch():       void { this.currentPage = 0; this.loadDossiers(); }
-    onStatusFilter(): void { this.currentPage = 0; this.loadDossiers(); }
-
-    clearSearch(): void {
-        this.searchText  = '';
-        this.currentPage = 0;
-        this.loadDossiers();
+    applyFilters(): void {
+        const q = this.searchText.trim().toLowerCase();
+        this.filteredDossiers = this.allDossiers.filter(d => {
+            if (q) {
+                const haystack = [
+                    d.number                 || '',
+                    d.object                 || '',
+                    d.accessCode             || '',
+                    d.declarant?.displayName || '',
+                    d.declarant?.phoneNumber || '',
+                    d.declarant?.email       || ''
+                ].join(' ').toLowerCase();
+                if (!haystack.includes(q)) return false;
+            }
+            if (this.selectedStatus && d.status !== this.selectedStatus)       return false;
+            if (this.selectedType   && d.type   !== this.selectedType)         return false;
+            if (this.selectedMode   && d.submissionMode !== this.selectedMode) return false;
+            return true;
+        });
     }
 
-    clearStatusFilter(): void {
-        this.selectedStatus = null;
-        this.currentPage    = 0;
-        this.loadDossiers();
+    isFiltering(): boolean {
+        return !!(this.searchText || this.selectedStatus
+               || this.selectedType || this.selectedMode);
     }
+
+    clearSearch(): void { this.searchText     = ''; this.applyFilters(); }
+    clearStatus(): void { this.selectedStatus = null; this.applyFilters(); }
+    clearType():   void { this.selectedType   = null; this.applyFilters(); }
+    clearMode():   void { this.selectedMode   = null; this.applyFilters(); }
 
     resetFilters(): void {
-        this.searchText     = '';
-        this.selectedStatus = null;
-        this.currentPage    = 0;
-        this.loadDossiers();
+        this.searchText = ''; this.selectedStatus = null;
+        this.selectedType = null; this.selectedMode = null;
+        this.applyFilters();
     }
 
     getStatusLabel(status: string): string {
-        const labels: Record<string, string> = {
+        const l: Record<string, string> = {
             SOUMIS: 'Soumis', RECU: 'Reçu',
             EN_ETUDE_OPPORTUNITE: 'En étude', EN_ATTENTE_COMPLEMENT: 'Complément',
             EN_REVUE_CTADP: 'CTADP', RECEVABLE: 'Recevable',
@@ -359,66 +594,70 @@ export class DossiersList implements OnInit {
             EN_INVESTIGATION: 'Investigation', RAPPORT_PRODUIT: 'Rapport',
             DECISION_RENDUE: 'Décision', CLOS: 'Clôturé', CLASSE: 'Classé'
         };
-        return labels[status] || status;
+        return l[status] || status;
     }
 
     getStatusSeverity(status: string): TagSeverity {
-        const map: Record<string, TagSeverity> = {
+        const m: Record<string, TagSeverity> = {
             SOUMIS: 'info', RECU: 'info',
-            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn', EN_REVUE_CTADP: 'warn',
-            RECEVABLE: 'success', IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
+            EN_ETUDE_OPPORTUNITE: 'warn', EN_ATTENTE_COMPLEMENT: 'warn',
+            EN_REVUE_CTADP: 'warn', RECEVABLE: 'success',
+            IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
             EN_INVESTIGATION: 'warn', RAPPORT_PRODUIT: 'info',
             DECISION_RENDUE: 'success', CLOS: 'success', CLASSE: 'secondary'
         };
-        return map[status] ?? 'info';
+        return m[status] ?? 'info';
     }
 
     getStatusBarClass(status: string): string {
-        const map: Record<string, string> = {
+        const m: Record<string, string> = {
             SOUMIS: 'bg-blue-400', RECU: 'bg-blue-500',
             EN_ETUDE_OPPORTUNITE: 'bg-amber-400', EN_ATTENTE_COMPLEMENT: 'bg-amber-500',
             EN_REVUE_CTADP: 'bg-orange-400', RECEVABLE: 'bg-green-500',
             IRRECEVABLE: 'bg-red-400', TRANSFERE: 'bg-surface-400',
             EN_INVESTIGATION: 'bg-purple-400', RAPPORT_PRODUIT: 'bg-teal-400',
-            DECISION_RENDUE: 'bg-green-600', CLOS: 'bg-green-700', CLASSE: 'bg-surface-300'
+            DECISION_RENDUE: 'bg-green-600', CLOS: 'bg-green-700',
+            CLASSE: 'bg-surface-300'
         };
-        return map[status] || 'bg-surface-200';
+        return m[status] || 'bg-surface-200';
     }
 
     getTypeLabel(type: string): string {
-        const labels: Record<string, string> = {
+        const l: Record<string, string> = {
             COMPLAINT: 'Plainte', DENUNCIATION: 'Dénonciation',
             AUTO_REFERRAL: 'Auto-saisine', ANONYMOUS: 'Anonyme'
         };
-        return labels[type] || type;
+        return l[type] || type;
     }
 
     getTypeIcon(type: string): string {
-        const icons: Record<string, string> = {
+        const m: Record<string, string> = {
             COMPLAINT: 'pi pi-exclamation-circle', DENUNCIATION: 'pi pi-megaphone',
             AUTO_REFERRAL: 'pi pi-search', ANONYMOUS: 'pi pi-eye-slash'
         };
-        return icons[type] || 'pi pi-file';
+        return m[type] || 'pi pi-file';
     }
 
     getModeLabel(mode: string): string {
-        const labels: Record<string, string> = {
+        const l: Record<string, string> = {
             IN_PERSON: 'Guichet', WEB_FORM: 'Web', EMAIL: 'Email',
             SMS: 'SMS', PHONE: 'Téléphone', GREEN_NUMBER: 'N° Vert',
             SOCIAL_MEDIA: 'Réseaux', AUDIO_COUNTER: 'Audio',
-            PAPER_FORM: 'Formulaire', FAX: 'Fax', POSTAL_MAIL: 'Courrier'
+            PAPER_FORM: 'Formulaire', POSTAL_MAIL: 'Courrier',
+            PRESS_MEDIA: 'Presse', AUDIT_REPORT: 'Rapport'
         };
-        return labels[mode] || mode;
+        return l[mode] || mode;
     }
 
     getModeIcon(mode: string): string {
-        const icons: Record<string, string> = {
+        const m: Record<string, string> = {
             IN_PERSON: 'pi pi-building', WEB_FORM: 'pi pi-globe',
             EMAIL: 'pi pi-envelope', SMS: 'pi pi-mobile',
             PHONE: 'pi pi-phone', GREEN_NUMBER: 'pi pi-phone',
             SOCIAL_MEDIA: 'pi pi-share-alt', AUDIO_COUNTER: 'pi pi-microphone',
-            PAPER_FORM: 'pi pi-file', FAX: 'pi pi-print', POSTAL_MAIL: 'pi pi-send'
+            PAPER_FORM: 'pi pi-file', POSTAL_MAIL: 'pi pi-send',
+            PRESS_MEDIA: 'pi pi-book', AUDIT_REPORT: 'pi pi-chart-bar'
         };
-        return icons[mode] || 'pi pi-circle';
+        return m[mode] || 'pi pi-circle';
     }
 }

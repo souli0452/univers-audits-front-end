@@ -5,14 +5,21 @@ import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { PageResponse } from '../models/dossier.model';
 
+export interface AgentSummaryInMember {
+    id:            string;
+    firstName:     string;
+    lastName:      string;
+    email?:        string;
+    matricule:     string;
+    departementLabel?: string;
+}
+
 export interface InvestigationMemberResponse {
-    id: string;
-    agentId: string;
-    agentName: string;
-    agentMatricule: string;
-    teamRole: TeamRole;
-    assignedBy: string;
-    active: boolean;
+    id:             string;
+    agent:          AgentSummaryInMember;
+    teamRole:       TeamRole;
+    dateAttribution?: string;
+    active:         boolean;
 }
 
 export interface InvestigationResponse {

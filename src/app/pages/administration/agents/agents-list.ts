@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+// Remplace le lazy loading par un chargement unique + filtrage client
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +18,6 @@ import { TooltipModule } from 'primeng/tooltip';
 @Component({
     selector: 'app-agents-list',
     standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush,  
     imports: [
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, TableModule,
@@ -38,125 +38,210 @@ import { TooltipModule } from 'primeng/tooltip';
                 Gestion des Agents
             </h1>
             <p class="text-surface-400 text-sm mt-1">
-                Administration des comptes et des accès
+                {{ filteredAgents.length }} agent(s)
+                <span *ngIf="searchText || selectedStatus !== null"
+                    class="text-primary-500">
+                    sur {{ allAgents.length }} au total
+                </span>
             </p>
         </div>
-        <p-button
-            label="Nouvel Agent"
-            icon="pi pi-user-plus"
-            routerLink="/app/administration/agents/nouveau"
-            styleClass="shadow-md" />
+        <p-button label="Nouvel Agent" icon="pi pi-user-plus"
+            routerLink="/app/administration/agents/nouveau" />
     </div>
 
     <!-- ── Cartes statistiques ─────────────────────────────── -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border border-surface-100 dark:border-surface-700 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border
+                    border-surface-100 dark:border-surface-700
+                    flex items-center gap-4 cursor-pointer hover:border-green-200
+                    transition-colors"
+            (click)="filterByActive(true)">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                [class.bg-green-200]="selectedStatus === true"
+                [class.bg-green-100]="selectedStatus !== true">
                 <i class="pi pi-check-circle text-green-600 text-xl"></i>
             </div>
             <div>
                 <div class="text-2xl font-bold text-green-600">{{ activeCount }}</div>
-                <div class="text-xs text-surface-400 font-medium uppercase tracking-wide mt-0.5">
-                    Agents actifs
-                </div>
+                <div class="text-xs text-surface-400 font-medium uppercase
+                            tracking-wide mt-0.5">Agents actifs</div>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border border-surface-100 dark:border-surface-700 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border
+                    border-surface-100 dark:border-surface-700
+                    flex items-center gap-4 cursor-pointer hover:border-red-200
+                    transition-colors"
+            (click)="filterByActive(false)">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                [class.bg-red-200]="selectedStatus === false"
+                [class.bg-red-100]="selectedStatus !== false">
                 <i class="pi pi-ban text-red-500 text-xl"></i>
             </div>
             <div>
                 <div class="text-2xl font-bold text-red-500">{{ inactiveCount }}</div>
-                <div class="text-xs text-surface-400 font-medium uppercase tracking-wide mt-0.5">
-                    Agents inactifs
-                </div>
+                <div class="text-xs text-surface-400 font-medium uppercase
+                            tracking-wide mt-0.5">Agents inactifs</div>
             </div>
         </div>
 
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border border-surface-100 dark:border-surface-700 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center flex-shrink-0">
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border
+                    border-surface-100 dark:border-surface-700
+                    flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-primary-100 flex items-center
+                        justify-center flex-shrink-0">
                 <i class="pi pi-users text-primary-600 text-xl"></i>
             </div>
             <div>
-                <div class="text-2xl font-bold text-primary-600">{{ totalRecords }}</div>
-                <div class="text-xs text-surface-400 font-medium uppercase tracking-wide mt-0.5">
-                    Total agents
+                <div class="text-2xl font-bold text-primary-600">
+                    {{ allAgents.length }}
                 </div>
+                <div class="text-xs text-surface-400 font-medium uppercase
+                            tracking-wide mt-0.5">Total agents</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ FILTRES — même pattern que dossiers-list ══════════ -->
+    <div class="bg-white dark:bg-surface-800 rounded-2xl border
+                border-surface-100 dark:border-surface-700 overflow-hidden">
+
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto]
+                    divide-y md:divide-y-0 md:divide-x
+                    divide-surface-100 dark:divide-surface-700">
+
+            <!-- Recherche texte -->
+            <div class="flex items-center gap-2.5 px-4" style="height:48px;">
+                <i class="pi pi-search text-surface-300 text-sm flex-shrink-0"></i>
+                <input pInputText [(ngModel)]="searchText"
+                    placeholder="Nom, matricule, email, département..."
+                    (ngModelChange)="applyFilters()"
+                    class="flex-1 border-none shadow-none outline-none
+                           bg-transparent text-sm min-w-0"
+                    style="box-shadow:none !important; border:none !important;
+                           padding:0 !important;" />
+                <button *ngIf="searchText" (click)="clearSearch()"
+                    class="flex-shrink-0 w-5 h-5 flex items-center justify-center
+                           text-surface-300 hover:text-surface-600 transition-colors
+                           rounded-full hover:bg-surface-100">
+                    <i class="pi pi-times" style="font-size:10px;"></i>
+                </button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-center gap-1 px-3" style="height:48px;">
+                <button *ngIf="isFiltering()" (click)="resetFilters()"
+                    class="flex items-center gap-1 text-xs text-surface-400
+                           hover:text-surface-700 transition-colors px-2 py-1.5
+                           rounded-lg hover:bg-surface-50 whitespace-nowrap">
+                    <i class="pi pi-filter-slash text-xs"></i>
+                    Effacer
+                </button>
+                <button (click)="refresh()" title="Actualiser"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg
+                           text-surface-400 hover:text-surface-700
+                           hover:bg-surface-50 transition-colors">
+                    <i class="pi pi-refresh text-sm"></i>
+                </button>
             </div>
         </div>
 
-    </div>
+        <!-- Bande filtres actifs -->
+        <div *ngIf="isFiltering()"
+            class="flex items-center gap-2 px-4 py-2 bg-surface-50
+                   dark:bg-surface-700/50 border-t border-surface-100
+                   dark:border-surface-600 flex-wrap">
+            <span class="text-xs font-semibold text-surface-500 flex-shrink-0">
+                {{ filteredAgents.length }}
+                résultat{{ filteredAgents.length > 1 ? 's' : '' }}
+            </span>
+            <span class="text-surface-200 text-xs">·</span>
 
-    <!-- ── Barre de recherche ──────────────────────────────── -->
-    <div class="bg-white dark:bg-surface-800 rounded-2xl p-4 border border-surface-100 dark:border-surface-700 flex items-center gap-3">
-        <i class="pi pi-search text-surface-400 text-sm"></i>
-        <input
-            pInputText
-            [(ngModel)]="searchText"
-            placeholder="Rechercher par nom, matricule, email..."
-            class="flex-1 border-none shadow-none outline-none bg-transparent text-sm"
-            (input)="onSearch()" />
-        <span *ngIf="searchText"
-            class="text-xs text-surface-400 bg-surface-100 px-2 py-1 rounded-full cursor-pointer hover:bg-surface-200"
-            (click)="clearSearch()">
-            Effacer
-        </span>
-    </div>
+            <span *ngIf="searchText"
+                class="inline-flex items-center gap-1 text-xs bg-white
+                       dark:bg-surface-800 text-surface-600 border border-surface-200
+                       px-2 py-0.5 rounded-full shadow-sm max-w-48">
+                <i class="pi pi-search flex-shrink-0" style="font-size:9px;"></i>
+                <span class="truncate">"{{ searchText }}"</span>
+                <button (click)="clearSearch()"
+                    class="flex-shrink-0 ml-0.5 text-surface-300
+                           hover:text-surface-600 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
 
-    <!-- ── Contenu principal ───────────────────────────────── -->
-    <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
+            <span *ngIf="selectedStatus === true"
+                class="inline-flex items-center gap-1 text-xs bg-green-50
+                       text-green-700 border border-green-200 px-2 py-0.5
+                       rounded-full shadow-sm">
+                <i class="pi pi-check-circle text-green-400 flex-shrink-0"
+                    style="font-size:9px;"></i>
+                Actifs uniquement
+                <button (click)="clearStatus()"
+                    class="flex-shrink-0 ml-0.5 text-green-400
+                           hover:text-green-700 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
 
-        <!-- Squelettes -->
-        <div *ngIf="loading" class="p-4 flex flex-col gap-3">
-            <p-skeleton *ngFor="let i of skeletonRows"
-                height="56px" borderRadius="12px" />
+            <span *ngIf="selectedStatus === false"
+                class="inline-flex items-center gap-1 text-xs bg-red-50
+                       text-red-700 border border-red-200 px-2 py-0.5
+                       rounded-full shadow-sm">
+                <i class="pi pi-ban text-red-400 flex-shrink-0"
+                    style="font-size:9px;"></i>
+                Inactifs uniquement
+                <button (click)="clearStatus()"
+                    class="flex-shrink-0 ml-0.5 text-red-400
+                           hover:text-red-700 transition-colors">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
         </div>
+    </div>
 
-        <!-- Tableau -->
-        <p-table
-            *ngIf="!loading"
-            [value]="agents"
-            [paginator]="true"
-            [rows]="pageSize"
-            [totalRecords]="totalRecords"
-            [lazy]="true"
-            (onLazyLoad)="onLazyLoad($event)"
-            dataKey="id"
-            styleClass="p-datatable-sm"
-            [rowHover]="true">
+    <!-- ── Spinner ─────────────────────────────────────────── -->
+    <div *ngIf="loading" class="p-4 flex flex-col gap-3">
+        <div *ngFor="let i of [1,2,3,4,5]"
+            class="h-14 bg-surface-100 dark:bg-surface-700 rounded-xl
+                   animate-pulse"></div>
+    </div>
+
+    <!-- ── Tableau ─────────────────────────────────────────── -->
+    <div *ngIf="!loading"
+        class="bg-white dark:bg-surface-800 rounded-2xl border
+               border-surface-100 dark:border-surface-700 overflow-hidden">
+
+        <p-table [value]="filteredAgents"
+            [paginator]="filteredAgents.length > pageSize"
+            [rows]="pageSize" [rowsPerPageOptions]="[10, 20, 50]"
+            dataKey="id" styleClass="p-datatable-sm" [rowHover]="true">
 
             <ng-template pTemplate="header">
                 <tr class="border-b border-surface-100">
                     <th class="w-14 py-3 px-4"></th>
-                    <th pSortableColumn="lastName"
-                        class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4">
-                        Agent <p-sortIcon field="lastName" />
-                    </th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-32">
-                        Matricule
-                    </th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4">
-                        Email
-                    </th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-40">
-                        Grade
-                    </th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-24">
-                        Statut
-                    </th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-24">
-                        Actions
-                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4">Agent</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-32">Matricule</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4">Email</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-40">Grade</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-24">Statut</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-24">Actions</th>
                 </tr>
             </ng-template>
 
             <ng-template pTemplate="body" let-agent>
-                <tr class="border-b border-surface-50 dark:border-surface-700 transition-colors">
+                <tr class="border-b border-surface-50 dark:border-surface-700
+                           transition-colors">
 
                     <td class="px-4 py-3">
-                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        <div class="w-9 h-9 rounded-full flex items-center
+                                    justify-center text-sm font-bold flex-shrink-0"
                             [class.bg-primary-100]="agent.actif"
                             [class.text-primary-700]="agent.actif"
                             [class.bg-surface-200]="!agent.actif"
@@ -166,7 +251,8 @@ import { TooltipModule } from 'primeng/tooltip';
                     </td>
 
                     <td class="px-4 py-3">
-                        <div class="font-semibold text-sm text-surface-900 dark:text-surface-0">
+                        <div class="font-semibold text-sm text-surface-900
+                                    dark:text-surface-0">
                             {{ agent.firstName }} {{ agent.lastName }}
                         </div>
                         <div *ngIf="agent.departementLabel"
@@ -176,7 +262,8 @@ import { TooltipModule } from 'primeng/tooltip';
                     </td>
 
                     <td class="px-4 py-3">
-                        <span class="font-mono text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-md border border-primary-100">
+                        <span class="font-mono text-xs bg-primary-50 text-primary-700
+                                     px-2 py-1 rounded-md border border-primary-100">
                             {{ agent.matricule }}
                         </span>
                     </td>
@@ -189,10 +276,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
                     <td class="px-4 py-3">
                         <span *ngIf="agent.grade"
-                            class="text-xs bg-surface-100 dark:bg-surface-700 text-surface-600 px-2 py-1 rounded-md">
+                            class="text-xs bg-surface-100 dark:bg-surface-700
+                                   text-surface-600 px-2 py-1 rounded-md">
                             {{ agent.grade }}
                         </span>
-                        <span *ngIf="!agent.grade" class="text-surface-300 text-xs">—</span>
+                        <span *ngIf="!agent.grade"
+                            class="text-surface-300 text-xs">—</span>
                     </td>
 
                     <td class="px-4 py-3">
@@ -210,19 +299,14 @@ import { TooltipModule } from 'primeng/tooltip';
 
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-1">
-                            <p-button
-                                icon="pi pi-pencil"
-                                severity="info"
-                                text
+                            <p-button icon="pi pi-pencil" severity="info" text
                                 size="small"
                                 [routerLink]="['/app/administration/agents', agent.id]"
-                                pTooltip="Modifier"
-                                tooltipPosition="top" />
+                                pTooltip="Modifier" tooltipPosition="top" />
                             <p-button
                                 [icon]="agent.actif ? 'pi pi-ban' : 'pi pi-check-circle'"
                                 [severity]="agent.actif ? 'danger' : 'success'"
-                                text
-                                size="small"
+                                text size="small"
                                 [pTooltip]="agent.actif ? 'Désactiver' : 'Activer'"
                                 tooltipPosition="top"
                                 (onClick)="toggleAgent(agent)" />
@@ -235,19 +319,23 @@ import { TooltipModule } from 'primeng/tooltip';
             <ng-template pTemplate="emptymessage">
                 <tr>
                     <td colspan="7">
-                        <div class="flex flex-col items-center justify-center py-16 text-surface-400">
-                            <div class="w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-4">
+                        <div class="flex flex-col items-center justify-center py-16">
+                            <div class="w-16 h-16 rounded-2xl bg-surface-100
+                                        flex items-center justify-center mb-4">
                                 <i class="pi pi-users text-2xl text-surface-300"></i>
                             </div>
-                            <p class="font-medium text-surface-500">Aucun agent trouvé</p>
-                            <p class="text-sm mt-1" *ngIf="searchText">
-                                Aucun résultat pour "{{ searchText }}"
+                            <p class="font-medium text-surface-500">
+                                Aucun agent trouvé
                             </p>
-                            <p-button *ngIf="searchText"
-                                label="Effacer la recherche"
+                            <p class="text-xs text-surface-400 mt-1">
+                                {{ isFiltering()
+                                    ? 'Aucun résultat pour les filtres appliqués'
+                                    : 'Aucun agent enregistré' }}
+                            </p>
+                            <p-button *ngIf="isFiltering()"
+                                label="Réinitialiser les filtres"
                                 severity="secondary" text size="small"
-                                styleClass="mt-3"
-                                (onClick)="clearSearch()" />
+                                styleClass="mt-3" (onClick)="resetFilters()" />
                         </div>
                     </td>
                 </tr>
@@ -264,73 +352,109 @@ export class AgentsList implements OnInit {
     private agentService        = inject(AgentService);
     private messageService      = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
-    private cdr                 = inject(ChangeDetectorRef);  // ← ajout
 
-    agents:       AgentResponse[] = [];
-    loading      = true;
-    totalRecords = 0;
-    pageSize     = 20;
-    currentPage  = 0;
-    searchText   = '';
+    // ── Données ───────────────────────────────────────────────
+    allAgents:      AgentResponse[] = [];
+    filteredAgents: AgentResponse[] = [];
 
-    // Tableau statique pour *ngFor dans les squelettes (évite NG0100)
-    readonly skeletonRows = [1, 2, 3, 4, 5];
+    loading  = true;
+    pageSize = 20;
 
-    get activeCount():   number { return this.agents.filter(a =>  a.actif).length; }
-    get inactiveCount(): number { return this.agents.filter(a => !a.actif).length; }
+    // ── Filtres ───────────────────────────────────────────────
+    searchText:     string          = '';
+    selectedStatus: boolean | null  = null;
 
-    ngOnInit(): void { this.loadAgents(); }
+    // ── Compteurs (sur allAgents, pas filteredAgents) ─────────
+    get activeCount():   number { return this.allAgents.filter(a =>  a.actif).length; }
+    get inactiveCount(): number { return this.allAgents.filter(a => !a.actif).length; }
 
-    loadAgents(): void {
+    ngOnInit(): void { this.loadAll(); }
+
+    // ── Chargement unique — 500 agents max ────────────────────
+    private loadAll(): void {
         this.loading = true;
-        this.cdr.markForCheck();   // ← notifier Angular immédiatement
-
-        this.agentService.findAll(
-            this.currentPage,
-            this.pageSize,
-            this.searchText || undefined
-        ).subscribe({
+        this.agentService.findAll(0, 500).subscribe({
             next: page => {
-                this.agents       = page.content;
-                this.totalRecords = page.totalElements;
-                this.loading      = false;
-                this.cdr.markForCheck();   // ← notifier après les données
+                // Tri alphabétique nom
+                this.allAgents = [...page.content].sort((a, b) =>
+                    `${a.lastName} ${a.firstName}`
+                        .localeCompare(`${b.lastName} ${b.firstName}`)
+                );
+                this.applyFilters();
+                this.loading = false;
             },
             error: () => {
                 this.loading = false;
-                this.cdr.markForCheck();
                 this.messageService.add({
-                    severity: 'error',
-                    summary:  'Erreur',
-                    detail:   'Impossible de charger les agents'
+                    severity: 'error', summary: 'Erreur',
+                    detail: 'Impossible de charger les agents'
                 });
             }
         });
     }
 
-    onSearch(): void {
-        this.currentPage = 0;
-        this.loadAgents();
+    refresh(): void { this.loadAll(); }
+
+    // ── Filtrage côté client — instantané ────────────────────
+    applyFilters(): void {
+        const q = this.searchText.trim().toLowerCase();
+
+        this.filteredAgents = this.allAgents.filter(agent => {
+
+            // Filtre texte : nom, prénom, matricule, email, département, grade
+            if (q) {
+                const haystack = [
+                    agent.firstName       || '',
+                    agent.lastName        || '',
+                    agent.matricule       || '',
+                    agent.email           || '',
+                    agent.departementLabel || '',
+                    agent.grade           || ''
+                ].join(' ').toLowerCase();
+                if (!haystack.includes(q)) return false;
+            }
+
+            // Filtre statut actif/inactif
+            if (this.selectedStatus !== null && agent.actif !== this.selectedStatus)
+                return false;
+
+            return true;
+        });
     }
 
+    isFiltering(): boolean {
+        return !!(this.searchText || this.selectedStatus !== null);
+    }
+
+    // ── Raccourcis cartes stats ───────────────────────────────
+    filterByActive(status: boolean): void {
+        this.selectedStatus = this.selectedStatus === status ? null : status;
+        this.applyFilters();
+    }
+
+    // ── Clear individuels ─────────────────────────────────────
     clearSearch(): void {
-        this.searchText  = '';
-        this.currentPage = 0;
-        this.loadAgents();
+        this.searchText = '';
+        this.applyFilters();
     }
 
-    onLazyLoad(event: any): void {
-        this.currentPage = Math.floor(
-            (event.first || 0) / (event.rows || this.pageSize)
-        );
-        this.pageSize = event.rows || this.pageSize;
-        this.loadAgents();
+    clearStatus(): void {
+        this.selectedStatus = null;
+        this.applyFilters();
     }
 
+    resetFilters(): void {
+        this.searchText     = '';
+        this.selectedStatus = null;
+        this.applyFilters();
+    }
+
+    // ── Toggle actif/inactif ──────────────────────────────────
     toggleAgent(agent: AgentResponse): void {
         const action = agent.actif ? 'désactiver' : 'activer';
         this.confirmationService.confirm({
-            message: `Voulez-vous ${action} l'agent ${agent.firstName} ${agent.lastName} ?`,
+            message: `Voulez-vous ${action} l'agent
+                      ${agent.firstName} ${agent.lastName} ?`,
             header:  'Confirmation',
             icon:    'pi pi-question-circle',
             accept: () => {
@@ -340,23 +464,28 @@ export class AgentsList implements OnInit {
 
                 obs.subscribe({
                     next: updated => {
-                        const idx = this.agents.findIndex(a => a.id === agent.id);
-                        if (idx !== -1) {
-                            this.agents = [...this.agents];   // ← nouveau tableau pour OnPush
-                            this.agents[idx] = updated;
-                        }
-                        this.cdr.markForCheck();
+                        // ✅ Mise à jour dans les deux tableaux
+                        const idxAll = this.allAgents.findIndex(a => a.id === agent.id);
+                        if (idxAll !== -1) this.allAgents[idxAll] = updated;
+
+                        const idxFiltered = this.filteredAgents
+                            .findIndex(a => a.id === agent.id);
+                        if (idxFiltered !== -1)
+                            this.filteredAgents[idxFiltered] = updated;
+
+                        // Force re-render
+                        this.allAgents      = [...this.allAgents];
+                        this.filteredAgents = [...this.filteredAgents];
+
                         this.messageService.add({
-                            severity: 'success',
-                            summary:  'Mis à jour',
-                            detail:   `Agent ${agent.actif ? 'désactivé' : 'activé'}`
+                            severity: 'success', summary: 'Mis à jour',
+                            detail: `Agent ${agent.actif ? 'désactivé' : 'activé'}`
                         });
                     },
                     error: () => {
                         this.messageService.add({
-                            severity: 'error',
-                            summary:  'Erreur',
-                            detail:   'Action impossible'
+                            severity: 'error', summary: 'Erreur',
+                            detail: 'Action impossible'
                         });
                     }
                 });
