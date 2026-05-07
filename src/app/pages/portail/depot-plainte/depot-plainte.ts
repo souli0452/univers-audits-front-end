@@ -38,7 +38,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
         .page { min-height:100vh; background:linear-gradient(160deg,#f0fdf4 0%,#f8fafc 70%); }
 
-        /* Navbar */
         .navbar {
             background:#16a34a; padding:0 1.5rem; height:60px;
             display:flex; align-items:center; justify-content:space-between;
@@ -55,10 +54,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .nav-title { color:#fff; font-weight:900; font-size:1rem; letter-spacing:1px; }
         .nav-sub   { color:#bbf7d0; font-size:.72rem; }
 
-        /* Content */
         .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
 
-        /* Hero */
         .hero { text-align:center; margin-bottom:2.5rem; animation:slide-up .4s ease; }
         .hero-icon {
             width:80px; height:80px; border-radius:50%;
@@ -71,7 +68,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .hero h1 { font-size:1.75rem; font-weight:900; color:#111827; margin-bottom:.5rem; }
         .hero p  { color:#6b7280; font-size:.875rem; }
 
-        /* Steps bar */
         .steps-bar {
             display:flex; align-items:center;
             justify-content:center; gap:0; margin-bottom:2rem;
@@ -101,7 +97,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .step-line.done { background:#22c55e; }
 
-        /* Card */
         .card {
             background:#fff; border-radius:20px; padding:2rem;
             border:1px solid #f0fdf4;
@@ -118,7 +113,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             flex-shrink:0;
         }
 
-        /* Type selector */
         .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
         .type-card {
             border:2.5px solid #e5e7eb; border-radius:14px; padding:1rem;
@@ -134,24 +128,21 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .type-name { font-weight:700; font-size:.875rem; color:#111827; }
         .type-desc { font-size:.75rem; color:#9ca3af; margin-top:2px; }
 
-        /* Field */
         .field { display:flex; flex-direction:column; gap:.375rem; }
         .field label { font-size:.875rem; font-weight:700; color:#374151; }
         .field-hint { font-size:.75rem; color:#9ca3af; }
         .char-count { text-align:right; font-size:.75rem; color:#9ca3af; }
 
-        /* Grid 2 */
         .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
-        /* Audio zone */
         .audio-idle {
             text-align:center; padding:2rem 1.5rem; border-radius:14px;
             border:2px dashed #86efac; background:#f0fdf4;
         }
         .audio-idle-icon {
             width:64px; height:64px; border-radius:50%;
-            background:#dcfce7; display:flex; align-items:center; justify-content:center;
-            margin:0 auto .875rem;
+            background:#dcfce7; display:flex; align-items:center;
+            justify-content:center; margin:0 auto .875rem;
         }
         .audio-idle-icon i { font-size:1.75rem; color:#16a34a; }
 
@@ -166,15 +157,23 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .rec-icon {
             width:72px; height:72px; border-radius:50%; background:#ef4444;
-            display:flex; align-items:center; justify-content:center; position:relative; z-index:1;
+            display:flex; align-items:center; justify-content:center;
+            position:relative; z-index:1;
         }
         .rec-icon i { font-size:2rem; color:#fff; }
-        .rec-timer { font-family:monospace; font-size:2.5rem; font-weight:900; color:#dc2626; line-height:1; }
+        .rec-timer {
+            font-family:monospace; font-size:2.5rem;
+            font-weight:900; color:#dc2626; line-height:1;
+        }
         .rec-label-badge {
             display:inline-flex; align-items:center; gap:6px;
-            background:#fee2e2; border-radius:20px; padding:4px 14px; margin:.625rem 0 1rem;
+            background:#fee2e2; border-radius:20px;
+            padding:4px 14px; margin:.625rem 0 1rem;
         }
-        .rec-dot { width:8px; height:8px; border-radius:50%; background:#ef4444; animation:blink 1s infinite; }
+        .rec-dot {
+            width:8px; height:8px; border-radius:50%;
+            background:#ef4444; animation:blink 1s infinite;
+        }
         .rec-text { color:#b91c1c; font-weight:900; font-size:.75rem; letter-spacing:2px; }
 
         .audio-done {
@@ -188,7 +187,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .done-icon i { color:#fff; font-size:1.1rem; }
 
-        /* Upload zone */
         .upload-zone {
             border:2.5px dashed #d1d5db; border-radius:14px;
             padding:1.5rem; text-align:center; cursor:pointer;
@@ -204,7 +202,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
 
-        /* Anonymous selector */
         .anon-option {
             border:2.5px solid #e5e7eb; border-radius:14px;
             padding:1rem 1.25rem; cursor:pointer; transition:all .2s;
@@ -213,13 +210,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .anon-option.selected-anon { border-color:#f59e0b; background:#fffbeb; }
         .radio-dot {
             width:20px; height:20px; border-radius:50%; border:2px solid #d1d5db;
-            display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; transition:all .2s;
         }
         .radio-dot.active-id   { border-color:#16a34a; background:#16a34a; }
         .radio-dot.active-anon { border-color:#f59e0b; background:#f59e0b; }
         .radio-inner { width:8px; height:8px; border-radius:50%; background:#fff; }
 
-        /* Recap */
         .recap-section {
             background:#f9fafb; border-radius:14px; padding:1rem 1.25rem;
             border:1.5px solid #e5e7eb;
@@ -228,13 +225,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .recap-key { color:#9ca3af; width:100px; flex-shrink:0; }
         .recap-val { font-weight:600; color:#111827; }
 
-        /* Footer nav */
         .step-footer {
             display:flex; justify-content:space-between;
             align-items:center; margin-top:1.75rem; gap:.75rem;
         }
 
-        /* Success dialog */
+        /* ── Dialog succès ── */
         .success-body { padding:.5rem .25rem; text-align:center; }
         .success-icon {
             width:88px; height:88px; border-radius:50%;
@@ -248,12 +244,36 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             border:2px solid #86efac; border-radius:16px;
             padding:1.25rem; margin:1.25rem 0;
         }
-        .code-label { font-size:.65rem; font-weight:900; color:#16a34a; letter-spacing:2px; text-transform:uppercase; }
-        .code-value { font-family:monospace; font-size:2.5rem; font-weight:900; color:#166534; letter-spacing:6px; }
+        .code-label {
+            font-size:.65rem; font-weight:900; color:#16a34a;
+            letter-spacing:2px; text-transform:uppercase;
+        }
+        .code-value {
+            font-family:monospace; font-size:2.5rem;
+            font-weight:900; color:#166534; letter-spacing:6px;
+        }
         .code-hint  { font-size:.75rem; color:#15803d; margin-top:.375rem; }
 
-        /* Page foot */
-        .page-foot { text-align:center; margin-top:2rem; color:#9ca3af; font-size:.75rem; padding-bottom:1rem; }
+        /* Badges notif */
+        .notif-row {
+            display:flex; flex-direction:column; gap:.5rem; margin-top:.75rem;
+        }
+        .notif-badge {
+            display:inline-flex; align-items:center; gap:.5rem;
+            font-size:.8rem; padding:6px 14px; border-radius:20px;
+            font-weight:600;
+        }
+        .notif-badge.sms {
+            background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;
+        }
+        .notif-badge.email {
+            background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
+        }
+
+        .page-foot {
+            text-align:center; margin-top:2rem;
+            color:#9ca3af; font-size:.75rem; padding-bottom:1rem;
+        }
 
         @media (max-width:520px) {
             .grid2 { grid-template-columns:1fr; }
@@ -284,7 +304,22 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Notez ce code ou prenez une photo
             </div>
         </div>
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:.875rem;font-size:.8rem;color:#92400e;text-align:left;">
+
+        <!-- ✅ Badges SMS et Email -->
+        <div class="notif-row" *ngIf="fd['phoneNumber'].value || fd['email'].value">
+            <div *ngIf="fd['phoneNumber'].value" class="notif-badge sms">
+                <i class="pi pi-mobile" style="font-size:.85rem;"></i>
+                SMS envoyé au {{ fd['phoneNumber'].value }}
+            </div>
+            <div *ngIf="fd['email'].value" class="notif-badge email">
+                <i class="pi pi-envelope" style="font-size:.85rem;"></i>
+                Email envoyé à {{ fd['email'].value }}
+            </div>
+        </div>
+
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;
+                    padding:.875rem;font-size:.8rem;color:#92400e;text-align:left;
+                    margin-top:.75rem;">
             <i class="pi pi-info-circle" style="color:#d97706;margin-right:6px;"></i>
             Vous recevrez un accusé de réception officiel dans les 7 jours ouvrables.
         </div>
@@ -292,10 +327,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     <ng-template pTemplate="footer">
         <div style="display:flex;gap:.5rem;justify-content:center;">
             <p-button label="Suivre mon dossier" icon="pi pi-search"
-                severity="success" routerLink="/portail/suivi"
-                (onClick)="showSuccess = false" />
+                severity="success" (onClick)="goToSuivi()" />
             <p-button label="Accueil" severity="secondary" outlined
-                routerLink="/" (onClick)="showSuccess = false" />
+                (onClick)="goToAccueil()" />
         </div>
     </ng-template>
 </p-dialog>
@@ -303,11 +337,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 <!-- ── Page principale ────────────────────────────────────── -->
 <div class="page">
 
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="nav-left">
             <p-button icon="pi pi-arrow-left" severity="contrast"
-                text routerLink="/" />
+                text (onClick)="router.navigate(['/portail'])" />
             <div class="nav-logo">
                 <img src="assets/logo-integrite.png" alt="Intégrité+" />
             </div>
@@ -317,12 +350,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
         <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-            outlined size="small" routerLink="/portail/suivi" />
+            outlined size="small"
+            (onClick)="router.navigate(['/portail/suivi'])" />
     </nav>
 
     <div class="content">
 
-        <!-- Hero -->
         <div class="hero">
             <div class="hero-icon"><i class="pi pi-file-edit"></i></div>
             <h1>Déposer un signalement</h1>
@@ -331,11 +364,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
         <!-- Steps -->
         <div class="steps-bar">
-            <div class="step-item" *ngFor="let s of steps; let i = index; let last = last">
+            <div class="step-item"
+                *ngFor="let s of steps; let i = index; let last = last">
                 <div class="step-circle"
                     [class.active]="currentStep === s.id"
                     [class.done]="currentStep > s.id">
-                    <i *ngIf="currentStep > s.id" class="pi pi-check" style="font-size:.75rem;"></i>
+                    <i *ngIf="currentStep > s.id" class="pi pi-check"
+                        style="font-size:.75rem;"></i>
                     <span *ngIf="currentStep <= s.id">{{ s.id }}</span>
                 </div>
                 <span class="step-label"
@@ -369,9 +404,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             [class.selected]="f['type'].value === type.value"
                             (click)="f['type'].setValue(type.value)">
                             <div class="type-icon"
-                                [style.background]="f['type'].value === type.value ? '#dcfce7' : '#f3f4f6'">
+                                [style.background]="f['type'].value === type.value
+                                    ? '#dcfce7' : '#f3f4f6'">
                                 <i [class]="type.icon"
-                                    [style.color]="f['type'].value === type.value ? '#16a34a' : '#9ca3af'"
+                                    [style.color]="f['type'].value === type.value
+                                        ? '#16a34a' : '#9ca3af'"
                                     style="font-size:1.1rem;"></i>
                             </div>
                             <div class="type-name">{{ type.label }}</div>
@@ -397,8 +434,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <label>Description détaillée *</label>
                     <textarea pTextarea [formControl]="f['description']"
                         placeholder="Décrivez les faits : qui, quoi, quand, où, comment..."
-                        rows="5" class="w-full resize-none">
-                    </textarea>
+                        rows="5" class="w-full resize-none"></textarea>
                     <div class="char-count">
                         {{ f['description'].value?.length || 0 }} caractères
                     </div>
@@ -408,20 +444,26 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <div class="grid2">
                     <div class="field">
                         <label>Lieu des faits</label>
-                        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-map-marker" style="color:#9ca3af;font-size:.875rem;"></i>
+                        <div style="display:flex;align-items:center;gap:8px;
+                            border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            <i class="pi pi-map-marker"
+                                style="color:#9ca3af;font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentLocation']"
                                 placeholder="Service, ville..."
-                                style="border:none;outline:none;background:transparent;padding:.625rem 0;flex:1;font-size:.875rem;" />
+                                style="border:none;outline:none;background:transparent;
+                                       padding:.625rem 0;flex:1;font-size:.875rem;" />
                         </div>
                     </div>
                     <div class="field">
                         <label>Période approximative</label>
-                        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-calendar" style="color:#9ca3af;font-size:.875rem;"></i>
+                        <div style="display:flex;align-items:center;gap:8px;
+                            border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            <i class="pi pi-calendar"
+                                style="color:#9ca3af;font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentPeriod']"
                                 placeholder="Ex: Janvier 2024"
-                                style="border:none;outline:none;background:transparent;padding:.625rem 0;flex:1;font-size:.875rem;" />
+                                style="border:none;outline:none;background:transparent;
+                                       padding:.625rem 0;flex:1;font-size:.875rem;" />
                         </div>
                     </div>
                 </div>
@@ -448,7 +490,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div class="audio-idle-icon">
                             <i class="pi pi-microphone"></i>
                         </div>
-                        <p style="font-size:.875rem;color:#374151;font-weight:600;margin-bottom:.375rem;">
+                        <p style="font-size:.875rem;color:#374151;font-weight:600;
+                                   margin-bottom:.375rem;">
                             Enregistrez votre témoignage vocal
                         </p>
                         <p style="font-size:.8rem;color:#9ca3af;margin-bottom:1rem;">
@@ -462,7 +505,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div *ngIf="isRecording" class="audio-recording">
                         <div class="rec-pulse-wrap">
                             <div class="rec-ring"></div>
-                            <div class="rec-icon"><i class="pi pi-microphone"></i></div>
+                            <div class="rec-icon">
+                                <i class="pi pi-microphone"></i>
+                            </div>
                         </div>
                         <div class="rec-timer">{{ formatDuration(recordingDuration) }}</div>
                         <div class="rec-label-badge">
@@ -486,7 +531,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                         </div>
                         <audio [src]="audioUrl" controls
-                            style="width:100%;border-radius:8px;margin-bottom:.625rem;"></audio>
+                            style="width:100%;border-radius:8px;margin-bottom:.625rem;">
+                        </audio>
                         <p-button label="Supprimer et recommencer" icon="pi pi-trash"
                             severity="danger" text size="small" (onClick)="deleteAudio()" />
                     </div>
@@ -506,8 +552,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <input #fileInput type="file" multiple style="display:none;"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
                             (change)="onFileSelect($event)" />
-                        <i class="pi pi-cloud-upload" style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;display:block;"></i>
-                        <p style="font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.25rem;">
+                        <i class="pi pi-cloud-upload"
+                            style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;display:block;">
+                        </i>
+                        <p style="font-size:.875rem;font-weight:600;color:#374151;
+                                   margin-bottom:.25rem;">
                             Cliquez ou glissez vos fichiers ici
                         </p>
                         <p style="font-size:.75rem;color:#9ca3af;">
@@ -517,15 +566,16 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
                     <div *ngIf="attachments.length > 0"
                         style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
-                        <div *ngFor="let file of attachments; let i = index" class="file-item">
-                            <div class="file-icon"
-                                [style.background]="getFileBg(file)">
+                        <div *ngFor="let file of attachments; let i = index"
+                            class="file-item">
+                            <div class="file-icon" [style.background]="getFileBg(file)">
                                 <i [class]="getFileIcon(file)"
                                     [style.color]="getFileColor(file)"
                                     style="font-size:1rem;"></i>
                             </div>
                             <div style="flex:1;min-width:0;">
-                                <div style="font-size:.875rem;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <div style="font-size:.875rem;font-weight:600;color:#111827;
+                                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                     {{ file.name }}
                                 </div>
                                 <div style="font-size:.75rem;color:#9ca3af;">
@@ -562,16 +612,19 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
                 Vos coordonnées
             </div>
-            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;margin-top:-.75rem;">
+            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;
+                       margin-top:-.75rem;">
                 Informations strictement confidentielles. Vous pouvez rester anonyme.
             </p>
 
             <!-- Choix identité -->
             <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
-                <div class="anon-option" [class.selected-id]="!fd['anonymous'].value"
+                <div class="anon-option"
+                    [class.selected-id]="!fd['anonymous'].value"
                     (click)="fd['anonymous'].setValue(false)">
                     <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot" [class.active-id]="!fd['anonymous'].value">
+                        <div class="radio-dot"
+                            [class.active-id]="!fd['anonymous'].value">
                             <div *ngIf="!fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
@@ -582,16 +635,21 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 Recommandé pour un meilleur suivi de votre dossier
                             </div>
                         </div>
-                        <div style="width:32px;height:32px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;">
-                            <i class="pi pi-id-card" style="color:#16a34a;font-size:.875rem;"></i>
+                        <div style="width:32px;height:32px;border-radius:8px;
+                            background:#dcfce7;display:flex;align-items:center;
+                            justify-content:center;">
+                            <i class="pi pi-id-card"
+                                style="color:#16a34a;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="anon-option" [class.selected-anon]="fd['anonymous'].value"
+                <div class="anon-option"
+                    [class.selected-anon]="fd['anonymous'].value"
                     (click)="fd['anonymous'].setValue(true)">
                     <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot" [class.active-anon]="fd['anonymous'].value">
+                        <div class="radio-dot"
+                            [class.active-anon]="fd['anonymous'].value">
                             <div *ngIf="fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
@@ -602,8 +660,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 Votre identité ne sera pas enregistrée
                             </div>
                         </div>
-                        <div style="width:32px;height:32px;border-radius:8px;background:#fef9c3;display:flex;align-items:center;justify-content:center;">
-                            <i class="pi pi-eye-slash" style="color:#ca8a04;font-size:.875rem;"></i>
+                        <div style="width:32px;height:32px;border-radius:8px;
+                            background:#fef9c3;display:flex;align-items:center;
+                            justify-content:center;">
+                            <i class="pi pi-eye-slash"
+                                style="color:#ca8a04;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -623,15 +684,25 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <input pInputText [formControl]="fd['lastName']"
                             placeholder="Votre nom" class="w-full" />
                     </div>
+                    <!-- ✅ Téléphone -->
                     <div class="field">
-                        <label>Téléphone</label>
+                        <label>Téléphone
+                            <span style="color:#9ca3af;font-weight:400;font-size:.8rem;">
+                                (pour recevoir le code par SMS)
+                            </span>
+                        </label>
                         <input pInputText [formControl]="fd['phoneNumber']"
                             placeholder="+226 XX XX XX XX" class="w-full" />
                     </div>
+                    <!-- ✅ Email -->
                     <div class="field">
-                        <label>Email</label>
+                        <label>Email
+                            <span style="color:#9ca3af;font-weight:400;font-size:.8rem;">
+                                (pour recevoir le code par email)
+                            </span>
+                        </label>
                         <input pInputText [formControl]="fd['email']"
-                            placeholder="votre@email.com" class="w-full" />
+                            placeholder="votre@email.com" type="email" class="w-full" />
                     </div>
                     <div class="field">
                         <label>Commune</label>
@@ -668,7 +739,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 border:1.5px solid #e5e7eb;">
                 <p-checkbox [formControl]="fd['dataProcessingConsent']"
                     [binary]="true" inputId="consent" />
-                <label for="consent" style="font-size:.875rem;color:#374151;cursor:pointer;">
+                <label for="consent"
+                    style="font-size:.875rem;color:#374151;cursor:pointer;">
                     J'accepte le traitement de mes données personnelles par l'ASCE-LC.
                     <span style="color:#ef4444;">*</span>
                 </label>
@@ -707,7 +779,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                     <div class="recap-row">
                         <span class="recap-key">Objet</span>
-                        <span class="recap-val" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        <span class="recap-val"
+                            style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             {{ f['object'].value }}
                         </span>
                     </div>
@@ -740,11 +813,45 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <i class="pi pi-eye-slash" style="font-size:.75rem;"></i>
                         Anonyme
                     </div>
-                    <div *ngIf="!fd['anonymous'].value" class="recap-row">
-                        <span class="recap-key">Identité</span>
-                        <span class="recap-val">
-                            {{ fd['firstName'].value }} {{ fd['lastName'].value }}
-                        </span>
+                    <div *ngIf="!fd['anonymous'].value">
+                        <div class="recap-row">
+                            <span class="recap-key">Identité</span>
+                            <span class="recap-val">
+                                {{ fd['firstName'].value }} {{ fd['lastName'].value }}
+                            </span>
+                        </div>
+                        <div *ngIf="fd['phoneNumber'].value" class="recap-row">
+                            <span class="recap-key">Téléphone</span>
+                            <span class="recap-val">{{ fd['phoneNumber'].value }}</span>
+                        </div>
+                        <div *ngIf="fd['email'].value" class="recap-row">
+                            <span class="recap-key">Email</span>
+                            <span class="recap-val">{{ fd['email'].value }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications prévues -->
+                <div *ngIf="!fd['anonymous'].value
+                            && (fd['phoneNumber'].value || fd['email'].value)"
+                    style="background:#f0fdf4;border:1.5px solid #86efac;
+                           border-radius:12px;padding:.875rem;">
+                    <div style="font-size:.75rem;font-weight:800;color:#16a34a;
+                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;">
+                        <i class="pi pi-send" style="margin-right:4px;"></i>
+                        Notifications prévues
+                    </div>
+                    <div *ngIf="fd['phoneNumber'].value"
+                        style="font-size:.8rem;color:#166534;display:flex;
+                               align-items:center;gap:.5rem;">
+                        <i class="pi pi-mobile" style="font-size:.8rem;"></i>
+                        SMS → {{ fd['phoneNumber'].value }}
+                    </div>
+                    <div *ngIf="fd['email'].value"
+                        style="font-size:.8rem;color:#166534;display:flex;
+                               align-items:center;gap:.5rem;margin-top:4px;">
+                        <i class="pi pi-envelope" style="font-size:.8rem;"></i>
+                        Email → {{ fd['email'].value }}
                     </div>
                 </div>
 
@@ -752,7 +859,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <div style="display:flex;align-items:flex-start;gap:.875rem;
                     padding:.875rem;border-radius:12px;background:#fffbeb;
                     border:1.5px solid #fde68a;">
-                    <i class="pi pi-exclamation-triangle" style="color:#d97706;margin-top:1px;"></i>
+                    <i class="pi pi-exclamation-triangle"
+                        style="color:#d97706;margin-top:1px;"></i>
                     <p style="font-size:.8rem;color:#92400e;line-height:1.6;">
                         En soumettant, vous certifiez l'exactitude des informations.
                         Toute fausse déclaration est passible de poursuites.
@@ -769,7 +877,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- Pied de page -->
         <div class="page-foot">
             <i class="pi pi-shield"></i>
             ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
@@ -780,6 +887,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     `
 })
 export class DepotPlainte {
+
+    // ✅ Router public pour le template
+    router = inject(Router);
 
     private fb                = inject(FormBuilder);
     private dossierService    = inject(DossierService);
@@ -823,8 +933,8 @@ export class DepotPlainte {
         typeDeclarant:         ['CITIZEN'],
         firstName:             [''],
         lastName:              [''],
-        email:                 [''],
-        phoneNumber:           [''],
+        email:                 [''],       // ✅
+        phoneNumber:           [''],       // ✅
         commune:               [''],
         province:              [''],
         anonymous:             [false],
@@ -837,13 +947,36 @@ export class DepotPlainte {
     get fd() { return this.declarantForm.controls; }
 
     typeOptions = [
-        { label: 'Plainte',      value: 'COMPLAINT',    description: 'Je suis victime ou témoin', icon: 'pi pi-exclamation-circle' },
-        { label: 'Dénonciation', value: 'DENUNCIATION', description: 'Je signale des faits',      icon: 'pi pi-megaphone'          }
+        {
+            label: 'Plainte', value: 'COMPLAINT',
+            description: 'Je suis victime ou témoin',
+            icon: 'pi pi-exclamation-circle'
+        },
+        {
+            label: 'Dénonciation', value: 'DENUNCIATION',
+            description: 'Je signale des faits',
+            icon: 'pi pi-megaphone'
+        }
     ];
+
+    // ── Navigation dialog ─────────────────────────────────────
+
+    goToSuivi(): void {
+        this.showSuccess = false;
+        setTimeout(() => this.router.navigate(['/portail/suivi']), 150);
+    }
+
+    goToAccueil(): void {
+        this.showSuccess = false;
+        setTimeout(() => this.router.navigate(['/portail']), 150);
+    }
+
+    // ── Enregistrement audio ──────────────────────────────────
 
     async startRecording(): Promise<void> {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices
+                .getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(stream);
             const chunks: BlobPart[] = [];
 
@@ -859,12 +992,13 @@ export class DepotPlainte {
             this.mediaRecorder.start();
             this.isRecording       = true;
             this.recordingDuration = 0;
-            this.recordingTimer    = setInterval(() => this.recordingDuration++, 1000);
+            this.recordingTimer    =
+                setInterval(() => this.recordingDuration++, 1000);
 
         } catch {
             this.messageService.add({
                 severity: 'error', summary: 'Microphone',
-                detail: "Impossible d'accéder au microphone"
+                detail:   "Impossible d'accéder au microphone"
             });
         }
     }
@@ -878,6 +1012,7 @@ export class DepotPlainte {
     }
 
     deleteAudio(): void {
+        if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
         this.audioBlob         = null;
         this.audioUrl          = null;
         this.recordingDuration = 0;
@@ -889,7 +1024,11 @@ export class DepotPlainte {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    onFileSelect(event: any): void { this.addFiles(Array.from(event.target.files)); }
+    // ── Fichiers ──────────────────────────────────────────────
+
+    onFileSelect(event: any): void {
+        this.addFiles(Array.from(event.target.files));
+    }
 
     onDrop(event: DragEvent): void {
         event.preventDefault();
@@ -901,7 +1040,7 @@ export class DepotPlainte {
             if (f.size > this.maxSizeMB * 1024 * 1024) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Fichier trop volumineux',
-                    detail: `${f.name} dépasse ${this.maxSizeMB}MB`
+                    detail:   `${f.name} dépasse ${this.maxSizeMB}MB`
                 });
                 return false;
             }
@@ -910,7 +1049,9 @@ export class DepotPlainte {
         this.attachments = [...this.attachments, ...valid].slice(0, this.maxFiles);
     }
 
-    removeAttachment(index: number): void { this.attachments.splice(index, 1); }
+    removeAttachment(index: number): void {
+        this.attachments.splice(index, 1);
+    }
 
     getFileIcon(file: File): string {
         if (file.type.includes('image')) return 'pi pi-image';
@@ -948,6 +1089,8 @@ export class DepotPlainte {
         return this.typeOptions.find(o => o.value === type)?.label || type;
     }
 
+    // ── Soumission ────────────────────────────────────────────
+
     submit(): void {
         this.submitting = true;
 
@@ -955,14 +1098,16 @@ export class DepotPlainte {
             type:             this.f['type'].value as any,
             submissionMode:   'WEB_FORM' as any,
             object:           this.f['object'].value!,
-            description:      this.f['description'].value || undefined,
+            description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
-            incidentPeriod:   this.f['incidentPeriod'].value  || undefined,
-            estimatedLoss:    this.f['estimatedLoss'].value   || undefined,
+            incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
+            estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {
-                typeDeclarant:         this.fd['anonymous'].value ? 'ANONYMOUS' as any : 'CITIZEN' as any,
+                typeDeclarant: this.fd['anonymous'].value
+                    ? 'ANONYMOUS' as any : 'CITIZEN' as any,
                 firstName:             this.fd['firstName'].value   || undefined,
                 lastName:              this.fd['lastName'].value    || undefined,
+                // ✅ Email et téléphone transmis au backend pour envoi auto
                 email:                 this.fd['email'].value       || undefined,
                 phoneNumber:           this.fd['phoneNumber'].value || undefined,
                 commune:               this.fd['commune'].value     || undefined,
@@ -987,8 +1132,14 @@ export class DepotPlainte {
                 }
                 if (allFiles.length > 0) {
                     this.attachmentService.upload(dossier.id, allFiles).subscribe({
-                        next:  () => { this.submitting = false; this.showSuccess = true; },
-                        error: () => { this.submitting = false; this.showSuccess = true; }
+                        next:  () => {
+                            this.submitting  = false;
+                            this.showSuccess = true;
+                        },
+                        error: () => {
+                            this.submitting  = false;
+                            this.showSuccess = true;
+                        }
                     });
                 } else {
                     this.submitting  = false;
@@ -999,7 +1150,8 @@ export class DepotPlainte {
                 this.submitting = false;
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
-                    detail: err.error?.message || 'Impossible de soumettre. Réessayez.'
+                    detail: err.error?.message
+                        || 'Impossible de soumettre. Réessayez.'
                 });
             }
         });
