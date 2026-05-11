@@ -13,10 +13,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DossierService {
 
-    private http = inject(HttpClient);
+    private http    = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/dossiers`;
 
-    // ── Lecture ──────────────────────────────────────────────────
+    // ── Lecture
 
     findAll(page = 0, size = 20): Observable<PageResponse<DossierResponse>> {
         const params = new HttpParams()
@@ -29,6 +29,13 @@ export class DossierService {
     }
 
     findById(id: string): Observable<DossierResponse> {
+        return this.http.get<DossierResponse>(
+            `${this.baseUrl}/${id}`
+        );
+    }
+
+
+    refreshById(id: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(
             `${this.baseUrl}/${id}`
         );
@@ -59,35 +66,27 @@ export class DossierService {
         );
     }
 
-    // ── Suivi citoyen (sans token) ────────────────────────────────
+    // ── Suivi citoyen 
 
-    trackByAccessCode(
-        accessCode: string
-    ): Observable<DossierResponse> {
+    trackByAccessCode(accessCode: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(
             `${this.baseUrl}/public/track/${accessCode}`
         );
     }
 
-    // ── Création ──────────────────────────────────────────────────
+    // ── Création 
 
-    submit(
-        request: DossierCreateRequest
-    ): Observable<DossierResponse> {
+    submit(request: DossierCreateRequest): Observable<DossierResponse> {
         return this.http.post<DossierResponse>(
             `${this.baseUrl}/public/submit`, request
         );
     }
 
-    create(
-        request: DossierCreateRequest
-    ): Observable<DossierResponse> {
+    create(request: DossierCreateRequest): Observable<DossierResponse> {
         return this.http.post<DossierResponse>(
             this.baseUrl, request
         );
     }
-
-    // ── Workflow — Transitions de statut ──────────────────────────
 
     registerReception(
         id: string,

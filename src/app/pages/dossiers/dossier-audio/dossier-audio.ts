@@ -12,7 +12,7 @@ import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
-const MAX_DURATION_SECONDS = 600; // 10 minutes
+const MAX_DURATION_SECONDS = 600; 
 
 @Component({
     selector: 'app-dossier-audio',
@@ -435,7 +435,6 @@ export class DossierAudio implements OnDestroy {
     audioBars: number[] = Array(12).fill(10);
     barsTimer: any = null;
 
-    // ── Guard : prévenir fermeture pendant enregistrement ──
     private boundUnload = this.onBeforeUnload.bind(this);
 
     dossierForm = this.fb.group({
@@ -489,7 +488,7 @@ export class DossierAudio implements OnDestroy {
         }
     }
 
-    // ── Enregistrement ────────────────────────────────────
+
 
     async startRecording(): Promise<void> {
         try {
@@ -517,7 +516,7 @@ export class DossierAudio implements OnDestroy {
 
             this.recordingTimer = setInterval(() => {
                 this.recordingDuration++;
-                // ✅ Arrêt automatique à la durée max
+              
                 if (this.recordingDuration >= MAX_DURATION_SECONDS) {
                     this.stopRecording();
                     this.messageService.add({
@@ -567,7 +566,6 @@ export class DossierAudio implements OnDestroy {
         this.audioBars = Array(12).fill(10);
     }
 
-    // ── Création dossier ──────────────────────────────────
 
     createDossier(): void {
         if (!this.audioBlob || this.dossierForm.invalid) {
@@ -614,7 +612,7 @@ export class DossierAudio implements OnDestroy {
                         window.removeEventListener('beforeunload', this.boundUnload);
                     },
                     error: () => {
-                        // Upload échoue mais dossier existe — on affiche quand même
+                        
                         this.submitting     = false;
                         this.createdDossier = dossier;
                         this.messageService.add({
@@ -636,7 +634,6 @@ export class DossierAudio implements OnDestroy {
         });
     }
 
-    // ── Navigation post-création ──────────────────────────
 
     goToDossier(): void {
         this.router.navigate(['/app/dossiers', this.createdDossier.id]);
@@ -646,7 +643,6 @@ export class DossierAudio implements OnDestroy {
         window.print();
     }
 
-    // ── Utilitaires ───────────────────────────────────────
 
     formatDuration(seconds: number): string {
         const m = Math.floor(seconds / 60);

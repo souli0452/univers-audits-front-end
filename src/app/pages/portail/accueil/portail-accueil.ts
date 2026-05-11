@@ -114,55 +114,107 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
         /* ── Hero ── */
         .hero {
             position:relative;
-            background:linear-gradient(135deg, var(--green) 0%, #00b050 60%, #007a35 100%);
-            min-height:520px; display:flex; align-items:center; overflow:hidden;
+            background: linear-gradient(135deg, #005c2a 0%, #003d1c 100%);
+            min-height:580px; display:flex; align-items:center; overflow:hidden;
+            border-bottom: 4px solid var(--green);
         }
-        .hero::before {
-            content:''; position:absolute; inset:0;
-            background:url('/assets/banner.jpg') center/cover no-repeat;
-            opacity:.12;
+        .hero::before { display:none; }
+
+        /* Slideshow */
+        .hero-bg {
+            position:absolute; inset:0;
+            background-size:cover; background-position:center;
+            opacity:0;
         }
-        .hero-circles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+        .hero-bg-1 {
+            background-image:url('/assets/banner1.png');
+            animation: slide-bg 18s infinite 0s;
+        }
+        .hero-bg-2 {
+            background-image:url('/assets/banner2.png');
+            background-size: cover;
+            background-position: center center;
+            animation: slide-bg 18s infinite 6s;
+        }
+        .hero-bg-3 {
+            background-image:url('/assets/banner3.png');
+            background-size: cover;
+            background-position: center center;
+            animation: slide-bg 18s infinite 12s;
+        }
+        @keyframes slide-bg {
+            0%     { opacity:0; }
+            5.5%   { opacity:1; }
+            27.7%  { opacity:1; }
+            33.3%  { opacity:0; }
+            100%   { opacity:0; }
+        }
+        /* Voile léger uniquement pour la lisibilité du texte */
+        .hero-overlay {
+            position:absolute; inset:0; z-index:1;
+            background:linear-gradient(
+                to bottom,
+                rgba(0,0,0,.25) 0%,
+                rgba(0,0,0,.10) 50%,
+                rgba(0,0,0,.35) 100%
+            );
+        }
+
+        /* Cercles décoratifs */
+        .hero-circles { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:2; }
         .hc {
             position:absolute; border-radius:50%;
-            background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+            background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
         }
-        .hc1 { width:400px; height:400px; top:-100px; right:-80px; }
-        .hc2 { width:250px; height:250px; bottom:-60px; left:10%; }
-        .hc3 { width:120px; height:120px; top:40%; left:5%; }
+        .hc1 { width:420px; height:420px; top:-120px; right:5%; }
+        .hc2 { width:200px; height:200px; bottom:-50px; left:10%; }
+        .hc3 { width:90px;  height:90px;  top:30%;     left:28%; }
+
+        /* Contenu centré */
         .hero-content {
-            position:relative; z-index:1;
-            max-width:1100px; margin:0 auto;
+            position:relative; z-index:3;
+            max-width:760px; margin:0 auto;
             padding:5rem 2rem; width:100%; text-align:center;
         }
+
+        /* Badge */
         .hero-badge {
             display:inline-flex; align-items:center; gap:.5rem;
             background:rgba(255,255,255,.15); backdrop-filter:blur(8px);
-            color:#fff; border:1px solid rgba(255,255,255,.25);
-            padding:6px 18px; border-radius:24px;
-            font-size:.8rem; font-weight:700; letter-spacing:1px;
-            text-transform:uppercase; margin-bottom:1.5rem;
-        }
-        .hero-title {
-            font-size:3rem; font-weight:900; color:#fff;
-            text-transform:uppercase; text-shadow:0 4px 16px rgba(0,0,0,.25);
-            margin-bottom:1.25rem; line-height:1.15;
-        }
-        .hero-title span { color:var(--gold); }
-        .hero-subtitle {
-            font-size:1.1rem; color:rgba(255,255,255,.92);
-            max-width:600px; margin:0 auto 2.5rem; line-height:1.75;
+            color:#fff; border:1px solid rgba(255,255,255,.3);
+            padding:7px 20px; border-radius:24px;
+            font-size:.75rem; font-weight:800; letter-spacing:1.5px;
+            text-transform:uppercase; margin-bottom:1.75rem;
         }
 
-        /* Stats hero */
-        .hero-stats {
-            display:flex; justify-content:center; gap:2.5rem;
-            margin-bottom:3rem; flex-wrap:wrap;
+        /* Titre */
+        .hero-title {
+            font-size:3.1rem; font-weight:900; color:#fff;
+            text-transform:uppercase; line-height:1.12;
+            margin-bottom:1.25rem; letter-spacing:-0.5px;
+            text-shadow:0 3px 16px rgba(0,0,0,.4);
         }
-        .hero-stat { text-align:center; }
+        .hero-title span { color:var(--gold); }
+
+        /* Sous-titre */
+        .hero-subtitle {
+            font-size:1.05rem; color:rgba(255,255,255,.9);
+            max-width:540px; margin:0 auto 2.5rem; line-height:1.8;
+            text-shadow:0 1px 6px rgba(0,0,0,.3);
+        }
+
+        /* Stats */
+        .hero-stats {
+            display:inline-flex; justify-content:center; gap:0;
+            margin-bottom:2.75rem; flex-wrap:wrap;
+            background:rgba(255,255,255,.12); backdrop-filter:blur(12px);
+            border-radius:20px; border:1px solid rgba(255,255,255,.2);
+            padding:.75rem 2rem;
+        }
+        .hero-stat { text-align:center; padding:.75rem 1.5rem; }
         .hero-stat-num {
-            font-size:2.25rem; font-weight:900; color:var(--gold);
-            min-width:80px; display:block;
+            font-size:2rem; font-weight:900; color:var(--gold);
+            min-width:70px; display:block; line-height:1.1;
         }
         .hero-stat-num.loading {
             background:rgba(255,255,255,.2); border-radius:8px;
@@ -172,12 +224,12 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
             0%,100% { opacity:.6; } 50% { opacity:1; }
         }
         .hero-stat-lbl {
-            font-size:.75rem; color:rgba(255,255,255,.8);
-            text-transform:uppercase; letter-spacing:1px;
+            font-size:.68rem; color:rgba(255,255,255,.75);
+            text-transform:uppercase; letter-spacing:1px; margin-top:2px;
         }
         .stat-divider {
             width:1px; background:rgba(255,255,255,.2);
-            align-self:stretch; margin:4px 0;
+            align-self:stretch; margin:8px 0;
         }
 
         /* Pills */
@@ -311,22 +363,37 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
             max-width:1100px; margin:0 auto;
             display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr;
             gap:3rem; margin-bottom:2.5rem;
+            align-items: start;
         }
-        .footer-brand { display:flex; flex-direction:column; gap:1.25rem; }
+
+        /* ── Colonne brand ── */
+        .footer-brand {
+            display:flex; flex-direction:column;
+            align-items:flex-start; gap:1.25rem;
+        }
         .footer-logo {
             width:90px; height:90px; border-radius:50%;
             border:3px solid var(--gold); overflow:hidden; background:#fff;
         }
         .footer-logo img { width:100%; height:100%; object-fit:contain; }
         .footer-brand p { color:rgba(255,255,255,.8); font-size:.8rem; line-height:1.7; }
-        .social-row { display:flex; gap:.625rem; }
+
+        /* ── Réseaux sociaux centrés sous la grille ── */
+        .social-row {
+            display:flex; gap:.625rem;
+            justify-content:center;
+            width:100%;
+            margin-bottom:2rem;
+        }
         .social-btn {
             width:38px; height:38px; border-radius:8px;
             background:rgba(255,255,255,.1);
             display:flex; align-items:center; justify-content:center;
-            color:#fff; font-size:1rem; cursor:pointer; transition:all .2s;
+            color:#fff; font-size:1rem; cursor:pointer;
+            transition:all .2s; text-decoration:none;
         }
         .social-btn:hover { background:var(--gold); color:var(--dark); transform:translateY(-3px); }
+
         .footer-col h4 { font-size:1rem; font-weight:800; color:var(--gold); margin-bottom:1.25rem; }
         .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:.75rem; }
         .footer-col a {
@@ -409,7 +476,9 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
         @media (max-width:900px) {
             .topbar { flex-direction:column; gap:10px; padding:12px 1rem; text-align:center; }
             .hero-title { font-size:2rem; }
-            .hero-stats { gap:1.5rem; }
+            .hero-horse { width:160px; }
+            .hero-stats { padding:.5rem 1rem; }
+            .hero-stat  { padding:.5rem .75rem; }
             .stat-divider { display:none; }
             .steps-row   { grid-template-columns:repeat(2,1fr); }
             .steps-row::before { display:none; }
@@ -422,6 +491,7 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
             .brand-plus    { font-size:1.75rem; }
         }
         @media (max-width:560px) {
+            .hero-horse { display:none; }
             .action-pills { flex-direction:column; align-items:center; gap:1rem; }
             .pill { border-radius:34px !important; margin:0 !important; padding:0 2.5rem !important; }
             .channels-grid { grid-template-columns:1fr; }
@@ -474,6 +544,16 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
 
     <!-- ── Hero ── -->
     <section class="hero">
+
+        <!-- Calque 1 : banner1.png -->
+        <div class="hero-bg hero-bg-1"></div>
+        <!-- Calque 2 : banner2.png -->
+        <div class="hero-bg hero-bg-2"></div>
+        <!-- Calque 3 : banner3.png -->
+        <div class="hero-bg hero-bg-3"></div>
+        <!-- Voile sombre -->
+        <div class="hero-overlay"></div>
+
         <div class="hero-circles">
             <div class="hc hc1"></div>
             <div class="hc hc2"></div>
@@ -497,34 +577,34 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
 
             <!-- Stats réelles -->
             <div class="hero-stats" @fadeIn>
-    <div class="hero-stat">
-        <span class="hero-stat-num" [class.loading]="statsLoading">
-            {{ statsLoading ? '—' : (stats.dossiersTraites | number) + '+' }}
-        </span>
-        <span class="hero-stat-lbl">Dossiers traités</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="hero-stat">
-        <span class="hero-stat-num" [class.loading]="statsLoading">
-            {{ statsLoading ? '—' : (stats.dossiersNouveaux | number) }}
-        </span>
-        <span class="hero-stat-lbl">Nouveaux</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="hero-stat">
-        <span class="hero-stat-num" [class.loading]="statsLoading">
-            {{ statsLoading ? '—' : (stats.dossiersEnCours | number) }}
-        </span>
-        <span class="hero-stat-lbl">En cours</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="hero-stat">
-        <span class="hero-stat-num" [class.loading]="statsLoading">
-            {{ statsLoading ? '—' : stats.confidentiel }}
-        </span>
-        <span class="hero-stat-lbl">Confidentiel</span>
-    </div>
-</div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num" [class.loading]="statsLoading">
+                        {{ statsLoading ? '—' : (stats.dossiersTraites | number) + '+' }}
+                    </span>
+                    <span class="hero-stat-lbl">Dossiers traités</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num" [class.loading]="statsLoading">
+                        {{ statsLoading ? '—' : (stats.dossiersNouveaux | number) }}
+                    </span>
+                    <span class="hero-stat-lbl">Nouveaux</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num" [class.loading]="statsLoading">
+                        {{ statsLoading ? '—' : (stats.dossiersEnCours | number) }}
+                    </span>
+                    <span class="hero-stat-lbl">En cours</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num" [class.loading]="statsLoading">
+                        {{ statsLoading ? '—' : stats.confidentiel }}
+                    </span>
+                    <span class="hero-stat-lbl">Confidentiel</span>
+                </div>
+            </div>
 
             <div class="action-pills" @fadeIn>
                 <button class="pill pill-left" (click)="showDialog = true">
@@ -614,24 +694,19 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
 
     <!-- ── Footer ── -->
     <footer class="footer">
+
+        <!-- Grille principale -->
         <div class="footer-inner">
 
+            <!-- Colonne brand : logo + texte -->
             <div class="footer-brand">
                 <div class="footer-logo">
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
                 <p>
                     Autorité Supérieure de Contrôle d'État<br>
-                    et de Lutte contre la Corruption<br>
-                    Prévention et Lutte contre la Corruption<br>
-                    et les Infractions Assimilées
+                    et de Lutte contre la Corruption
                 </p>
-                <div class="social-row">
-                    <div class="social-btn"><i class="pi pi-facebook"></i></div>
-                    <div class="social-btn"><i class="pi pi-twitter"></i></div>
-                    <div class="social-btn"><i class="pi pi-linkedin"></i></div>
-                    <div class="social-btn"><i class="pi pi-youtube"></i></div>
-                </div>
             </div>
 
             <div class="footer-col">
@@ -675,9 +750,34 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
             </div>
 
         </div>
+
+        <!-- ── Réseaux sociaux centrés sous la grille ── -->
+        <div class="social-row">
+            <a class="social-btn"
+               href="https://www.facebook.com/ascelcbf"
+               target="_blank" rel="noopener" title="Facebook ASCE-LC">
+                <i class="pi pi-facebook"></i>
+            </a>
+            <a class="social-btn"
+               href="#"
+               target="_blank" rel="noopener" title="Twitter / X">
+                <i class="pi pi-twitter"></i>
+            </a>
+            <a class="social-btn"
+               href="#"
+               target="_blank" rel="noopener" title="LinkedIn">
+                <i class="pi pi-linkedin"></i>
+            </a>
+            <a class="social-btn"
+               href="https://www.youtube.com/@ascelcbf"
+               target="_blank" rel="noopener" title="YouTube ASCE-LC">
+                <i class="pi pi-youtube"></i>
+            </a>
+        </div>
+
         <hr class="footer-hr" />
         <div class="footer-bottom">
-            <p>© 2025 ASCE-LC Burkina Faso — Tous droits réservés</p>
+            <p>© 2026 ASCE-LC Burkina Faso — Tous droits réservés</p>
             <p style="margin-top:6px;"><em>"La Patrie ou la Mort, nous vaincrons"</em></p>
         </div>
     </footer>
@@ -722,22 +822,21 @@ import { StatistiqueService, PublicStats } from '../../../core/services/statisti
 })
 export class PortailAccueil implements OnInit {
 
-    private router         = inject(Router);
-    private statsService   = inject(StatistiqueService);
+    private router       = inject(Router);
+    private statsService = inject(StatistiqueService);
 
     showDialog   = false;
     scrolled     = false;
     statsLoading = true;
 
-    
-stats: PublicStats = {
-    totalDossiers:    0,
-    dossiersNouveaux: 0,
-    dossiersEnCours:  0,
-    dossiersTraites:  0,
-    confidentiel:     '100%',
-    delaiJours:       7
-};
+    stats: PublicStats = {
+        totalDossiers:    0,
+        dossiersNouveaux: 0,
+        dossiersEnCours:  0,
+        dossiersTraites:  0,
+        confidentiel:     '100%',
+        delaiJours:       7
+    };
 
     @HostListener('window:scroll')
     onScroll(): void {
@@ -752,10 +851,10 @@ stats: PublicStats = {
     }
 
     readonly howSteps = [
-        { icon: 'pi pi-file-edit',    bg: '#16a34a', title: 'Soumission',    desc: 'Remplissez le formulaire ou enregistrez votre témoignage vocal' },
-        { icon: 'pi pi-check-circle', bg: '#2563eb', title: 'Enregistrement',desc: 'Votre dossier reçoit un numéro officiel et un code de suivi B4' },
-        { icon: 'pi pi-search',       bg: '#d97706', title: 'Instruction',   desc: "Un agent instruit le dossier et mène l'enquête si nécessaire" },
-        { icon: 'pi pi-gavel',        bg: '#7c3aed', title: 'Décision',      desc: 'Une décision officielle est rendue et vous est communiquée' }
+        { icon: 'pi pi-file-edit',    bg: '#16a34a', title: 'Soumission',     desc: 'Remplissez le formulaire ou enregistrez votre témoignage vocal' },
+        { icon: 'pi pi-check-circle', bg: '#2563eb', title: 'Enregistrement', desc: 'Votre dossier reçoit un numéro officiel et un code de suivi B4' },
+        { icon: 'pi pi-search',       bg: '#d97706', title: 'Instruction',    desc: "Un agent instruit le dossier et mène l'enquête si nécessaire" },
+        { icon: 'pi pi-gavel',        bg: '#7c3aed', title: 'Décision',       desc: 'Une décision officielle est rendue et vous est communiquée' }
     ];
 
     readonly trustItems = [

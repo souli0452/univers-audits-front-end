@@ -509,8 +509,7 @@ export class DossiersList implements OnInit {
         this.dossierService.findAll(0, 500).subscribe({
             next: page => {
                 this.allDossiers = [...page.content].sort((a, b) => {
-                    // Tri principal : numéro décroissant (séquentiel → fait autorité)
-                    // { numeric: true } gère "000019" > "000018" peu importe le padding
+                    
                     const numCompare = (b.number || '').localeCompare(
                         a.number || '',
                         undefined,
@@ -518,7 +517,6 @@ export class DossiersList implements OnInit {
                     );
                     if (numCompare !== 0) return numCompare;
 
-                    // Tri secondaire : date décroissante (si même numéro, cas rare)
                     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                 });
                 this.applyFilters();

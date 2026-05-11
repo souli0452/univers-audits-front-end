@@ -151,20 +151,19 @@ import { NotificationService } from '../../core/services/notification.service';
 })
 export class AppTopbar implements OnInit, OnDestroy {
 
-    items!: MenuItem[];
+    
     recentNotifs: any[] = [];
 
     layoutService       = inject(LayoutService);
     notificationService = inject(NotificationService);
 
-    // Stocker l'intervalle pour le nettoyer à la destruction
     private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
     ngOnInit(): void {
         this.notificationService.loadUnread();
         this.loadRecentNotifs();
 
-        // Rafraîchir toutes les 30 secondes
+
         this.pollingInterval = setInterval(() => {
             this.notificationService.loadUnread();
             this.loadRecentNotifs();

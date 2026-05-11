@@ -26,13 +26,14 @@ import {
     InvestigationService,
     InvestigationResponse,
     TeamRole,
-    SubmitReportRequest
+    SubmitReportRequest,
+    AgentSummaryInMember,
+    InvestigationMemberResponse
 } from '../../../core/services/investigation.service';
 import { AgentService }      from '../../../core/services/agent.service';
 import { KeycloakService }   from '../../../core/auth/keycloak.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
-// ─── Types locaux ──────────────────────────────────────────────────────────────
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -45,26 +46,6 @@ type OutcomeValue =
     | 'PRESS_RELEASE'
     | 'ANNUAL_REPORT';
 
-// ─── Interfaces exportées ──────────────────────────────────────────────────────
-
-export interface AgentSummaryInMember {
-    id:                string;
-    firstName:         string;
-    lastName:          string;
-    email?:            string;
-    matricule:         string;
-    departementLabel?: string;
-}
-
-export interface InvestigationMemberResponse {
-    id:               string;
-    agent:            AgentSummaryInMember;
-    teamRole:         TeamRole;
-    dateAttribution?: string;
-    active:           boolean;
-}
-
-// ─── Interfaces internes ───────────────────────────────────────────────────────
 
 interface AgentOption {
     label: string;
@@ -89,7 +70,6 @@ interface ApiError {
     error?: { message?: string };
 }
 
-// ─── Composant ─────────────────────────────────────────────────────────────────
 
 @Component({
     selector:    'app-investigation-detail',
@@ -105,7 +85,6 @@ interface ApiError {
     template: `
 <p-toast />
 
-<!-- ── Dialog suspension ──────────────────────────────── -->
 <p-dialog [(visible)]="showSuspendDialog"
     header="Suspendre l'investigation"
     [modal]="true" [style]="{width:'440px'}">
@@ -681,7 +660,7 @@ interface ApiError {
                     </div>
                 </div>
 
-                <!-- ✅ Rapport — innerHTML assaini via DomSanitizer -->
+                <!-- Rapport — innerHTML assaini via DomSanitizer -->
                 <div *ngIf="safeReport">
                     <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">
                         Rapport
@@ -863,7 +842,6 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     get isPanel(): boolean { return !!this.dossierId; }
 
-    // ── Injections ───────────────────────────────────────────────────────────────
 
     private readonly route                = inject(ActivatedRoute);
     private readonly router               = inject(Router);
@@ -874,31 +852,23 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly attachmentService    = inject(AttachmentService);
     private readonly sanitizer            = inject(DomSanitizer);
 
-    // ── Gestion mémoire ──────────────────────────────────────────────────────────
-    // ✅ FIX : toutes les subscriptions sont détruites dans ngOnDestroy
 
     private readonly destroy$ = new Subject<void>();
 
-    // ── État ─────────────────────────────────────────────────────────────────────
 
     inv:      InvestigationResponse | null = null;
     loading   = true;
     actioning = false;
     readonly today = new Date();
 
-    // HTML assaini — ✅ FIX sécurité : [innerHTML] ne doit jamais recevoir de string brute
     safeReport:          SafeHtml | null = null;
     safeConclusions:     SafeHtml | null = null;
     safeRecommendations: SafeHtml | null = null;
-
-    // Dialogs
     showSuspendDialog   = false;
     showExtendDialog    = false;
     showReportDialog    = false;
     showCgeDialog       = false;
     showAddMemberDialog = false;
-
-    // Champs formulaires
     suspendReason    = '';
     extendDate:      Date | null = null;
     extendReason     = '';
@@ -916,13 +886,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     reportFiles:    File[] = [];
     uploadProgress = 0;
-
-    // ── Données de référence ─────────────────────────────────────────────────────
-
     availableAgents: AgentOption[]  = [];
     approvalSteps:   ApprovalStep[] = [];
 
-    // ✅ FIX : constantes inline dans le template remplacées par des propriétés typées
     readonly quickDays: readonly number[] = [90, 120, 180];
 
     readonly roleOptions: SelectOption<TeamRole>[] = [
@@ -938,7 +904,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         { label: 'Rapport annuel',             value: 'ANNUAL_REPORT'            }
     ];
 
-    // ── Cycle de vie ─────────────────────────────────────────────────────────────
+
 
     ngOnInit(): void {
         if (this.dossierId) {
@@ -958,13 +924,10 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         }
     }
 
-    // ✅ FIX mémoire : libération de toutes les subscriptions
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
     }
-
-    // ── Chargement ───────────────────────────────────────────────────────────────
 
     private loadById(id: string): void {
         this.loading = true;
@@ -1002,6 +965,17 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             });
     }
 
+
+    private reloadInv(): void {
+        if (!this.inv) return;
+        this.investigationService.findById(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: freshInv => this.setInv(freshInv),
+                error: () => {  }
+            });
+    }
+
     private loadAgents(): void {
         this.agentService.findAll(0, 100)
             .pipe(takeUntil(this.destroy$))
@@ -1012,18 +986,11 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                         value: a.id
                     }));
                 },
-                error: () => { /* silencieux */ }
+                error: () => { }
             });
     }
 
-    // ── Helpers d'état ───────────────────────────────────────────────────────────
 
-    /**
-     * ✅ FIX sécurité : appelé à chaque réception de données du serveur.
-     * Le HTML riche produit par p-editor (Quill) est assaini avant d'être
-     * injecté via [innerHTML].  bypassSecurityTrustHtml est justifié ici car
-     * le contenu provient exclusivement du back-end interne (pas de l'utilisateur final).
-     */
     private setInv(inv: InvestigationResponse | null): void {
         this.inv = inv;
         if (inv) {
@@ -1079,7 +1046,6 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         ];
     }
 
-    // ── Upload ───────────────────────────────────────────────────────────────────
 
     onFileSelect(event: Event): void {
         const input = event.target as HTMLInputElement;
@@ -1097,7 +1063,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     private addReportFiles(files: File[]): void {
-        const maxSize = 10 * 1024 * 1024; // 10 Mo
+        const maxSize = 10 * 1024 * 1024;
         for (const f of files) {
             if (f.size > maxSize) {
                 this.messageService.add({
@@ -1125,7 +1091,6 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         return this.attachmentService.formatSize(bytes);
     }
 
-    // ── Actions ──────────────────────────────────────────────────────────────────
 
     openInvestigation(): void {
         if (!this.dossierId) return;
@@ -1211,10 +1176,10 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             .subscribe({
                 next: inv => {
                     this.setInv(inv);
-                    this.actioning         = false;
-                    this.showExtendDialog  = false;
-                    this.extendDate        = null;
-                    this.extendReason      = '';
+                    this.actioning        = false;
+                    this.showExtendDialog = false;
+                    this.extendDate       = null;
+                    this.extendReason     = '';
                     this.messageService.add({ severity: 'success', summary: 'Délai prolongé' });
                 },
                 error: (err: ApiError) => { this.actioning = false; this.showError(err); }
@@ -1334,32 +1299,70 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             })
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: inv => {
-                    this.setInv(inv);
-                    this.actioning           = false;
-                    this.showAddMemberDialog = false;
-                    this.newMemberAgentId    = '';
-                    this.newMemberRole       = 'MEMBER';
-                    this.messageService.add({ severity: 'success', summary: 'Membre ajouté' });
+                next: () => {
+                    this.investigationService.findById(this.inv!.id)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe({
+                            next: freshInv => {
+                                this.setInv(freshInv);
+                                this.actioning           = false;
+                                this.showAddMemberDialog = false;
+                                this.newMemberAgentId    = '';
+                                this.newMemberRole       = 'MEMBER';
+                                this.messageService.add({
+                                    severity: 'success',
+                                    summary:  'Membre ajouté',
+                                    detail:   'L\'équipe a été mise à jour.'
+                                });
+                            },
+                            error: () => {
+                                this.actioning           = false;
+                                this.showAddMemberDialog = false;
+                                this.newMemberAgentId    = '';
+                                this.newMemberRole       = 'MEMBER';
+                                this.messageService.add({
+                                    severity: 'warn',
+                                    summary:  'Membre ajouté',
+                                    detail:   'Rafraîchissez si le membre n\'apparaît pas.'
+                                });
+                            }
+                        });
                 },
                 error: (err: ApiError) => { this.actioning = false; this.showError(err); }
             });
     }
 
+   
     executeRemoveMember(agentId: string): void {
         if (!this.inv) return;
         this.investigationService.removeMember(this.inv.id, agentId)
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: inv => {
-                    this.setInv(inv);
-                    this.messageService.add({ severity: 'info', summary: 'Membre retiré' });
+                next: () => {
+                    this.investigationService.findById(this.inv!.id)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe({
+                            next: freshInv => {
+                                this.setInv(freshInv);
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary:  'Membre retiré',
+                                    detail:   'L\'équipe a été mise à jour.'
+                                });
+                            },
+                            error: () => {
+                                this.messageService.add({
+                                    severity: 'warn',
+                                    summary:  'Membre retiré',
+                                    detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                                });
+                            }
+                        });
                 },
                 error: (err: ApiError) => this.showError(err)
             });
     }
 
-    // ── Utilitaires ──────────────────────────────────────────────────────────────
 
     getProgress(): number {
         if (!this.inv?.startDate || !this.inv?.plannedEndDate) return 0;
@@ -1374,7 +1377,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     getProgressGradient(): string {
-        if (this.inv?.overdue)       return 'linear-gradient(90deg,#ef4444,#dc2626)';
+        if (this.inv?.overdue)        return 'linear-gradient(90deg,#ef4444,#dc2626)';
         if (this.getProgress() >= 80) return 'linear-gradient(90deg,#f59e0b,#d97706)';
         return 'linear-gradient(90deg,#22c55e,#16a34a)';
     }

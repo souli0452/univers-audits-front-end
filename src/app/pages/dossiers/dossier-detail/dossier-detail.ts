@@ -13,7 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
-import { DossierResponse, DossierStatus } from '../../../core/models/dossier.model';
+import { DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
 import { KeycloakService } from '../../../core/auth/keycloak.service';
 import { AttachmentService, AttachmentResponse } from '../../../core/services/attachment.service';
 import {
@@ -78,6 +78,51 @@ interface WorkflowStep {
     </ng-template>
 </p-dialog>
 
+
+<p-dialog [(visible)]="showVersionConflictDialog"
+    header="Conflit de version détecté"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false"
+    [closable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div class="flex items-start gap-3 p-4 bg-amber-50 border border-amber-300
+                    rounded-xl">
+            <i class="pi pi-exclamation-triangle text-amber-600 text-xl
+                       flex-shrink-0 mt-0.5"></i>
+            <div>
+                <div class="font-bold text-amber-800 mb-1">
+                    Ce dossier a été modifié par un autre agent
+                </div>
+                <p class="text-sm text-amber-700 leading-relaxed">
+                    Votre version locale (v{{ staleVersion }}) est différente
+                    de la version en base. Le dossier a été rechargé
+                    automatiquement. Vous pouvez maintenant réessayer.
+                </p>
+            </div>
+        </div>
+        <div *ngIf="conflictRefreshing"
+            class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200
+                   rounded-xl">
+            <i class="pi pi-spin pi-spinner text-blue-600"></i>
+            <span class="text-sm text-blue-700">Rechargement du dossier...</span>
+        </div>
+        <div *ngIf="!conflictRefreshing"
+            class="flex items-center gap-2 p-3 bg-green-50 border border-green-200
+                   rounded-xl">
+            <i class="pi pi-check-circle text-green-600"></i>
+            <span class="text-sm text-green-700 font-medium">
+                Dossier synchronisé — version actuelle : v{{ dossier?.version }}
+            </span>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Fermer et réessayer"
+            icon="pi pi-refresh"
+            severity="warn"
+            [disabled]="conflictRefreshing"
+            (onClick)="closeVersionConflictDialog()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog Partie visée ────────────────────────────────── -->
 <p-dialog [(visible)]="showPartyDialog"
     [header]="editingParty ? 'Modifier la partie' : 'Ajouter une partie visée'"
@@ -86,7 +131,7 @@ interface WorkflowStep {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Type de partie *
+                    Type de partie <span class="text-red-500 font-bold">*</span>
                 </label>
                 <p-select [(ngModel)]="partyForm.partyType"
                     [options]="partyTypeOptions"
@@ -106,7 +151,7 @@ interface WorkflowStep {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Prénom
+                    Prénom <span class="text-red-500 font-bold">*</span>
                 </label>
                 <input pInputText [(ngModel)]="partyForm.firstName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
@@ -114,7 +159,7 @@ interface WorkflowStep {
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Nom
+                    Nom <span class="text-red-500 font-bold">*</span>
                 </label>
                 <input pInputText [(ngModel)]="partyForm.name"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
@@ -165,6 +210,10 @@ interface WorkflowStep {
                 class="w-full border border-surface-300 rounded-lg px-3 py-2"
                 placeholder="Ex: Supérieur hiérarchique" />
         </div>
+        <!-- Légende champs obligatoires -->
+        <p class="text-xs text-surface-400 mt-1">
+            <span class="text-red-500 font-bold">*</span> Champs obligatoires
+        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showPartyDialog=false"/>
@@ -181,7 +230,7 @@ interface WorkflowStep {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Prénom
+                    Prénom <span class="text-red-500 font-bold">*</span>
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.firstName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
@@ -189,7 +238,7 @@ interface WorkflowStep {
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Nom
+                    Nom <span class="text-red-500 font-bold">*</span>
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.lastName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
@@ -240,6 +289,10 @@ interface WorkflowStep {
                 Consent à être recontacté
             </label>
         </div>
+        <!-- Légende champs obligatoires -->
+        <p class="text-xs text-surface-400 mt-1">
+            <span class="text-red-500 font-bold">*</span> Champs obligatoires
+        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showWitnessDialog=false"/>
@@ -254,7 +307,7 @@ interface WorkflowStep {
     <div class="flex flex-col gap-3 py-2">
         <div>
             <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                Type *
+                Type <span class="text-red-500 font-bold">*</span>
             </label>
             <p-select [(ngModel)]="obsForm.type" [options]="obsTypeOptions"
                 optionLabel="label" optionValue="value"
@@ -262,7 +315,7 @@ interface WorkflowStep {
         </div>
         <div>
             <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                Contenu *
+                Contenu <span class="text-red-500 font-bold">*</span>
             </label>
             <textarea pTextarea [(ngModel)]="obsForm.content" rows="5"
                 class="w-full resize-none"
@@ -274,6 +327,10 @@ interface WorkflowStep {
             <span class="font-medium">Confidentiel</span>
             <span class="text-xs text-surface-400">(CGE, CGEA et juridique uniquement)</span>
         </label>
+        <!-- Légende champs obligatoires -->
+        <p class="text-xs text-surface-400 mt-1">
+            <span class="text-red-500 font-bold">*</span> Champs obligatoires
+        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showObsDialog=false"/>
@@ -302,6 +359,23 @@ interface WorkflowStep {
                         <p-tag *ngIf="dossier"
                             [value]="getStatusLabel(dossier.status)"
                             [severity]="getStatusSeverity(dossier.status)"/>
+                        <span *ngIf="dossier"
+                            class="inline-flex items-center gap-1 px-2 py-0.5
+                                   bg-surface-100 dark:bg-surface-700
+                                   text-surface-400 text-xs font-mono rounded-full
+                                   border border-surface-200 dark:border-surface-600"
+                            pTooltip="Version du dossier (optimistic locking)"
+                            tooltipPosition="bottom">
+                            <i class="pi pi-code" style="font-size:9px;"></i>
+                            v{{ dossier.version }}
+                        </span>
+                        <span *ngIf="justRefreshedAfterConflict"
+                            class="inline-flex items-center gap-1 px-2 py-0.5
+                                   bg-green-100 text-green-700 text-xs font-medium
+                                   rounded-full border border-green-200">
+                            <i class="pi pi-check-circle" style="font-size:9px;"></i>
+                            Synchronisé
+                        </span>
                     </div>
                     <p class="text-surface-400 text-sm mt-1">{{ dossier?.object }}</p>
                 </div>
@@ -774,7 +848,7 @@ interface WorkflowStep {
                 </div>
             </div>
 
-            <!-- ✅ BLOC INVESTIGATION : ouvrir ou accéder -->
+            <!-- BLOC INVESTIGATION -->
             <div *ngIf="dossier && isInvestigationVisible()"
                 class="bg-white dark:bg-surface-800 rounded-2xl border
                        border-surface-100 dark:border-surface-700 overflow-hidden">
@@ -789,8 +863,6 @@ interface WorkflowStep {
                     </h3>
                 </div>
                 <div class="p-4">
-
-                    <!-- Dossier RECEVABLE — ouvrir investigation -->
                     <div *ngIf="dossier.status === 'RECEVABLE'
                                 && hasRole(['CGEA','ADMIN_DDIC'])"
                         class="flex flex-col gap-3">
@@ -841,8 +913,6 @@ interface WorkflowStep {
                             [loading]="openingInvestigation"
                             (onClick)="openInvestigation()"/>
                     </div>
-
-                    <!-- Dossier RECEVABLE, pas CGEA -->
                     <div *ngIf="dossier.status === 'RECEVABLE'
                                 && !hasRole(['CGEA','ADMIN_DDIC'])"
                         class="p-3 bg-blue-50 border border-blue-200 rounded-xl
@@ -850,8 +920,6 @@ interface WorkflowStep {
                         <i class="pi pi-info-circle mr-1"></i>
                         En attente d'ouverture par le CGEA.
                     </div>
-
-                    <!-- Investigation déjà ouverte → bouton accéder -->
                     <div *ngIf="dossier.status !== 'RECEVABLE'"
                         class="flex flex-col gap-2">
                         <div class="flex items-center gap-2 p-2 bg-surface-50
@@ -879,7 +947,6 @@ interface WorkflowStep {
                             routerLink="/app/investigations"
                             [queryParams]="{dossier: dossier.id}"/>
                     </div>
-
                 </div>
             </div>
 
@@ -1008,6 +1075,10 @@ export class DossierDetail implements OnInit {
     attachmentBlobs:      { [id: string]: string } = {};
     previewId:            string | null = null;
     docxHtml:             { [id: string]: string } = {};
+    staleVersion                  = 0;
+    showVersionConflictDialog     = false;
+    conflictRefreshing            = false;
+    justRefreshedAfterConflict    = false;
 
     activeTab = 'parties';
     tabs = [
@@ -1074,6 +1145,7 @@ export class DossierDetail implements OnInit {
         if (id) this.loadDossier(id);
     }
 
+
     private loadDossier(id: string): void {
         this.loading = true;
         this.dossierService.findById(id).subscribe({
@@ -1108,7 +1180,46 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    // ── Investigation ─────────────────────────────────────────
+
+    private handleTransitionError(err: any): void {
+        this.transitioning = false;
+
+        if (isVersionConflict(err)) {
+            this.staleVersion              = this.dossier?.version ?? 0;
+            this.showTransitionDialog      = false;
+            this.showVersionConflictDialog = true;
+            this.conflictRefreshing        = true;
+
+            this.dossierService.refreshById(this.dossier!.id).subscribe({
+                next: fresh => {
+                    this.dossier            = fresh;
+                    this.buildWorkflowSteps(fresh);
+                    this.conflictRefreshing = false;
+                },
+                error: () => {
+                    this.conflictRefreshing = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary:  'Erreur de rechargement',
+                        detail:   'Impossible de recharger le dossier. Rafraîchissez la page.'
+                    });
+                }
+            });
+        } else {
+            this.messageService.add({
+                severity: 'error',
+                summary:  'Erreur',
+                detail:   err.error?.message || 'Transition échouée'
+            });
+        }
+    }
+
+    closeVersionConflictDialog(): void {
+        this.showVersionConflictDialog  = false;
+        this.justRefreshedAfterConflict = true;
+        setTimeout(() => { this.justRefreshedAfterConflict = false; }, 5000);
+    }
+
 
     openInvestigation(): void {
         if (!this.dossier) return;
@@ -1137,7 +1248,6 @@ export class DossierDetail implements OnInit {
             });
     }
 
-    // ── Parties ───────────────────────────────────────────────
 
     openAddParty(): void {
         this.editingParty    = null;
@@ -1158,21 +1268,44 @@ export class DossierDetail implements OnInit {
     }
 
     saveParty(): void {
-        if (!this.dossier || !this.partyForm.partyType) return;
+        if (!this.dossier || !this.partyForm.partyType
+            || !this.partyForm.firstName?.trim() || !this.partyForm.name?.trim()) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champs obligatoires',
+                detail:   'Type de partie, Prénom et Nom sont requis.'
+            });
+            return;
+        }
         this.savingParty = true;
+
         const obs$ = this.editingParty
             ? this.targetedPartyService.update(
                 this.dossier.id, this.editingParty.id, this.partyForm)
             : this.targetedPartyService.create(this.dossier.id, this.partyForm);
+
         obs$.subscribe({
             next: () => {
-                this.savingParty = false; this.showPartyDialog = false;
+
                 this.targetedPartyService.findAll(this.dossier!.id).subscribe({
-                    next: p => { this.parties = p; }
-                });
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.editingParty ? 'Partie modifiée' : 'Partie ajoutée'
+                    next: p => {
+                        this.parties         = p;
+                        this.savingParty     = false;
+                        this.showPartyDialog = false;
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: this.editingParty ? 'Partie modifiée' : 'Partie ajoutée'
+                        });
+                    },
+                    error: () => {
+                        // Mutation OK mais rechargement échoué → on ferme quand même
+                        this.savingParty     = false;
+                        this.showPartyDialog = false;
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary:  this.editingParty ? 'Partie modifiée' : 'Partie ajoutée',
+                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                        });
+                    }
                 });
             },
             error: err => {
@@ -1189,14 +1322,30 @@ export class DossierDetail implements OnInit {
         if (!this.dossier) return;
         this.targetedPartyService.delete(this.dossier.id, partyId).subscribe({
             next: () => {
-                this.parties = this.parties.filter(p => p.id !== partyId);
-                this.messageService.add({ severity: 'info', summary: 'Partie supprimée' });
+              
+                this.targetedPartyService.findAll(this.dossier!.id).subscribe({
+                    next: p => {
+                        this.parties = p;
+                        this.messageService.add({ severity: 'info', summary: 'Partie supprimée' });
+                    },
+                    error: () => {
+                        this.messageService.add({
+                            severity: 'warn', summary: 'Partie supprimée',
+                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                        });
+                    }
+                });
             },
-            error: () => {}
+            error: err => {
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Suppression échouée'
+                });
+            }
         });
     }
 
-    // ── Témoins ───────────────────────────────────────────────
+    
 
     openAddWitness(): void {
         this.editingWitness    = null;
@@ -1218,21 +1367,43 @@ export class DossierDetail implements OnInit {
     }
 
     saveWitness(): void {
-        if (!this.dossier) return;
+        if (!this.dossier || !this.witnessForm.firstName?.trim()
+            || (!this.witnessForm.anonymous && !this.witnessForm.lastName?.trim())) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champs obligatoires',
+                detail:   'Prénom et Nom sont requis (sauf témoin anonyme).'
+            });
+            return;
+        }
         this.savingWitness = true;
+
         const obs$ = this.editingWitness
             ? this.witnessService.update(
                 this.dossier.id, this.editingWitness.id, this.witnessForm)
             : this.witnessService.create(this.dossier.id, this.witnessForm);
+
         obs$.subscribe({
             next: () => {
-                this.savingWitness = false; this.showWitnessDialog = false;
+                
                 this.witnessService.findAll(this.dossier!.id).subscribe({
-                    next: w => { this.witnesses = w; }
-                });
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.editingWitness ? 'Témoin modifié' : 'Témoin ajouté'
+                    next: w => {
+                        this.witnesses          = w;
+                        this.savingWitness      = false;
+                        this.showWitnessDialog  = false;
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: this.editingWitness ? 'Témoin modifié' : 'Témoin ajouté'
+                        });
+                    },
+                    error: () => {
+                        this.savingWitness     = false;
+                        this.showWitnessDialog = false;
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary:  this.editingWitness ? 'Témoin modifié' : 'Témoin ajouté',
+                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                        });
+                    }
                 });
             },
             error: err => {
@@ -1249,14 +1420,27 @@ export class DossierDetail implements OnInit {
         if (!this.dossier) return;
         this.witnessService.delete(this.dossier.id, witnessId).subscribe({
             next: () => {
-                this.witnesses = this.witnesses.filter(w => w.id !== witnessId);
-                this.messageService.add({ severity: 'info', summary: 'Témoin supprimé' });
+                this.witnessService.findAll(this.dossier!.id).subscribe({
+                    next: w => {
+                        this.witnesses = w;
+                        this.messageService.add({ severity: 'info', summary: 'Témoin supprimé' });
+                    },
+                    error: () => {
+                        this.messageService.add({
+                            severity: 'warn', summary: 'Témoin supprimé',
+                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                        });
+                    }
+                });
             },
-            error: () => {}
+            error: err => {
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Suppression échouée'
+                });
+            }
         });
     }
-
-    // ── Observations ──────────────────────────────────────────
 
     saveObservation(): void {
         if (!this.dossier || !this.obsForm.type || !this.obsForm.content) return;
@@ -1279,7 +1463,6 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    // ── Blob / Preview ────────────────────────────────────────
 
     loadBlob(att: AttachmentResponse): void {
         const url = this.attachmentService.getDownloadUrl(att.id);
@@ -1344,7 +1527,6 @@ export class DossierDetail implements OnInit {
             && !this.isImage(att) && !this.isWord(att) && !this.isVideo(att);
     }
 
-    // ── Workflow ──────────────────────────────────────────────
 
     private buildWorkflowSteps(dossier: DossierResponse): void {
         const order: DossierStatus[] = [
@@ -1378,7 +1560,6 @@ export class DossierDetail implements OnInit {
         }));
     }
 
-    // ── Transitions ───────────────────────────────────────────
 
     openTransition(type: string, title: string, placeholder: string): void {
         this.currentTransitionType = type;
@@ -1399,7 +1580,12 @@ export class DossierDetail implements OnInit {
     executeTransition(): void {
         if (!this.dossier) return;
         this.transitioning = true;
-        const request = { version: this.dossier.version, reason: this.transitionReason };
+
+        const request = {
+            version: this.dossier.version,
+            reason:  this.transitionReason
+        };
+
         const map: Record<string, () => any> = {
             'register':             () => this.dossierService.registerReception(this.dossier!.id, request),
             'start-study':          () => this.dossierService.startOpportunityStudy(this.dossier!.id, request),
@@ -1409,24 +1595,23 @@ export class DossierDetail implements OnInit {
             'declare-inadmissible': () => this.dossierService.declareInadmissible(this.dossier!.id, request),
             'close':                () => this.dossierService.close(this.dossier!.id, request)
         };
+
         const obs$ = map[this.currentTransitionType]?.();
         if (!obs$) { this.transitioning = false; return; }
+
         obs$.subscribe({
             next: (updated: DossierResponse) => {
-                this.dossier = updated; this.buildWorkflowSteps(updated);
-                this.transitioning = false; this.showTransitionDialog = false;
+                this.dossier = updated;
+                this.buildWorkflowSteps(updated);
+                this.transitioning        = false;
+                this.showTransitionDialog = false;
                 this.messageService.add({
-                    severity: 'success', summary: 'Statut mis à jour',
-                    detail: this.getStatusLabel(updated.status)
+                    severity: 'success',
+                    summary:  'Statut mis à jour',
+                    detail:   this.getStatusLabel(updated.status)
                 });
             },
-            error: (err: any) => {
-                this.transitioning = false;
-                this.messageService.add({
-                    severity: 'error', summary: 'Erreur',
-                    detail: err.error?.message || 'Transition échouée'
-                });
-            }
+            error: (err: any) => this.handleTransitionError(err)
         });
     }
 
@@ -1447,7 +1632,6 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    // ── Utilitaires ───────────────────────────────────────────
 
     hasRole(roles: string[]): boolean { return this.keycloakService.hasAnyRole(roles); }
 

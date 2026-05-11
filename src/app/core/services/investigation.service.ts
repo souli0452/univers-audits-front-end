@@ -6,20 +6,20 @@ import { environment } from '../../../environments/environment';
 import { PageResponse } from '../models/dossier.model';
 
 export interface AgentSummaryInMember {
-    id:            string;
-    firstName:     string;
-    lastName:      string;
-    email?:        string;
-    matricule:     string;
+    id:                string;
+    firstName:         string;
+    lastName:          string;
+    email?:            string;
+    matricule:         string;
     departementLabel?: string;
 }
 
 export interface InvestigationMemberResponse {
-    id:             string;
-    agent:          AgentSummaryInMember;
-    teamRole:       TeamRole;
+    id:               string;
+    agent:            AgentSummaryInMember;
+    teamRole:         TeamRole;
     dateAttribution?: string;
-    active:         boolean;
+    active:           boolean;
 }
 
 export interface InvestigationResponse {

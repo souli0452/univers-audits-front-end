@@ -41,36 +41,23 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
 
         .top-nav {
-            height: 56px;
-            background: #16a34a;
-            padding: 0 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            height: 56px; background: #16a34a; padding: 0 1rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,.15);
         }
         .nav-left { display:flex; align-items:center; gap:.75rem; }
         .nav-logo {
             width:34px; height:34px; border-radius:50%;
             overflow:hidden; background:#fff;
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
         .nav-logo img { width:100%; height:100%; object-fit:contain; }
-        .nav-brand {
-            font-weight:900; font-size:.95rem;
-            letter-spacing:1.5px; color:#fff;
-        }
+        .nav-brand { font-weight:900; font-size:.95rem; letter-spacing:1.5px; color:#fff; }
 
         .content { max-width:560px; margin:0 auto; padding:1.5rem 1rem 3rem; }
 
-        .page-header {
-            text-align:center; margin-bottom:2rem;
-            animation: slide-up .5s ease;
-        }
+        .page-header { text-align:center; margin-bottom:2rem; animation: slide-up .5s ease; }
         .header-icon {
             width:96px; height:96px; border-radius:50%;
             background: linear-gradient(135deg, #16a34a, #22c55e);
@@ -78,141 +65,108 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             margin:0 auto 1rem; box-shadow:0 8px 24px rgba(22,163,74,.3);
         }
         .header-icon i { font-size:3rem; color:#fff; }
-        .page-title {
-            font-size:1.75rem; font-weight:900;
-            color:#111827; margin-bottom:.5rem;
-        }
+        .page-title { font-size:1.75rem; font-weight:900; color:#111827; margin-bottom:.5rem; }
         .page-subtitle { color:#6b7280; font-size:.9rem; line-height:1.7; }
 
         .steps-bar {
-            display:flex; align-items:center;
-            justify-content:center; gap:6px;
-            margin-bottom:1.75rem;
+            display:flex; align-items:center; justify-content:center;
+            gap:6px; margin-bottom:1.75rem;
         }
         .step-dot {
             width:40px; height:40px; border-radius:50%;
             display:flex; align-items:center; justify-content:center;
             font-weight:800; font-size:.875rem;
-            border:2.5px solid #e5e7eb;
-            background:#fff; color:#9ca3af;
-            transition:all .3s;
+            border:2.5px solid #e5e7eb; background:#fff; color:#9ca3af; transition:all .3s;
         }
         .step-dot.active {
             background:#16a34a; border-color:#16a34a;
             color:#fff; box-shadow:0 0 0 5px rgba(22,163,74,.15);
         }
         .step-dot.done { background:#22c55e; border-color:#22c55e; color:#fff; }
-        .step-line {
-            width:40px; height:3px; border-radius:2px;
-            background:#e5e7eb; transition:background .3s;
-        }
+        .step-line { width:40px; height:3px; border-radius:2px; background:#e5e7eb; transition:background .3s; }
         .step-line.done { background:#22c55e; }
 
         .step-card {
-            background:#fff; border-radius:20px;
-            padding:1.75rem; border:1px solid #f0fdf4;
-            box-shadow:0 4px 24px rgba(0,0,0,.06);
+            background:#fff; border-radius:20px; padding:1.75rem;
+            border:1px solid #f0fdf4; box-shadow:0 4px 24px rgba(0,0,0,.06);
             animation: slide-up .3s ease;
         }
         .step-card-title {
-            text-align:center; font-size:1.05rem;
-            font-weight:800; color:#111827;
-            margin-bottom:1.5rem;
-            display:flex; align-items:center;
+            text-align:center; font-size:1.05rem; font-weight:800; color:#111827;
+            margin-bottom:1.5rem; display:flex; align-items:center;
             justify-content:center; gap:.5rem;
         }
 
         .record-idle {
-            text-align:center; padding:2.5rem 1.5rem;
-            border-radius:16px; border:2.5px dashed #86efac;
-            background:#f0fdf4; margin-bottom:1.5rem;
+            text-align:center; padding:2.5rem 1.5rem; border-radius:16px;
+            border:2.5px dashed #86efac; background:#f0fdf4; margin-bottom:1.5rem;
         }
         .idle-icon {
             width:96px; height:96px; border-radius:50%;
             background:linear-gradient(135deg,#16a34a,#22c55e);
             display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem;
-            box-shadow:0 8px 20px rgba(22,163,74,.25);
+            margin:0 auto 1.25rem; box-shadow:0 8px 20px rgba(22,163,74,.25);
         }
         .idle-icon i { font-size:2.75rem; color:#fff; }
 
+        /* Audio requis — bordure rouge si tenté de passer sans audio */
+        .record-idle-error {
+            border-color:#ef4444 !important;
+            background:#fff5f5 !important;
+        }
+
         .record-active {
-            text-align:center; padding:2rem 1.5rem;
-            border-radius:16px; border:2.5px solid #ef4444;
-            background:#fff5f5; margin-bottom:1.5rem;
+            text-align:center; padding:2rem 1.5rem; border-radius:16px;
+            border:2.5px solid #ef4444; background:#fff5f5; margin-bottom:1.5rem;
         }
-        .pulse-wrap {
-            position:relative; display:inline-block; margin-bottom:1rem;
-        }
+        .pulse-wrap { position:relative; display:inline-block; margin-bottom:1rem; }
         .pulse-ring {
             position:absolute; inset:-12px; border-radius:50%;
-            border:3px solid #ef4444;
-            animation:pulse-ring 1.4s ease-out infinite;
+            border:3px solid #ef4444; animation:pulse-ring 1.4s ease-out infinite;
         }
         .active-icon {
-            width:88px; height:88px; border-radius:50%;
-            background:#ef4444; display:flex;
-            align-items:center; justify-content:center;
+            width:88px; height:88px; border-radius:50%; background:#ef4444;
+            display:flex; align-items:center; justify-content:center;
             position:relative; z-index:1;
         }
         .active-icon i { font-size:2.5rem; color:#fff; }
         .chrono {
-            font-family:monospace; font-size:3.5rem;
-            font-weight:900; color:#dc2626;
-            line-height:1; margin-bottom:.75rem;
+            font-family:monospace; font-size:3.5rem; font-weight:900;
+            color:#dc2626; line-height:1; margin-bottom:.75rem;
         }
         .rec-badge {
             display:inline-flex; align-items:center; gap:8px;
-            background:#fee2e2; border-radius:20px;
-            padding:5px 16px; margin-bottom:1.25rem;
+            background:#fee2e2; border-radius:20px; padding:5px 16px; margin-bottom:1.25rem;
         }
-        .rec-dot {
-            width:9px; height:9px; border-radius:50%;
-            background:#ef4444; animation:blink 1s infinite;
-        }
-        .rec-label {
-            color:#b91c1c; font-weight:900;
-            font-size:.8rem; letter-spacing:2px;
-        }
+        .rec-dot { width:9px; height:9px; border-radius:50%; background:#ef4444; animation:blink 1s infinite; }
+        .rec-label { color:#b91c1c; font-weight:900; font-size:.8rem; letter-spacing:2px; }
 
         .bars-row {
-            display:flex; align-items:flex-end;
-            gap:4px; height:36px; justify-content:center;
-            margin-bottom:1.25rem;
+            display:flex; align-items:flex-end; gap:4px; height:36px;
+            justify-content:center; margin-bottom:1.25rem;
         }
-        .bar {
-            width:5px; background:#ef4444;
-            border-radius:3px; min-height:5px;
-            transition:height .12s ease;
-        }
+        .bar { width:5px; background:#ef4444; border-radius:3px; min-height:5px; transition:height .12s ease; }
 
         .audio-done {
-            display:flex; align-items:center; gap:1rem;
-            padding:.875rem 1rem; border-radius:14px;
-            background:#f0fdf4; border:1.5px solid #86efac;
-            margin-bottom:.75rem;
+            display:flex; align-items:center; gap:1rem; padding:.875rem 1rem;
+            border-radius:14px; background:#f0fdf4; border:1.5px solid #86efac; margin-bottom:.75rem;
         }
         .done-icon {
-            width:48px; height:48px; border-radius:12px;
-            background:#22c55e; display:flex;
-            align-items:center; justify-content:center; flex-shrink:0;
+            width:48px; height:48px; border-radius:12px; background:#22c55e;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
         .done-icon i { color:#fff; font-size:1.25rem; }
 
-        .photos-grid {
-            display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
-        }
+        .photos-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
         .photo-thumb { position:relative; }
         .photo-thumb img {
             width:100%; height:90px; object-fit:cover;
             border-radius:10px; border:1.5px solid #e5e7eb;
         }
         .photo-remove {
-            position:absolute; top:4px; right:4px;
-            width:22px; height:22px; border-radius:50%;
-            background:#ef4444; color:#fff; border:none;
-            cursor:pointer; font-size:14px;
-            display:flex; align-items:center; justify-content:center;
+            position:absolute; top:4px; right:4px; width:22px; height:22px;
+            border-radius:50%; background:#ef4444; color:#fff; border:none;
+            cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
         }
 
         .phone-hero { text-align:center; margin-bottom:1.5rem; }
@@ -220,31 +174,36 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             width:80px; height:80px; border-radius:50%;
             background:linear-gradient(135deg,#0ea5e9,#38bdf8);
             display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1rem;
-            box-shadow:0 8px 20px rgba(14,165,233,.25);
+            margin:0 auto 1rem; box-shadow:0 8px 20px rgba(14,165,233,.25);
         }
         .phone-icon i { font-size:2.25rem; color:#fff; }
 
         .recap-item {
-            display:flex; align-items:center; gap:.875rem;
-            padding:.875rem 1rem; border-radius:14px;
-            border:1.5px solid #e5e7eb; background:#f9fafb;
-            transition:all .2s;
+            display:flex; align-items:center; gap:.875rem; padding:.875rem 1rem;
+            border-radius:14px; border:1.5px solid #e5e7eb; background:#f9fafb; transition:all .2s;
         }
         .recap-item.ok   { background:#f0fdf4; border-color:#86efac; }
         .recap-item.info { background:#eff6ff; border-color:#93c5fd; }
+        .recap-item.missing { background:#fff5f5; border-color:#fca5a5; }
         .recap-icon {
             width:42px; height:42px; border-radius:12px;
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
         .recap-title { font-weight:700; font-size:.875rem; color:#111827; }
         .recap-sub   { font-size:.775rem; color:#6b7280; margin-top:2px; }
 
+        .req { color:#ef4444; margin-left:2px; }
+        .error-msg { color:#ef4444; font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:4px; }
+
+        .field-label {
+            display:block; font-weight:700; color:#374151;
+            font-size:.875rem; margin-bottom:.5rem;
+        }
+        .input-error { border:1.5px solid #ef4444 !important; background:#fff5f5 !important; }
+
         .step-footer {
-            display:flex; justify-content:space-between;
-            align-items:center; gap:.75rem;
-            margin-top:1.5rem; flex-wrap:wrap;
+            display:flex; justify-content:space-between; align-items:center;
+            gap:.75rem; margin-top:1.5rem; flex-wrap:wrap;
         }
         .footer-right { display:flex; gap:.5rem; align-items:center; }
 
@@ -253,8 +212,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             width:88px; height:88px; border-radius:50%;
             background:linear-gradient(135deg,#16a34a,#22c55e);
             display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem;
-            box-shadow:0 8px 24px rgba(22,163,74,.3);
+            margin:0 auto 1.25rem; box-shadow:0 8px 24px rgba(22,163,74,.3);
         }
         .success-icon-wrap i { font-size:2.75rem; color:#fff; }
         .code-box {
@@ -266,32 +224,18 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             font-size:.65rem; font-weight:900; color:#16a34a;
             letter-spacing:2px; text-transform:uppercase; margin-bottom:.5rem;
         }
-        .code-value {
-            font-family:monospace; font-size:2.5rem;
-            font-weight:900; color:#166534; letter-spacing:6px;
-        }
+        .code-value { font-family:monospace; font-size:2.5rem; font-weight:900; color:#166534; letter-spacing:6px; }
         .code-hint { font-size:.75rem; color:#15803d; margin-top:.5rem; }
 
-        .notif-row {
-            display:flex; flex-direction:column; gap:.5rem;
-            margin-top:.5rem;
-        }
+        .notif-row { display:flex; flex-direction:column; gap:.5rem; margin-top:.5rem; }
         .notif-badge {
             display:inline-flex; align-items:center; gap:.5rem;
-            font-size:.8rem; padding:6px 12px; border-radius:20px;
-            font-weight:600;
+            font-size:.8rem; padding:6px 12px; border-radius:20px; font-weight:600;
         }
-        .notif-badge.sms {
-            background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;
-        }
-        .notif-badge.email {
-            background:#fef9c3; color:#854d0e; border:1px solid #fde68a;
-        }
+        .notif-badge.sms  { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .notif-badge.email { background:#fef9c3; color:#854d0e; border:1px solid #fde68a; }
 
-        .page-foot {
-            text-align:center; margin-top:2rem;
-            color:#9ca3af; font-size:.75rem;
-        }
+        .page-foot { text-align:center; margin-top:2rem; color:#9ca3af; font-size:.75rem; }
 
         @media (max-width:600px) {
             .step-footer { flex-direction:column; align-items:stretch; }
@@ -309,8 +253,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         <div class="success-icon-wrap">
             <i class="pi pi-check-circle"></i>
         </div>
-        <h3 style="font-size:1.4rem;font-weight:900;color:#111827;
-                   margin-bottom:.5rem;">
+        <h3 style="font-size:1.4rem;font-weight:900;color:#111827;margin-bottom:.5rem;">
             Merci pour votre témoignage !
         </h3>
         <p style="font-size:.875rem;color:#6b7280;line-height:1.7;margin-bottom:0;">
@@ -318,7 +261,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             et créer votre dossier officiel.
         </p>
 
-        <!-- Code B4 -->
         <div class="code-box">
             <div class="code-label">Votre code de suivi B4</div>
             <div class="code-value">{{ createdAccessCode }}</div>
@@ -328,7 +270,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ✅ Indicateurs d'envoi SMS et/ou Email -->
         <div class="notif-row" *ngIf="phoneNumber || email">
             <div *ngIf="phoneNumber" class="notif-badge sms">
                 <i class="pi pi-mobile" style="font-size:.85rem;"></i>
@@ -354,7 +295,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 <!-- ── Page ───────────────────────────────────────────────── -->
 <div class="page-wrapper">
 
-    <!-- Navbar -->
     <nav class="top-nav">
         <div class="nav-left">
             <p-button icon="pi pi-arrow-left" severity="contrast"
@@ -371,7 +311,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
     <div class="content">
 
-        <!-- Header -->
         <div class="page-header">
             <div class="header-icon">
                 <i class="pi pi-microphone"></i>
@@ -388,16 +327,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <div class="step-dot"
                 [class.active]="currentStep === 1"
                 [class.done]="currentStep > 1">
-                <i *ngIf="currentStep > 1" class="pi pi-check"
-                    style="font-size:.75rem;"></i>
+                <i *ngIf="currentStep > 1" class="pi pi-check" style="font-size:.75rem;"></i>
                 <span *ngIf="currentStep <= 1">1</span>
             </div>
             <div class="step-line" [class.done]="currentStep > 1"></div>
             <div class="step-dot"
                 [class.active]="currentStep === 2"
                 [class.done]="currentStep > 2">
-                <i *ngIf="currentStep > 2" class="pi pi-check"
-                    style="font-size:.75rem;"></i>
+                <i *ngIf="currentStep > 2" class="pi pi-check" style="font-size:.75rem;"></i>
                 <span *ngIf="currentStep <= 2">2</span>
             </div>
             <div class="step-line" [class.done]="currentStep > 2"></div>
@@ -411,27 +348,33 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div class="step-card-title">
                 <span style="background:#dcfce7;color:#16a34a;font-size:.7rem;
-                    font-weight:900;padding:3px 10px;border-radius:20px;
-                    letter-spacing:1px;">ÉTAPE 1</span>
-                Enregistrez votre témoignage
+                    font-weight:900;padding:3px 10px;border-radius:20px;letter-spacing:1px;">
+                    ÉTAPE 1
+                </span>
+                Enregistrez votre témoignage <span style="color:#ef4444;margin-left:2px;">*</span>
             </div>
 
             <!-- Idle -->
-            <div *ngIf="!audioUrl && !isRecording" class="record-idle">
+            <div *ngIf="!audioUrl && !isRecording"
+                class="record-idle"
+                [class.record-idle-error]="audioTouched && !audioUrl">
                 <div class="idle-icon">
                     <i class="pi pi-microphone"></i>
                 </div>
-                <p style="font-weight:800;font-size:1.05rem;color:#111827;
-                           margin-bottom:.5rem;">
+                <p style="font-weight:800;font-size:1.05rem;color:#111827;margin-bottom:.5rem;">
                     Appuyez pour parler
                 </p>
-                <p style="color:#6b7280;font-size:.85rem;margin-bottom:1.5rem;
-                           line-height:1.6;">
+                <p style="color:#6b7280;font-size:.85rem;margin-bottom:1.5rem;line-height:1.6;">
                     Parlez dans votre langue<br>Moore, Dioula, Fulfuldé…
                 </p>
                 <p-button label="COMMENCER À PARLER"
                     icon="pi pi-microphone" size="large"
                     (onClick)="startRecording()" />
+            </div>
+            <!-- Message erreur audio manquant -->
+            <div *ngIf="audioTouched && !audioUrl && !isRecording" class="error-msg" style="justify-content:center;margin-bottom:.75rem;">
+                <i class="pi pi-exclamation-circle" style="font-size:.875rem;"></i>
+                L'enregistrement audio est obligatoire pour continuer
             </div>
 
             <!-- En cours -->
@@ -448,8 +391,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <span class="rec-label">REC</span>
                 </div>
                 <div class="bars-row">
-                    <div *ngFor="let b of audioBars" class="bar"
-                        [style.height]="b + 'px'"></div>
+                    <div *ngFor="let b of audioBars" class="bar" [style.height]="b + 'px'"></div>
                 </div>
                 <p-button label="ARRÊTER" icon="pi pi-stop-circle"
                     severity="danger" size="large" (onClick)="stopRecording()" />
@@ -458,9 +400,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <!-- Enregistré -->
             <div *ngIf="audioUrl && !isRecording">
                 <div class="audio-done">
-                    <div class="done-icon">
-                        <i class="pi pi-check"></i>
-                    </div>
+                    <div class="done-icon"><i class="pi pi-check"></i></div>
                     <div style="flex:1;">
                         <div style="font-weight:800;color:#166534;font-size:.9rem;">
                             Témoignage enregistré ✓
@@ -471,13 +411,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         </div>
                     </div>
                     <span style="background:#dcfce7;color:#166534;font-size:.75rem;
-                        font-weight:700;padding:4px 10px;border-radius:20px;">
-                        OK
-                    </span>
+                        font-weight:700;padding:4px 10px;border-radius:20px;">OK</span>
                 </div>
                 <audio [src]="audioUrl" controls
-                    style="width:100%;margin-bottom:.75rem;border-radius:8px;">
-                </audio>
+                    style="width:100%;margin-bottom:.75rem;border-radius:8px;"></audio>
                 <p-button label="Recommencer" icon="pi pi-refresh"
                     severity="secondary" outlined (onClick)="deleteAudio()" />
             </div>
@@ -491,9 +428,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <i class="pi pi-camera" style="color:#16a34a;"></i>
                     Ajouter des preuves
                     <span style="background:#f3f4f6;color:#6b7280;font-size:.7rem;
-                        padding:2px 8px;border-radius:12px;font-weight:600;">
-                        Optionnel
-                    </span>
+                        padding:2px 8px;border-radius:12px;font-weight:600;">Optionnel</span>
                 </p>
                 <div style="display:flex;gap:.75rem;margin-bottom:1rem;">
                     <input #cameraInput type="file" accept="image/*"
@@ -510,11 +445,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         (onClick)="galleryInput.click()" />
                 </div>
                 <div *ngIf="photos.length > 0" class="photos-grid">
-                    <div *ngFor="let photo of photos; let i = index"
-                        class="photo-thumb">
+                    <div *ngFor="let photo of photos; let i = index" class="photo-thumb">
                         <img [src]="getPhotoPreview(photo)" alt="Photo" />
-                        <button class="photo-remove"
-                            (click)="removePhoto(i)">×</button>
+                        <button class="photo-remove" (click)="removePhoto(i)">×</button>
                     </div>
                 </div>
             </div>
@@ -525,8 +458,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     L'audio est obligatoire
                 </span>
                 <p-button label="Continuer" icon="pi pi-arrow-right"
-                    iconPos="right" [disabled]="!audioUrl"
-                    (onClick)="currentStep = 2" />
+                    iconPos="right" (onClick)="goToStep2()" />
             </div>
         </div>
 
@@ -535,50 +467,38 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div class="step-card-title">
                 <span style="background:#dbeafe;color:#1d4ed8;font-size:.7rem;
-                    font-weight:900;padding:3px 10px;border-radius:20px;
-                    letter-spacing:1px;">ÉTAPE 2</span>
+                    font-weight:900;padding:3px 10px;border-radius:20px;letter-spacing:1px;">
+                    ÉTAPE 2
+                </span>
                 Vos coordonnées de contact
             </div>
 
             <div class="phone-hero">
-                <div class="phone-icon">
-                    <i class="pi pi-mobile"></i>
-                </div>
-                <p style="color:#6b7280;font-size:.875rem;line-height:1.7;
-                    max-width:320px;margin:0 auto;">
+                <div class="phone-icon"><i class="pi pi-mobile"></i></div>
+                <p style="color:#6b7280;font-size:.875rem;line-height:1.7;max-width:320px;margin:0 auto;">
                     Pour recevoir votre code de suivi par SMS et/ou email.<br>
-                    <strong style="color:#374151;">
-                        Vous pouvez passer cette étape.
-                    </strong>
+                    <strong style="color:#374151;">Vous pouvez passer cette étape.</strong>
                 </p>
             </div>
 
             <!-- Téléphone -->
             <div style="margin-bottom:1rem;">
-                <label style="display:block;font-weight:700;color:#374151;
-                    font-size:.875rem;margin-bottom:.5rem;">
-                    <i class="pi pi-phone"
-                        style="color:#0ea5e9;margin-right:6px;"></i>
+                <label class="field-label">
+                    <i class="pi pi-phone" style="color:#0ea5e9;margin-right:6px;"></i>
                     Numéro de téléphone
-                    <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">
-                        (optionnel)
-                    </span>
+                    <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">(optionnel)</span>
                 </label>
                 <input pInputText [(ngModel)]="phoneNumber"
                     placeholder="+226 XX XX XX XX" type="tel" class="w-full"
                     style="font-size:1rem;padding:.75rem;border-radius:12px;" />
             </div>
 
-            <!-- ✅ Email -->
+            <!-- Email -->
             <div style="margin-bottom:1.25rem;">
-                <label style="display:block;font-weight:700;color:#374151;
-                    font-size:.875rem;margin-bottom:.5rem;">
-                    <i class="pi pi-envelope"
-                        style="color:#0ea5e9;margin-right:6px;"></i>
+                <label class="field-label">
+                    <i class="pi pi-envelope" style="color:#0ea5e9;margin-right:6px;"></i>
                     Adresse email
-                    <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">
-                        (optionnel)
-                    </span>
+                    <span style="font-weight:400;color:#9ca3af;font-size:.8rem;">(optionnel)</span>
                 </label>
                 <input pInputText [(ngModel)]="email"
                     placeholder="votre@email.com" type="email" class="w-full"
@@ -606,36 +526,38 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div class="step-card-title">
                 <span style="background:#fef9c3;color:#854d0e;font-size:.7rem;
-                    font-weight:900;padding:3px 10px;border-radius:20px;
-                    letter-spacing:1px;">ÉTAPE 3</span>
+                    font-weight:900;padding:3px 10px;border-radius:20px;letter-spacing:1px;">
+                    ÉTAPE 3
+                </span>
                 Vérification et envoi
             </div>
 
-            <div style="display:flex;flex-direction:column;gap:.625rem;
-                        margin-bottom:1.5rem;">
+            <div style="display:flex;flex-direction:column;gap:.625rem;margin-bottom:1.5rem;">
 
-                <!-- Audio -->
-                <div class="recap-item" [class.ok]="audioUrl">
+                <!-- Audio — obligatoire, mis en rouge si absent -->
+                <div class="recap-item"
+                    [class.ok]="audioUrl"
+                    [class.missing]="!audioUrl">
                     <div class="recap-icon"
-                        [style.background]="audioUrl ? '#dcfce7' : '#f3f4f6'">
+                        [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'">
                         <i class="pi text-xl"
                             [class.pi-check-circle]="audioUrl"
                             [class.pi-times-circle]="!audioUrl"
-                            [style.color]="audioUrl ? '#16a34a' : '#d1d5db'">
-                        </i>
+                            [style.color]="audioUrl ? '#16a34a' : '#ef4444'"></i>
                     </div>
                     <div style="flex:1;">
-                        <div class="recap-title">Témoignage audio</div>
-                        <div class="recap-sub">
+                        <div class="recap-title">
+                            Témoignage audio <span *ngIf="!audioUrl" style="color:#ef4444;">*</span>
+                        </div>
+                        <div class="recap-sub" [style.color]="!audioUrl ? '#ef4444' : ''">
                             {{ audioUrl
                                 ? 'Enregistré — ' + formatDuration(recordingDuration)
-                                : 'Manquant (obligatoire)' }}
+                                : 'Manquant — obligatoire' }}
                         </div>
                     </div>
                     <span [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'"
                         [style.color]="audioUrl ? '#166534' : '#dc2626'"
-                        style="font-size:.75rem;font-weight:700;
-                               padding:4px 10px;border-radius:20px;">
+                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
                         {{ audioUrl ? 'OK' : 'Requis' }}
                     </span>
                 </div>
@@ -647,8 +569,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <i class="pi text-xl"
                             [class.pi-images]="photos.length > 0"
                             [class.pi-minus-circle]="photos.length === 0"
-                            [style.color]="photos.length > 0 ? '#16a34a' : '#d1d5db'">
-                        </i>
+                            [style.color]="photos.length > 0 ? '#16a34a' : '#d1d5db'"></i>
                     </div>
                     <div style="flex:1;">
                         <div class="recap-title">Fichiers joints</div>
@@ -658,23 +579,20 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 : 'Aucun (optionnel)' }}
                         </div>
                     </div>
-                    <span style="background:#f3f4f6;color:#6b7280;
-                                 font-size:.75rem;font-weight:700;
-                                 padding:4px 10px;border-radius:20px;">
-                        {{ photos.length > 0
-                            ? photos.length + ' fichier(s)' : 'Aucun' }}
+                    <span style="background:#f3f4f6;color:#6b7280;font-size:.75rem;
+                                 font-weight:700;padding:4px 10px;border-radius:20px;">
+                        {{ photos.length > 0 ? photos.length + ' fichier(s)' : 'Aucun' }}
                     </span>
                 </div>
 
-                <!-- ✅ SMS -->
+                <!-- SMS -->
                 <div class="recap-item" [class.info]="phoneNumber">
                     <div class="recap-icon"
                         [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'">
                         <i class="pi text-xl"
                             [class.pi-mobile]="phoneNumber"
                             [class.pi-minus-circle]="!phoneNumber"
-                            [style.color]="phoneNumber ? '#2563eb' : '#d1d5db'">
-                        </i>
+                            [style.color]="phoneNumber ? '#2563eb' : '#d1d5db'"></i>
                     </div>
                     <div style="flex:1;">
                         <div class="recap-title">SMS de confirmation</div>
@@ -684,36 +602,49 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                     <span [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'"
                         [style.color]="phoneNumber ? '#1d4ed8' : '#9ca3af'"
-                        style="font-size:.75rem;font-weight:700;
-                               padding:4px 10px;border-radius:20px;">
+                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
                         {{ phoneNumber ? 'SMS prévu' : 'Ignoré' }}
                     </span>
                 </div>
 
-                <!-- ✅ Email -->
+                <!-- Email -->
                 <div class="recap-item" [class.info]="email">
                     <div class="recap-icon"
                         [style.background]="email ? '#fef9c3' : '#f3f4f6'">
                         <i class="pi text-xl"
                             [class.pi-envelope]="email"
                             [class.pi-minus-circle]="!email"
-                            [style.color]="email ? '#854d0e' : '#d1d5db'">
-                        </i>
+                            [style.color]="email ? '#854d0e' : '#d1d5db'"></i>
                     </div>
                     <div style="flex:1;">
                         <div class="recap-title">Email de confirmation</div>
                         <div class="recap-sub">
-                            {{ email || 'Pas d\'email fourni (optionnel)' }}
+                            {{ email || "Pas d'email fourni (optionnel)" }}
                         </div>
                     </div>
                     <span [style.background]="email ? '#fef9c3' : '#f3f4f6'"
                         [style.color]="email ? '#854d0e' : '#9ca3af'"
-                        style="font-size:.75rem;font-weight:700;
-                               padding:4px 10px;border-radius:20px;">
+                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
                         {{ email ? 'Email prévu' : 'Ignoré' }}
                     </span>
                 </div>
 
+            </div>
+
+            <!-- Avertissement audio manquant à l'étape 3 -->
+            <div *ngIf="!audioUrl"
+                style="display:flex;align-items:center;gap:.75rem;padding:.875rem;
+                border-radius:12px;background:#fff5f5;border:1.5px solid #fca5a5;
+                margin-bottom:1rem;">
+                <i class="pi pi-exclamation-triangle" style="color:#ef4444;font-size:1.25rem;flex-shrink:0;"></i>
+                <div>
+                    <div style="font-weight:700;color:#dc2626;font-size:.875rem;">
+                        Témoignage audio manquant
+                    </div>
+                    <div style="font-size:.8rem;color:#ef4444;margin-top:2px;">
+                        Retournez à l'étape 1 pour enregistrer votre témoignage.
+                    </div>
+                </div>
             </div>
 
             <p-message severity="success"
@@ -751,12 +682,11 @@ export class PortailVocal {
     submitting        = false;
     showSuccess       = false;
     createdAccessCode = '';
+    audioTouched      = false;
 
-    // ✅ Champs contact
     phoneNumber = '';
     email       = '';
 
-    // Enregistrement
     isRecording       = false;
     audioBlob:        Blob | null   = null;
     audioUrl:         string | null = null;
@@ -766,11 +696,8 @@ export class PortailVocal {
     barsTimer:        any = null;
     audioBars:        number[] = Array(14).fill(8);
 
-    // Photos
     photos:        File[]   = [];
     photoPreviews: string[] = [];
-
-    // ── Navigation ────────────────────────────────────────────
 
     goToSuivi(): void {
         this.showSuccess = false;
@@ -782,12 +709,24 @@ export class PortailVocal {
         setTimeout(() => this.router.navigate(['/portail']), 150);
     }
 
-    // ── Enregistrement ────────────────────────────────────────
+
+    goToStep2(): void {
+        this.audioTouched = true;
+        if (!this.audioUrl) {
+            this.messageService.add({
+                severity: 'warn',
+                summary:  'Audio requis',
+                detail:   'Veuillez enregistrer votre témoignage avant de continuer.'
+            });
+            return;
+        }
+        this.currentStep = 2;
+    }
+
 
     async startRecording(): Promise<void> {
         try {
-            const stream = await navigator.mediaDevices
-                .getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(stream);
             const chunks: BlobPart[] = [];
 
@@ -804,8 +743,7 @@ export class PortailVocal {
             this.mediaRecorder.start();
             this.isRecording       = true;
             this.recordingDuration = 0;
-            this.recordingTimer    =
-                setInterval(() => this.recordingDuration++, 1000);
+            this.recordingTimer    = setInterval(() => this.recordingDuration++, 1000);
             this.startBars();
 
         } catch {
@@ -830,13 +768,12 @@ export class PortailVocal {
         this.audioBlob         = null;
         this.audioUrl          = null;
         this.recordingDuration = 0;
+        this.audioTouched      = false;
     }
 
     private startBars(): void {
         this.barsTimer = setInterval(() => {
-            this.audioBars = Array(14).fill(0).map(
-                () => Math.floor(Math.random() * 28) + 5
-            );
+            this.audioBars = Array(14).fill(0).map(() => Math.floor(Math.random() * 28) + 5);
         }, 120);
     }
 
@@ -851,22 +788,16 @@ export class PortailVocal {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    // ── Photos ────────────────────────────────────────────────
 
-    onPhotoSelect(event: any): void {
-        this.addPhotos(Array.from(event.target.files));
-    }
-    onFileSelect(event: any): void {
-        this.addPhotos(Array.from(event.target.files));
-    }
+    onPhotoSelect(event: any): void { this.addPhotos(Array.from(event.target.files)); }
+    onFileSelect(event: any): void  { this.addPhotos(Array.from(event.target.files)); }
 
     private addPhotos(files: File[]): void {
         files.forEach((f: File) => {
             if (this.photos.length < 10) {
                 this.photos.push(f);
                 const reader = new FileReader();
-                reader.onload = e =>
-                    this.photoPreviews.push(e.target?.result as string);
+                reader.onload = e => this.photoPreviews.push(e.target?.result as string);
                 reader.readAsDataURL(f);
             }
         });
@@ -881,7 +812,6 @@ export class PortailVocal {
         this.photoPreviews.splice(index, 1);
     }
 
-    // ── Soumission ────────────────────────────────────────────
 
     submit(): void {
         if (!this.audioBlob) return;
@@ -894,7 +824,6 @@ export class PortailVocal {
             description:    'Témoignage audio soumis via le portail citoyen.',
             declarantData: {
                 typeDeclarant:         'CITIZEN' as any,
-                // ✅ Les deux champs envoyés au backend
                 phoneNumber:           this.phoneNumber || undefined,
                 email:                 this.email       || undefined,
                 anonymous:             !this.phoneNumber && !this.email,
@@ -907,8 +836,6 @@ export class PortailVocal {
         this.dossierService.submit(request).subscribe({
             next: dossier => {
                 this.createdAccessCode = dossier.accessCode;
-
-                // Prépare les fichiers à uploader
                 const allFiles: File[] = [];
                 if (this.audioBlob) {
                     allFiles.push(new File(
@@ -920,35 +847,26 @@ export class PortailVocal {
                 allFiles.push(...this.photos);
 
                 if (allFiles.length > 0) {
-                    this.attachmentService
-                        .upload(dossier.id, allFiles)
-                        .subscribe({
-                            next:  () => {
-                                this.submitting  = false;
-                                this.showSuccess = true;
-                            },
-                            // ✅ Même si l'upload échoue, on affiche le succès
-                            // car le dossier est créé et le SMS/email déjà parti
-                            error: () => {
-                                this.submitting  = false;
-                                this.showSuccess = true;
-                                this.messageService.add({
-                                    severity: 'warn',
-                                    summary:  'Dossier créé',
-                                    detail:   'Les fichiers joints n\'ont pas pu être envoyés.'
-                                });
-                            }
-                        });
+                    this.attachmentService.upload(dossier.id, allFiles).subscribe({
+                        next:  () => { this.submitting = false; this.showSuccess = true; },
+                        error: () => {
+                            this.submitting = false;
+                            this.showSuccess = true;
+                            this.messageService.add({
+                                severity: 'warn', summary: 'Dossier créé',
+                                detail:   "Les fichiers joints n'ont pas pu être envoyés."
+                            });
+                        }
+                    });
                 } else {
-                    this.submitting  = false;
+                    this.submitting = false;
                     this.showSuccess = true;
                 }
             },
             error: () => {
                 this.submitting = false;
                 this.messageService.add({
-                    severity: 'error',
-                    summary:  'Erreur',
+                    severity: 'error', summary: 'Erreur',
                     detail:   "Impossible d'envoyer. Réessayez."
                 });
             }

@@ -12,7 +12,7 @@ const PUBLIC_URLS = [
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
-    // ── Pas de token pour les URLs publiques ──────────────────
+   
     const isPublic = PUBLIC_URLS.some(url => req.url.includes(url));
     if (isPublic) {
         return next(req);
@@ -20,12 +20,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     const keycloakService = inject(KeycloakService);
 
-    // ── Pas de token si non authentifié ───────────────────────
+    
     if (!keycloakService.isAuthenticated()) {
         return next(req);
     }
 
-    // ── Ajouter le token pour les appels protégés ─────────────
+   
     return from(keycloakService.getValidToken()).pipe(
         switchMap(token => {
             if (!token) return next(req);

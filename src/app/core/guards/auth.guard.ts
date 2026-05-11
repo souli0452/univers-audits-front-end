@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { KeycloakService } from '../auth/keycloak.service';
 
 /**
- * Guard — vérifie que l'utilisateur est authentifié.
+ * vérifie que l'utilisateur est authentifié.
  * Redirige vers Keycloak si non connecté.
  */
 export const authGuard: CanActivateFn = () => {
@@ -18,7 +18,7 @@ export const authGuard: CanActivateFn = () => {
 };
 
 /**
- * Guard — vérifie que l'utilisateur a les rôles requis.
+ * vérifie que l'utilisateur a les rôles requis.
  */
 export const roleGuard = (roles: string[]): CanActivateFn => {
     return () => {

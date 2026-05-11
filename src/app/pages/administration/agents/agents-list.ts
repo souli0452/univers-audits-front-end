@@ -1,4 +1,3 @@
-// Remplace le lazy loading par un chargement unique + filtrage client
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -353,29 +352,24 @@ export class AgentsList implements OnInit {
     private messageService      = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
 
-    // ── Données ───────────────────────────────────────────────
     allAgents:      AgentResponse[] = [];
     filteredAgents: AgentResponse[] = [];
 
     loading  = true;
     pageSize = 20;
 
-    // ── Filtres ───────────────────────────────────────────────
     searchText:     string          = '';
     selectedStatus: boolean | null  = null;
 
-    // ── Compteurs (sur allAgents, pas filteredAgents) ─────────
     get activeCount():   number { return this.allAgents.filter(a =>  a.actif).length; }
     get inactiveCount(): number { return this.allAgents.filter(a => !a.actif).length; }
 
     ngOnInit(): void { this.loadAll(); }
 
-    // ── Chargement unique — 500 agents max ────────────────────
     private loadAll(): void {
         this.loading = true;
         this.agentService.findAll(0, 500).subscribe({
             next: page => {
-                // Tri alphabétique nom
                 this.allAgents = [...page.content].sort((a, b) =>
                     `${a.lastName} ${a.firstName}`
                         .localeCompare(`${b.lastName} ${b.firstName}`)
@@ -395,13 +389,11 @@ export class AgentsList implements OnInit {
 
     refresh(): void { this.loadAll(); }
 
-    // ── Filtrage côté client — instantané ────────────────────
     applyFilters(): void {
         const q = this.searchText.trim().toLowerCase();
 
         this.filteredAgents = this.allAgents.filter(agent => {
 
-            // Filtre texte : nom, prénom, matricule, email, département, grade
             if (q) {
                 const haystack = [
                     agent.firstName       || '',
@@ -414,7 +406,6 @@ export class AgentsList implements OnInit {
                 if (!haystack.includes(q)) return false;
             }
 
-            // Filtre statut actif/inactif
             if (this.selectedStatus !== null && agent.actif !== this.selectedStatus)
                 return false;
 
@@ -426,13 +417,12 @@ export class AgentsList implements OnInit {
         return !!(this.searchText || this.selectedStatus !== null);
     }
 
-    // ── Raccourcis cartes stats ───────────────────────────────
     filterByActive(status: boolean): void {
         this.selectedStatus = this.selectedStatus === status ? null : status;
         this.applyFilters();
     }
 
-    // ── Clear individuels ─────────────────────────────────────
+    
     clearSearch(): void {
         this.searchText = '';
         this.applyFilters();
@@ -449,7 +439,7 @@ export class AgentsList implements OnInit {
         this.applyFilters();
     }
 
-    // ── Toggle actif/inactif ──────────────────────────────────
+    
     toggleAgent(agent: AgentResponse): void {
         const action = agent.actif ? 'désactiver' : 'activer';
         this.confirmationService.confirm({
@@ -464,7 +454,7 @@ export class AgentsList implements OnInit {
 
                 obs.subscribe({
                     next: updated => {
-                        // ✅ Mise à jour dans les deux tableaux
+                        
                         const idxAll = this.allAgents.findIndex(a => a.id === agent.id);
                         if (idxAll !== -1) this.allAgents[idxAll] = updated;
 

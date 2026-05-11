@@ -40,10 +40,6 @@ export class KeycloakService {
         });
     }
 
-    getToken(): string | undefined {
-        return this.keycloak.token;
-    }
-
     async getValidToken(): Promise<string | undefined> {
         try {
             await this.keycloak.updateToken(30);

@@ -133,6 +133,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .field-hint { font-size:.75rem; color:#9ca3af; }
         .char-count { text-align:right; font-size:.75rem; color:#9ca3af; }
 
+        .req { color:#ef4444; margin-left:2px; }
+        .error-msg { color:#ef4444; font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:2px; }
+
         .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
         .audio-idle {
@@ -230,7 +233,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             align-items:center; margin-top:1.75rem; gap:.75rem;
         }
 
-        /* ── Dialog succès ── */
         .success-body { padding:.5rem .25rem; text-align:center; }
         .success-icon {
             width:88px; height:88px; border-radius:50%;
@@ -254,7 +256,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .code-hint  { font-size:.75rem; color:#15803d; margin-top:.375rem; }
 
-        /* Badges notif */
         .notif-row {
             display:flex; flex-direction:column; gap:.5rem; margin-top:.75rem;
         }
@@ -273,6 +274,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .page-foot {
             text-align:center; margin-top:2rem;
             color:#9ca3af; font-size:.75rem; padding-bottom:1rem;
+        }
+
+        /* Consent error */
+        .consent-box-error {
+            border:1.5px solid #ef4444 !important;
+            background:#fff5f5 !important;
         }
 
         @media (max-width:520px) {
@@ -305,7 +312,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ✅ Badges SMS et Email -->
         <div class="notif-row" *ngIf="fd['phoneNumber'].value || fd['email'].value">
             <div *ngIf="fd['phoneNumber'].value" class="notif-badge sms">
                 <i class="pi pi-mobile" style="font-size:.85rem;"></i>
@@ -397,7 +403,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
                 <!-- Type -->
                 <div class="field">
-                    <label>Type de signalement *</label>
+                    <label>Type de signalement <span class="req">*</span></label>
                     <div class="type-grid">
                         <div *ngFor="let type of typeOptions"
                             class="type-card"
@@ -419,24 +425,37 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
                 <!-- Objet -->
                 <div class="field">
-                    <label>Résumé du signalement *</label>
+                    <label>Résumé du signalement <span class="req">*</span></label>
                     <input pInputText [formControl]="f['object']"
                         placeholder="Ex: Détournement de fonds à la mairie de..."
-                        class="w-full" />
-                    <small *ngIf="f['object'].invalid && f['object'].touched"
-                        style="color:#ef4444;font-size:.75rem;">
+                        class="w-full"
+                        [class.ng-invalid]="f['object'].invalid && f['object'].touched"
+                        [class.ng-dirty]="f['object'].invalid && f['object'].touched" />
+                    <small class="error-msg"
+                        *ngIf="f['object'].invalid && f['object'].touched">
+                        <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
                         Minimum 10 caractères requis
                     </small>
                 </div>
 
                 <!-- Description -->
                 <div class="field">
-                    <label>Description détaillée *</label>
+                    <label>Description détaillée <span class="req">*</span></label>
                     <textarea pTextarea [formControl]="f['description']"
                         placeholder="Décrivez les faits : qui, quoi, quand, où, comment..."
-                        rows="5" class="w-full resize-none"></textarea>
-                    <div class="char-count">
-                        {{ f['description'].value?.length || 0 }} caractères
+                        rows="5" class="w-full resize-none"
+                        [class.ng-invalid]="f['description'].invalid && f['description'].touched"
+                        [class.ng-dirty]="f['description'].invalid && f['description'].touched">
+                    </textarea>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <small class="error-msg"
+                            *ngIf="f['description'].invalid && f['description'].touched">
+                            <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                            Ce champ est obligatoire
+                        </small>
+                        <span class="char-count" style="margin-left:auto;">
+                            {{ f['description'].value?.length || 0 }} caractères
+                        </span>
                     </div>
                 </div>
 
@@ -598,8 +617,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <i class="pi pi-lock"></i> Données chiffrées
                 </span>
                 <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    [disabled]="!f['object'].value || !f['description'].value"
-                    (onClick)="currentStep = 2" />
+                    (onClick)="goToStep2()" />
             </div>
         </div>
 
@@ -684,7 +702,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <input pInputText [formControl]="fd['lastName']"
                             placeholder="Votre nom" class="w-full" />
                     </div>
-                    <!-- ✅ Téléphone -->
                     <div class="field">
                         <label>Téléphone
                             <span style="color:#9ca3af;font-weight:400;font-size:.8rem;">
@@ -694,7 +711,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <input pInputText [formControl]="fd['phoneNumber']"
                             placeholder="+226 XX XX XX XX" class="w-full" />
                     </div>
-                    <!-- ✅ Email -->
                     <div class="field">
                         <label>Email
                             <span style="color:#9ca3af;font-weight:400;font-size:.8rem;">
@@ -733,8 +749,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
             </div>
 
-            <!-- Consentement -->
-            <div style="display:flex;align-items:flex-start;gap:.875rem;
+            <!-- Consentement obligatoire -->
+            <div [class.consent-box-error]="consentTouched && !fd['dataProcessingConsent'].value"
+                style="display:flex;align-items:flex-start;gap:.875rem;
                 padding:.875rem;border-radius:12px;background:#f9fafb;
                 border:1.5px solid #e5e7eb;">
                 <p-checkbox [formControl]="fd['dataProcessingConsent']"
@@ -742,16 +759,21 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <label for="consent"
                     style="font-size:.875rem;color:#374151;cursor:pointer;">
                     J'accepte le traitement de mes données personnelles par l'ASCE-LC.
-                    <span style="color:#ef4444;">*</span>
+                    <span class="req">*</span>
                 </label>
             </div>
+            <small class="error-msg"
+                *ngIf="consentTouched && !fd['dataProcessingConsent'].value"
+                style="margin-top:4px;">
+                <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                Vous devez accepter pour continuer
+            </small>
 
             <div class="step-footer">
                 <p-button label="Précédent" icon="pi pi-arrow-left"
                     severity="secondary" outlined (onClick)="currentStep = 1" />
                 <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    [disabled]="!fd['dataProcessingConsent'].value"
-                    (onClick)="currentStep = 3" />
+                    (onClick)="goToStep3()" />
             </div>
         </div>
 
@@ -888,7 +910,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 })
 export class DepotPlainte {
 
-    // ✅ Router public pour le template
     router = inject(Router);
 
     private fb                = inject(FormBuilder);
@@ -900,6 +921,7 @@ export class DepotPlainte {
     submitting        = false;
     showSuccess       = false;
     createdAccessCode = '';
+    consentTouched    = false;
 
     readonly steps = [
         { id: 1, label: 'Les faits'    },
@@ -907,7 +929,6 @@ export class DepotPlainte {
         { id: 3, label: 'Confirmation' }
     ];
 
-    // Audio
     isRecording       = false;
     audioBlob:        Blob | null   = null;
     audioUrl:         string | null = null;
@@ -915,7 +936,6 @@ export class DepotPlainte {
     recordingDuration = 0;
     recordingTimer:   any = null;
 
-    // Pièces jointes
     attachments: File[] = [];
     maxFiles  = 5;
     maxSizeMB = 25;
@@ -933,8 +953,8 @@ export class DepotPlainte {
         typeDeclarant:         ['CITIZEN'],
         firstName:             [''],
         lastName:              [''],
-        email:                 [''],       // ✅
-        phoneNumber:           [''],       // ✅
+        email:                 [''],
+        phoneNumber:           [''],
         commune:               [''],
         province:              [''],
         anonymous:             [false],
@@ -959,7 +979,31 @@ export class DepotPlainte {
         }
     ];
 
-    // ── Navigation dialog ─────────────────────────────────────
+
+    goToStep2(): void {
+        this.dossierForm.markAllAsTouched();
+        if (this.f['object'].invalid || this.f['description'].invalid) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champs requis',
+                detail: 'Veuillez remplir tous les champs obligatoires.'
+            });
+            return;
+        }
+        this.currentStep = 2;
+    }
+
+    goToStep3(): void {
+        this.consentTouched = true;
+        if (!this.fd['dataProcessingConsent'].value) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Consentement requis',
+                detail: 'Vous devez accepter le traitement de vos données.'
+            });
+            return;
+        }
+        this.currentStep = 3;
+    }
+
 
     goToSuivi(): void {
         this.showSuccess = false;
@@ -971,7 +1015,6 @@ export class DepotPlainte {
         setTimeout(() => this.router.navigate(['/portail']), 150);
     }
 
-    // ── Enregistrement audio ──────────────────────────────────
 
     async startRecording(): Promise<void> {
         try {
@@ -1024,7 +1067,7 @@ export class DepotPlainte {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    // ── Fichiers ──────────────────────────────────────────────
+    
 
     onFileSelect(event: any): void {
         this.addFiles(Array.from(event.target.files));
@@ -1107,7 +1150,6 @@ export class DepotPlainte {
                     ? 'ANONYMOUS' as any : 'CITIZEN' as any,
                 firstName:             this.fd['firstName'].value   || undefined,
                 lastName:              this.fd['lastName'].value    || undefined,
-                // ✅ Email et téléphone transmis au backend pour envoi auto
                 email:                 this.fd['email'].value       || undefined,
                 phoneNumber:           this.fd['phoneNumber'].value || undefined,
                 commune:               this.fd['commune'].value     || undefined,

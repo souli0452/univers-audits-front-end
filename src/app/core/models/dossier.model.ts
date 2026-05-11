@@ -19,7 +19,6 @@ export type TypeSaisine =
     | 'AUTO_REFERRAL'
     | 'ANONYMOUS';
 
-
 export type SubmissionMode =
     | 'IN_PERSON'
     | 'AUDIO_COUNTER'
@@ -41,6 +40,11 @@ export type TypeDeclarant =
     | 'PUBLIC_AUTHORITY'
     | 'ANONYMOUS'
     | 'ASCE_SELF_REFERRAL';
+
+
+export function isVersionConflict(err: any): boolean {
+    return err?.status === 409;
+}
 
 export interface DeclarantResponse {
     id: string;
@@ -154,6 +158,7 @@ export interface DeclarantCreateRequest {
     dataProcessingConsent?: boolean;
     notificationsAccepted?: boolean;
 }
+
 
 export interface StatusTransitionRequest {
     version: number;

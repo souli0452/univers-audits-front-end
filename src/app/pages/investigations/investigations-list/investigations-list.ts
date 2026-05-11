@@ -15,10 +15,9 @@ import {
     InvestigationService,
     InvestigationResponse
 } from '../../../core/services/investigation.service';
-// ✅ Import des interfaces depuis investigation-detail
 import {
     InvestigationMemberResponse
-} from '../investigation-detail/investigation-detail';
+} from '../../../core/services/investigation.service';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
@@ -394,7 +393,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                             class="text-xs text-surface-300">—</span>
                     </td>
 
-                    <!-- Équipe — ✅ getMembers() pour typage strict -->
                     <td class="px-4 py-3">
                         <div *ngIf="getMembers(inv).length; else noTeam"
                             class="flex items-center gap-1">
@@ -529,7 +527,6 @@ export class InvestigationsList implements OnInit {
 
     refresh(): void { this.loadAll(); }
 
-    // ✅ Helper cast — résout TS2571 "Object is of type 'unknown'"
     getMembers(inv: InvestigationResponse): InvestigationMemberResponse[] {
         return (inv.members || []) as InvestigationMemberResponse[];
     }
@@ -601,7 +598,6 @@ export class InvestigationsList implements OnInit {
         return this.allInvestigations.filter(i => i.overdue).length;
     }
 
-    // ✅ Renommé getProgressForInv() pour éviter collision avec getProgress() de detail
     getProgressForInv(inv: InvestigationResponse): number {
         if (!inv.startDate || !inv.plannedEndDate) return 0;
         const start = new Date(inv.startDate).getTime();

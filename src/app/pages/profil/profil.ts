@@ -401,7 +401,6 @@ export class Profil implements OnInit {
         });
     }
 
-    // ── Modifier profil ───────────────────────────────────────
 
     openEditProfile(): void {
         this.profileForm.patchValue({
@@ -451,7 +450,6 @@ export class Profil implements OnInit {
         });
     }
 
-    // ── Changer mot de passe ──────────────────────────────────
 
     openChangePassword(): void {
         this.passwordForm.reset();
