@@ -78,7 +78,7 @@ interface WorkflowStep {
     </ng-template>
 </p-dialog>
 
-
+<!-- ── Dialog conflit de version ──────────────────────────── -->
 <p-dialog [(visible)]="showVersionConflictDialog"
     header="Conflit de version détecté"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false"
@@ -131,12 +131,12 @@ interface WorkflowStep {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Type de partie <span class="text-red-500 font-bold">*</span>
+                    Type de partie <span class="text-red-500">*</span>
                 </label>
                 <p-select [(ngModel)]="partyForm.partyType"
                     [options]="partyTypeOptions"
                     optionLabel="label" optionValue="value"
-                    placeholder="Sélectionner..." styleClass="w-full" appendTo="body" />
+                    placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
@@ -145,25 +145,25 @@ interface WorkflowStep {
                 <p-select [(ngModel)]="partyForm.allegedRole"
                     [options]="allegedRoleOptions"
                     optionLabel="label" optionValue="value"
-                    placeholder="Sélectionner..." styleClass="w-full" appendTo="body" />
+                    placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
             </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Prénom <span class="text-red-500 font-bold">*</span>
+                    Prénom <span class="text-red-500">*</span>
                 </label>
                 <input pInputText [(ngModel)]="partyForm.firstName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Prénom" />
+                    placeholder="Prénom"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Nom <span class="text-red-500 font-bold">*</span>
+                    Nom <span class="text-red-500">*</span>
                 </label>
                 <input pInputText [(ngModel)]="partyForm.name"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Nom" />
+                    placeholder="Nom"/>
             </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -173,7 +173,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="partyForm.position"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Ex: Directeur Général" />
+                    placeholder="Ex: Directeur Général"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
@@ -181,7 +181,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="partyForm.institution"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Ex: Ministère des Finances" />
+                    placeholder="Ex: Ministère des Finances"/>
             </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -191,7 +191,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="partyForm.phoneNumber"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="+226 XX XX XX XX" />
+                    placeholder="+226 XX XX XX XX"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
@@ -199,7 +199,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="partyForm.email"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="email@exemple.bf" />
+                    placeholder="email@exemple.bf"/>
             </div>
         </div>
         <div>
@@ -208,12 +208,8 @@ interface WorkflowStep {
             </label>
             <input pInputText [(ngModel)]="partyForm.relationWithDeclarant"
                 class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                placeholder="Ex: Supérieur hiérarchique" />
+                placeholder="Ex: Supérieur hiérarchique"/>
         </div>
-        <!-- Légende champs obligatoires -->
-        <p class="text-xs text-surface-400 mt-1">
-            <span class="text-red-500 font-bold">*</span> Champs obligatoires
-        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showPartyDialog=false"/>
@@ -230,19 +226,19 @@ interface WorkflowStep {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Prénom <span class="text-red-500 font-bold">*</span>
+                    Prénom <span class="text-red-500">*</span>
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.firstName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Prénom" />
+                    placeholder="Prénom"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                    Nom <span class="text-red-500 font-bold">*</span>
+                    Nom <span class="text-red-500">*</span>
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.lastName"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Nom" />
+                    placeholder="Nom"/>
             </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -252,7 +248,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.profession"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="Profession" />
+                    placeholder="Profession"/>
             </div>
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
@@ -260,7 +256,7 @@ interface WorkflowStep {
                 </label>
                 <input pInputText [(ngModel)]="witnessForm.phoneNumber"
                     class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                    placeholder="+226 XX XX XX XX" />
+                    placeholder="+226 XX XX XX XX"/>
             </div>
         </div>
         <div>
@@ -277,22 +273,18 @@ interface WorkflowStep {
             </label>
             <input pInputText [(ngModel)]="witnessForm.relationWithParties"
                 class="w-full border border-surface-300 rounded-lg px-3 py-2"
-                placeholder="Ex: Collègue de travail" />
+                placeholder="Ex: Collègue de travail"/>
         </div>
         <div class="flex items-center gap-6 pt-1">
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-                <input type="checkbox" [(ngModel)]="witnessForm.anonymous" />
+                <input type="checkbox" [(ngModel)]="witnessForm.anonymous"/>
                 Anonyme
             </label>
             <label class="flex items-center gap-2 cursor-pointer text-sm">
-                <input type="checkbox" [(ngModel)]="witnessForm.consentToContact" />
+                <input type="checkbox" [(ngModel)]="witnessForm.consentToContact"/>
                 Consent à être recontacté
             </label>
         </div>
-        <!-- Légende champs obligatoires -->
-        <p class="text-xs text-surface-400 mt-1">
-            <span class="text-red-500 font-bold">*</span> Champs obligatoires
-        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showWitnessDialog=false"/>
@@ -307,7 +299,7 @@ interface WorkflowStep {
     <div class="flex flex-col gap-3 py-2">
         <div>
             <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                Type <span class="text-red-500 font-bold">*</span>
+                Type <span class="text-red-500">*</span>
             </label>
             <p-select [(ngModel)]="obsForm.type" [options]="obsTypeOptions"
                 optionLabel="label" optionValue="value"
@@ -315,7 +307,7 @@ interface WorkflowStep {
         </div>
         <div>
             <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
-                Contenu <span class="text-red-500 font-bold">*</span>
+                Contenu <span class="text-red-500">*</span>
             </label>
             <textarea pTextarea [(ngModel)]="obsForm.content" rows="5"
                 class="w-full resize-none"
@@ -327,10 +319,6 @@ interface WorkflowStep {
             <span class="font-medium">Confidentiel</span>
             <span class="text-xs text-surface-400">(CGE, CGEA et juridique uniquement)</span>
         </label>
-        <!-- Légende champs obligatoires -->
-        <p class="text-xs text-surface-400 mt-1">
-            <span class="text-red-500 font-bold">*</span> Champs obligatoires
-        </p>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showObsDialog=false"/>
@@ -339,10 +327,104 @@ interface WorkflowStep {
     </ng-template>
 </p-dialog>
 
-<!-- ══════════════════════════════════════════════════════════
-     PAGE
-     ══════════════════════════════════════════════════════════ -->
+<!-- ── Dialog Confidentialité ─────────────────────────────── -->
+<p-dialog [(visible)]="showConfidentialDialog"
+    [header]="dossier?.isConfidential
+        ? 'Retirer la confidentialité'
+        : 'Marquer comme confidentiel'"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+
+    <div class="flex flex-col gap-4 py-2">
+
+        <!-- ── CORRECTION #3 : Avertissement si lanceur d'alerte protégé ── -->
+        <div *ngIf="isWhistleblowerProtected() && dossier?.isConfidential"
+            class="p-3 bg-red-50 border border-red-300 rounded-xl
+                   flex items-start gap-2">
+            <i class="pi pi-shield text-red-600 mt-0.5 flex-shrink-0"></i>
+            <p class="text-sm text-red-700">
+                <strong>Action restreinte.</strong> Ce dossier concerne un lanceur
+                d'alerte protégé (Loi N°010-2004/AN). Seuls le CGE et le CGEA
+                peuvent retirer la confidentialité.
+            </p>
+        </div>
+
+        <div class="p-3 rounded-xl border flex items-start gap-2"
+            [class.bg-amber-50]="!dossier?.isConfidential"
+            [class.border-amber-200]="!dossier?.isConfidential"
+            [class.bg-blue-50]="dossier?.isConfidential"
+            [class.border-blue-200]="dossier?.isConfidential">
+            <i class="pi mt-0.5 flex-shrink-0"
+                [class.pi-lock]="!dossier?.isConfidential"
+                [class.text-amber-600]="!dossier?.isConfidential"
+                [class.pi-lock-open]="dossier?.isConfidential"
+                [class.text-blue-600]="dossier?.isConfidential"></i>
+            <p class="text-sm"
+                [class.text-amber-700]="!dossier?.isConfidential"
+                [class.text-blue-700]="dossier?.isConfidential">
+                <span *ngIf="!dossier?.isConfidential">
+                    Ce dossier sera <strong>visible uniquement</strong>
+                    par les rôles habilités.
+                    Les autres agents ne pourront plus accéder au contenu.
+                </span>
+                <span *ngIf="dossier?.isConfidential">
+                    Ce dossier redeviendra <strong>accessible à tous
+                    les agents</strong> ayant accès aux dossiers.
+                </span>
+            </p>
+        </div>
+        <div>
+            <label class="text-sm font-medium text-surface-700 mb-1 block">
+                Motif <span class="text-surface-400 font-normal">(optionnel)</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="confidentialReason"
+                placeholder="Raison du changement de confidentialité..."
+                rows="3" class="w-full resize-none"></textarea>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined
+            (onClick)="showConfidentialDialog = false"/>
+        <p-button
+            [label]="dossier?.isConfidential
+                ? 'Retirer la confidentialité'
+                : 'Confirmer — Marquer confidentiel'"
+            [icon]="dossier?.isConfidential ? 'pi pi-lock-open' : 'pi pi-lock'"
+            [severity]="dossier?.isConfidential ? 'secondary' : 'warn'"
+            [loading]="savingConfidential"
+            (onClick)="executeToggleConfidential()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ══ PAGE ════════════════════════════════════════════════ -->
 <div *ngIf="!loading; else sk" class="flex flex-col gap-4">
+
+    <div *ngIf="dossier?.isConfidential"
+        class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-300
+               rounded-2xl">
+        <i class="pi pi-lock text-orange-600 text-xl flex-shrink-0"></i>
+        <div>
+            <span class="font-bold text-orange-800">Dossier confidentiel</span>
+            <span class="text-orange-600 text-sm ml-2">
+                — Accès restreint
+            </span>
+        </div>
+    </div>
+
+    <!-- ── CORRECTION #3 : Bandeau lanceur d'alerte protégé ── -->
+    <div *ngIf="isWhistleblowerProtected()"
+        class="flex items-center gap-3 p-3 bg-blue-50 border-2 border-blue-300
+               rounded-2xl">
+        <i class="pi pi-shield text-blue-600 text-xl flex-shrink-0"></i>
+        <div>
+            <span class="font-bold text-blue-800">
+                Protection lanceur d'alerte active
+            </span>
+            <span class="text-blue-600 text-sm ml-2">
+                — Loi N°010-2004/AN — Identité masquée pour les non-habilités
+            </span>
+        </div>
+    </div>
 
     <!-- En-tête -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100
@@ -359,6 +441,16 @@ interface WorkflowStep {
                         <p-tag *ngIf="dossier"
                             [value]="getStatusLabel(dossier.status)"
                             [severity]="getStatusSeverity(dossier.status)"/>
+
+                        <span *ngIf="dossier?.isConfidential"
+                            class="inline-flex items-center gap-1 px-2 py-0.5
+                                   bg-orange-100 text-orange-700 text-xs font-bold
+                                   rounded-full border border-orange-300">
+                            <i class="pi pi-lock" style="font-size:9px;"></i>
+                            CONFIDENTIEL
+                        </span>
+
+                        <!-- Badge version -->
                         <span *ngIf="dossier"
                             class="inline-flex items-center gap-1 px-2 py-0.5
                                    bg-surface-100 dark:bg-surface-700
@@ -369,6 +461,8 @@ interface WorkflowStep {
                             <i class="pi pi-code" style="font-size:9px;"></i>
                             v{{ dossier.version }}
                         </span>
+
+                        <!-- Badge synchronisé -->
                         <span *ngIf="justRefreshedAfterConflict"
                             class="inline-flex items-center gap-1 px-2 py-0.5
                                    bg-green-100 text-green-700 text-xs font-medium
@@ -380,6 +474,8 @@ interface WorkflowStep {
                     <p class="text-surface-400 text-sm mt-1">{{ dossier?.object }}</p>
                 </div>
             </div>
+
+            <!-- Boutons d'action workflow -->
             <div class="flex gap-2 flex-wrap" *ngIf="dossier">
                 <p-button *ngIf="dossier.status==='SOUMIS' && hasRole(['AGENT_BRPD'])"
                     label="Enregistrer" icon="pi pi-check" severity="success" size="small"
@@ -407,12 +503,33 @@ interface WorkflowStep {
                 <p-button label="PDF" icon="pi pi-file-pdf"
                     severity="secondary" outlined size="small"
                     pTooltip="Exporter en PDF" (onClick)="exportPdf()"/>
+
+                <p-button
+                    *ngIf="hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                    [label]="dossier.isConfidential ? 'Retirer confidentialité' : 'Marquer confidentiel'"
+                    [icon]="dossier.isConfidential ? 'pi pi-lock-open' : 'pi pi-lock'"
+                    [severity]="dossier.isConfidential ? 'secondary' : 'warn'"
+                    outlined
+                    size="small"
+                    (onClick)="openToggleConfidential()"/>
             </div>
         </div>
     </div>
 
-    <!-- Grid principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div *ngIf="dossier?.isConfidential && !canSeeConfidential()"
+        class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-8 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-orange-100 flex items-center
+                    justify-center mx-auto mb-4">
+            <i class="pi pi-lock text-orange-600 text-3xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-orange-800 mb-2">
+            Contenu confidentiel
+        </h2>
+    </div>
+
+    <!-- Grid principal — masqué si confidentiel ET pas autorisé -->
+    <div *ngIf="!dossier?.isConfidential || canSeeConfidential()"
+        class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         <!-- ── Colonne principale (2/3) ──────────────────── -->
         <div class="lg:col-span-2 flex flex-col gap-4">
@@ -458,55 +575,123 @@ interface WorkflowStep {
                             <div class="text-xs text-red-400 uppercase tracking-wide mb-1">Montant estimé</div>
                             <div class="font-bold text-sm text-red-600">{{ dossier?.estimatedLoss | number }} FCFA</div>
                         </div>
+
+                        <div class="p-3 rounded-xl border"
+                            [class.bg-orange-50]="dossier?.isConfidential"
+                            [class.border-orange-200]="dossier?.isConfidential"
+                            [class.bg-surface-50]="!dossier?.isConfidential"
+                            [class.border-surface-100]="!dossier?.isConfidential">
+                            <div class="text-xs uppercase tracking-wide mb-1"
+                                [class.text-orange-400]="dossier?.isConfidential"
+                                [class.text-surface-400]="!dossier?.isConfidential">
+                                Confidentialité
+                            </div>
+                            <div class="font-semibold text-sm flex items-center gap-1"
+                                [class.text-orange-700]="dossier?.isConfidential"
+                                [class.text-surface-600]="!dossier?.isConfidential">
+                                <i [class]="dossier?.isConfidential ? 'pi pi-lock' : 'pi pi-lock-open'"
+                                   style="font-size:11px;"></i>
+                                {{ dossier?.isConfidential ? 'Confidentiel' : 'Standard' }}
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Description -->
                     <div *ngIf="dossier?.description"
-                        class="mb-4 text-sm text-surface-600 dark:text-surface-300
-                               leading-relaxed bg-surface-50 dark:bg-surface-700
-                               rounded-xl p-3 border border-surface-100 dark:border-surface-600">
+                        class="mb-4 text-sm leading-relaxed rounded-xl p-3 border"
+                        [class.bg-orange-50]="dossier?.description === '** Contenu confidentiel — accès restreint **'"
+                        [class.border-orange-200]="dossier?.description === '** Contenu confidentiel — accès restreint **'"
+                        [class.text-orange-600]="dossier?.description === '** Contenu confidentiel — accès restreint **'"
+                        [class.italic]="dossier?.description === '** Contenu confidentiel — accès restreint **'"
+                        [class.bg-surface-50]="dossier?.description !== '** Contenu confidentiel — accès restreint **'"
+                        [class.dark:bg-surface-700]="dossier?.description !== '** Contenu confidentiel — accès restreint **'"
+                        [class.border-surface-100]="dossier?.description !== '** Contenu confidentiel — accès restreint **'"
+                        [class.text-surface-600]="dossier?.description !== '** Contenu confidentiel — accès restreint **'">
+                        <i *ngIf="dossier?.description === '** Contenu confidentiel — accès restreint **'"
+                            class="pi pi-lock mr-2"></i>
                         {{ dossier?.description }}
                     </div>
-                    <!-- Déclarant -->
+
+                    <!-- ══ Bloc Déclarant ══════════════════════════════════ -->
                     <div *ngIf="dossier?.declarant"
-                        class="flex items-center gap-3 p-3 rounded-xl border
+                        class="flex flex-col gap-2 p-3 rounded-xl border
                                border-surface-100 dark:border-surface-600
                                bg-surface-50 dark:bg-surface-700">
-                        <div class="w-9 h-9 rounded-full bg-green-100 flex items-center
-                                    justify-center font-bold text-green-700 text-sm flex-shrink-0">
-                            {{ getInitials(dossier?.declarant?.displayName || '') }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-semibold text-surface-900
-                                        dark:text-surface-0 flex items-center gap-2">
-                                {{ dossier?.declarant?.displayName }}
-                                <span *ngIf="dossier?.declarant?.anonymous"
-                                    class="text-xs bg-amber-100 text-amber-700
-                                           px-2 py-0.5 rounded-full">Anonyme</span>
-                            </div>
-                            <div class="text-xs text-surface-400 mt-0.5
-                                        flex items-center gap-3 flex-wrap">
-                                <span *ngIf="dossier?.declarant?.phoneNumber">
-                                    <i class="pi pi-phone mr-1 text-xs"></i>
-                                    {{ dossier?.declarant?.phoneNumber }}
-                                </span>
-                                <span *ngIf="dossier?.declarant?.email">
-                                    <i class="pi pi-envelope mr-1 text-xs"></i>
-                                    {{ dossier?.declarant?.email }}
-                                </span>
-                                <span *ngIf="dossier?.declarant?.commune">
-                                    <i class="pi pi-map-marker mr-1 text-xs"></i>
-                                    {{ dossier?.declarant?.commune }}
+
+                        <!-- Ligne principale : avatar + infos + badge -->
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full flex items-center
+                                        justify-center font-bold text-sm flex-shrink-0"
+                                [class.bg-blue-100]="dossier?.declarant?.protectionRequested"
+                                [class.text-blue-700]="dossier?.declarant?.protectionRequested"
+                                [class.bg-green-100]="!dossier?.declarant?.protectionRequested"
+                                [class.text-green-700]="!dossier?.declarant?.protectionRequested">
+                                <i *ngIf="dossier?.declarant?.protectionRequested"
+                                    class="pi pi-shield text-sm"></i>
+                                <span *ngIf="!dossier?.declarant?.protectionRequested">
+                                    {{ getInitials(dossier?.declarant?.displayName || '') }}
                                 </span>
                             </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-semibold text-surface-900
+                                            dark:text-surface-0 flex items-center gap-2 flex-wrap">
+                                    {{ dossier?.declarant?.displayName }}
+                                    <span *ngIf="dossier?.declarant?.anonymous"
+                                        class="text-xs bg-amber-100 text-amber-700
+                                               px-2 py-0.5 rounded-full">Anonyme</span>
+                                </div>
+                                <div class="text-xs text-surface-400 mt-0.5
+                                            flex items-center gap-3 flex-wrap">
+                                    <span *ngIf="dossier?.declarant?.phoneNumber">
+                                        <i class="pi pi-phone mr-1 text-xs"></i>
+                                        {{ dossier?.declarant?.phoneNumber }}
+                                    </span>
+                                    <span *ngIf="dossier?.declarant?.email">
+                                        <i class="pi pi-envelope mr-1 text-xs"></i>
+                                        {{ dossier?.declarant?.email }}
+                                    </span>
+                                    <span *ngIf="dossier?.declarant?.commune">
+                                        <i class="pi pi-map-marker mr-1 text-xs"></i>
+                                        {{ dossier?.declarant?.commune }}
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-xs bg-green-50 text-green-700 px-2 py-1
+                                         rounded-lg font-medium flex-shrink-0">
+                                Déclarant
+                            </span>
                         </div>
-                        <span class="text-xs bg-green-50 text-green-700 px-2 py-1
-                                     rounded-lg font-medium flex-shrink-0">
-                            Déclarant
-                        </span>
+
+                        <!-- ── Badge protection lanceur d'alerte ── -->
+                        <div *ngIf="dossier?.declarant?.protectionRequested"
+                            class="flex items-center gap-2 p-2 bg-blue-50
+                                   border border-blue-200 rounded-lg">
+                            <i class="pi pi-shield text-blue-600 text-sm flex-shrink-0"></i>
+                            <div>
+                                <div class="text-xs font-bold text-blue-800">
+                                    Protection lanceur d'alerte demandée
+                                </div>
+                                <div class="text-xs text-blue-600">
+                                    Loi N°010-2004/AN — Protection garantie par l'État
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ─────────────────────────────────────── -->
+
+                    </div>
+                    <!-- ════════════════════════════════════════════ -->
+
+                    <!-- Message si déclarant masqué (confidentiel) -->
+                    <div *ngIf="!dossier?.declarant && dossier?.isConfidential"
+                        class="flex items-center gap-2 p-3 bg-orange-50 rounded-xl
+                               border border-orange-200 text-xs text-orange-600">
+                        <i class="pi pi-lock flex-shrink-0"></i>
+                        Informations du déclarant masquées (dossier confidentiel)
                     </div>
                 </div>
             </div>
 
-            <!-- ── Panel onglets ───────────────────────────── -->
+            <!-- Panel onglets -->
             <div class="bg-white dark:bg-surface-800 rounded-2xl border
                         border-surface-100 dark:border-surface-700 overflow-hidden">
                 <div class="flex border-b border-surface-100 dark:border-surface-700
@@ -533,6 +718,7 @@ interface WorkflowStep {
 
                 <!-- ONGLET Parties visées -->
                 <div *ngIf="activeTab === 'parties'" class="p-5">
+                    <!-- CORRECTION #3 : canEditDossier() tient déjà compte de isProtectedWhistleblower -->
                     <div class="flex justify-end mb-4" *ngIf="canEditDossier()">
                         <p-button icon="pi pi-plus" label="Ajouter une partie"
                             severity="danger" outlined size="small"
@@ -544,9 +730,6 @@ interface WorkflowStep {
                             <i class="pi pi-user-minus text-xl text-surface-300"></i>
                         </div>
                         <p class="text-sm">Aucune partie visée enregistrée</p>
-                        <p class="text-xs mt-1 text-surface-300">
-                            Ajoutez les personnes impliquées dans les faits dénoncés
-                        </p>
                     </div>
                     <div class="flex flex-col gap-3" *ngIf="parties.length > 0">
                         <div *ngFor="let p of parties"
@@ -577,9 +760,6 @@ interface WorkflowStep {
                                     <span class="text-xs bg-surface-100 text-surface-500
                                                  px-2 py-0.5 rounded-full">
                                         {{ getPartyTypeLabel(p.partyType) }}
-                                    </span>
-                                    <span *ngIf="p.phoneNumber" class="text-xs text-surface-400">
-                                        <i class="pi pi-phone text-xs mr-0.5"></i>{{ p.phoneNumber }}
                                     </span>
                                 </div>
                             </div>
@@ -627,25 +807,11 @@ interface WorkflowStep {
                                         class="text-xs bg-surface-200 text-surface-600
                                                px-2 py-0.5 rounded-full">Anonyme</span>
                                 </div>
-                                <div class="text-xs text-surface-400 mt-0.5">
-                                    <span *ngIf="w.profession">{{ w.profession }}</span>
-                                    <span *ngIf="w.phoneNumber && !w.anonymous">
-                                        · {{ w.phoneNumber }}
-                                    </span>
-                                </div>
                                 <div *ngIf="w.testimonyNature"
                                     class="text-xs text-surface-500 mt-2 italic
                                            bg-white dark:bg-surface-800 rounded-lg p-2
                                            border border-surface-100 dark:border-surface-600">
                                     {{ w.testimonyNature }}
-                                </div>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <span *ngIf="w.consentToContact"
-                                        class="text-xs bg-green-50 text-green-600 px-2 py-0.5
-                                               rounded-full border border-green-100">
-                                        <i class="pi pi-check text-xs mr-0.5"></i>
-                                        Consent à être recontacté
-                                    </span>
                                 </div>
                             </div>
                             <div class="flex gap-1 flex-shrink-0" *ngIf="canEditDossier()">
@@ -677,12 +843,9 @@ interface WorkflowStep {
                         <div *ngFor="let obs of observations"
                             class="p-4 rounded-xl border transition-colors"
                             [class.bg-orange-50]="obs.confidential"
-                            [class.dark:bg-orange-950]="obs.confidential"
                             [class.border-orange-200]="obs.confidential"
                             [class.bg-surface-50]="!obs.confidential"
-                            [class.dark:bg-surface-700]="!obs.confidential"
-                            [class.border-surface-100]="!obs.confidential"
-                            [class.dark:border-surface-600]="!obs.confidential">
+                            [class.border-surface-100]="!obs.confidential">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="text-xs font-semibold bg-purple-100
@@ -756,14 +919,8 @@ interface WorkflowStep {
                                                 dark:text-surface-0 truncate">
                                         {{ att.originalName }}
                                     </div>
-                                    <div class="text-xs text-surface-400 mt-0.5
-                                                flex items-center gap-2">
-                                        <span>{{ formatSize(att.fileSizeBytes) }}</span>
-                                        <span *ngIf="isAudio(att)" class="text-purple-500 font-medium">Audio</span>
-                                        <span *ngIf="isPdf(att)" class="text-red-500 font-medium">PDF</span>
-                                        <span *ngIf="isImage(att)" class="text-blue-500 font-medium">Image</span>
-                                        <span *ngIf="isWord(att)" class="text-indigo-500 font-medium">Word</span>
-                                        <span *ngIf="isVideo(att)" class="text-green-500 font-medium">Vidéo</span>
+                                    <div class="text-xs text-surface-400 mt-0.5">
+                                        {{ formatSize(att.fileSizeBytes) }}
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-1 flex-shrink-0">
@@ -786,12 +943,10 @@ interface WorkflowStep {
                             <div *ngIf="previewId === att.id">
                                 <div *ngIf="isAudio(att)" class="p-3 bg-white dark:bg-surface-800">
                                     <audio [src]="getBlobUrl(att.id)" controls
-                                        controlsList="nodownload nofullscreen"
                                         class="w-full" style="height:36px;"></audio>
                                 </div>
                                 <div *ngIf="isImage(att)"
-                                    class="bg-surface-900 flex items-center justify-center p-2"
-                                    style="max-height:400px;overflow:auto;">
+                                    class="bg-surface-900 flex items-center justify-center p-2">
                                     <img [src]="getBlobUrl(att.id)"
                                         class="max-w-full object-contain rounded"
                                         style="max-height:380px;" alt="Pièce jointe"/>
@@ -819,7 +974,6 @@ interface WorkflowStep {
                                 </div>
                                 <div *ngIf="isOther(att)"
                                     class="p-4 text-center text-sm text-surface-400 bg-surface-50">
-                                    <i class="pi pi-download text-lg mb-2 block"></i>
                                     Ce type de fichier ne peut pas être prévisualisé.
                                 </div>
                             </div>
@@ -827,7 +981,6 @@ interface WorkflowStep {
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- ── Colonne droite (1/3) ──────────────────────── -->
@@ -848,7 +1001,7 @@ interface WorkflowStep {
                 </div>
             </div>
 
-            <!-- BLOC INVESTIGATION -->
+            <!-- Investigation -->
             <div *ngIf="dossier && isInvestigationVisible()"
                 class="bg-white dark:bg-surface-800 rounded-2xl border
                        border-surface-100 dark:border-surface-700 overflow-hidden">
@@ -867,36 +1020,22 @@ interface WorkflowStep {
                                 && hasRole(['CGEA','ADMIN_DDIC'])"
                         class="flex flex-col gap-3">
                         <div class="p-3 bg-green-50 dark:bg-green-950 border border-green-200
-                                    dark:border-green-800 rounded-xl">
-                            <div class="flex items-center gap-2 mb-1">
-                                <i class="pi pi-check-circle text-green-600 text-sm"></i>
-                                <span class="text-xs font-semibold text-green-700
-                                             dark:text-green-300">
-                                    Dossier recevable
-                                </span>
-                            </div>
-                            <p class="text-xs text-green-600 dark:text-green-400 ml-5">
-                                Vous pouvez ouvrir l'investigation.
-                            </p>
+                                    rounded-xl">
+                            <p class="text-xs text-green-600">Vous pouvez ouvrir l'investigation.</p>
                         </div>
                         <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-3 border
-                                    border-surface-100 dark:border-surface-600">
+                                    border-surface-100">
                             <label class="text-xs font-semibold text-surface-600 uppercase
-                                          tracking-wide mb-2 block">
-                                Durée (jours)
-                            </label>
+                                          tracking-wide mb-2 block">Durée (jours)</label>
                             <div class="flex items-center gap-2 mb-2">
-                                <input type="number" [(ngModel)]="openDays"
-                                    min="90" max="365"
-                                    class="p-inputtext w-20 text-sm text-center
-                                           font-mono font-bold" />
+                                <input type="number" [(ngModel)]="openDays" min="90" max="365"
+                                    class="p-inputtext w-20 text-sm text-center font-mono font-bold"/>
                                 <span class="text-xs text-surface-400">jours</span>
                             </div>
                             <div class="flex gap-1.5">
                                 <button *ngFor="let d of [90, 120, 180]"
                                     class="text-xs px-2 py-1 rounded-lg border
-                                           transition-colors cursor-pointer flex-1
-                                           text-center"
+                                           transition-colors cursor-pointer flex-1 text-center"
                                     [class.bg-primary-100]="openDays === d"
                                     [class.text-primary-700]="openDays === d"
                                     [class.border-primary-300]="openDays === d"
@@ -917,24 +1056,12 @@ interface WorkflowStep {
                                 && !hasRole(['CGEA','ADMIN_DDIC'])"
                         class="p-3 bg-blue-50 border border-blue-200 rounded-xl
                                text-xs text-blue-700 text-center">
-                        <i class="pi pi-info-circle mr-1"></i>
                         En attente d'ouverture par le CGEA.
                     </div>
                     <div *ngIf="dossier.status !== 'RECEVABLE'"
                         class="flex flex-col gap-2">
                         <div class="flex items-center gap-2 p-2 bg-surface-50
                                     dark:bg-surface-700 rounded-xl">
-                            <div class="w-6 h-6 rounded-full flex items-center
-                                        justify-center flex-shrink-0"
-                                [class.bg-green-500]="dossier.status === 'CLOS'"
-                                [class.bg-blue-500]="dossier.status === 'EN_INVESTIGATION'"
-                                [class.bg-amber-500]="dossier.status === 'RAPPORT_PRODUIT'"
-                                [class.bg-purple-500]="dossier.status === 'DECISION_RENDUE'"
-                                [class.bg-surface-400]="!['CLOS','EN_INVESTIGATION',
-                                    'RAPPORT_PRODUIT','DECISION_RENDUE']
-                                    .includes(dossier.status)">
-                                <i class="pi pi-search text-white" style="font-size:9px;"></i>
-                            </div>
                             <span class="text-xs font-medium text-surface-700
                                          dark:text-surface-200">
                                 {{ getStatusLabel(dossier.status) }}
@@ -1079,6 +1206,9 @@ export class DossierDetail implements OnInit {
     showVersionConflictDialog     = false;
     conflictRefreshing            = false;
     justRefreshedAfterConflict    = false;
+    showConfidentialDialog = false;
+    confidentialReason     = '';
+    savingConfidential     = false;
 
     activeTab = 'parties';
     tabs = [
@@ -1145,7 +1275,6 @@ export class DossierDetail implements OnInit {
         if (id) this.loadDossier(id);
     }
 
-
     private loadDossier(id: string): void {
         this.loading = true;
         this.dossierService.findById(id).subscribe({
@@ -1158,7 +1287,8 @@ export class DossierDetail implements OnInit {
             error: () => {
                 this.loading = false;
                 this.messageService.add({
-                    severity: 'error', summary: 'Erreur', detail: 'Dossier introuvable'
+                    severity: 'error', summary: 'Erreur',
+                    detail: 'Dossier introuvable'
                 });
             }
         });
@@ -1180,6 +1310,27 @@ export class DossierDetail implements OnInit {
         });
     }
 
+    canSeeConfidential(): boolean {
+        return this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
+    }
+
+    isWhistleblowerProtected(): boolean {
+        return !!this.dossier?.declarant?.protectionRequested;
+    }
+
+    canEditDossier(): boolean {
+        if (this.isClosed()) return false;
+
+        if (this.isWhistleblowerProtected()
+            && !this.hasRole(['CGE', 'CGEA'])) {
+            return false;
+        }
+
+        return this.hasRole([
+            'AGENT_BRPD', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE',
+            'CGEA', 'CGE', 'ADMIN_DDIC'
+        ]);
+    }
 
     private handleTransitionError(err: any): void {
         this.transitioning = false;
@@ -1201,7 +1352,7 @@ export class DossierDetail implements OnInit {
                     this.messageService.add({
                         severity: 'error',
                         summary:  'Erreur de rechargement',
-                        detail:   'Impossible de recharger le dossier. Rafraîchissez la page.'
+                        detail:   'Impossible de recharger le dossier.'
                     });
                 }
             });
@@ -1219,7 +1370,6 @@ export class DossierDetail implements OnInit {
         this.justRefreshedAfterConflict = true;
         setTimeout(() => { this.justRefreshedAfterConflict = false; }, 5000);
     }
-
 
     openInvestigation(): void {
         if (!this.dossier) return;
@@ -1248,7 +1398,6 @@ export class DossierDetail implements OnInit {
             });
     }
 
-
     openAddParty(): void {
         this.editingParty    = null;
         this.partyForm       = this.emptyPartyForm();
@@ -1262,22 +1411,23 @@ export class DossierDetail implements OnInit {
             position: p.position, institution: p.institution,
             organization: p.organization, address: p.address,
             phoneNumber: p.phoneNumber, email: p.email,
-            relationWithDeclarant: p.relationWithDeclarant, allegedRole: p.allegedRole
+            relationWithDeclarant: p.relationWithDeclarant,
+            allegedRole: p.allegedRole
         };
         this.showPartyDialog = true;
     }
 
     saveParty(): void {
         if (!this.dossier || !this.partyForm.partyType
-            || !this.partyForm.firstName?.trim() || !this.partyForm.name?.trim()) {
+            || !this.partyForm.firstName?.trim()
+            || !this.partyForm.name?.trim()) {
             this.messageService.add({
                 severity: 'warn', summary: 'Champs obligatoires',
-                detail:   'Type de partie, Prénom et Nom sont requis.'
+                detail: 'Type de partie, Prénom et Nom sont requis.'
             });
             return;
         }
         this.savingParty = true;
-
         const obs$ = this.editingParty
             ? this.targetedPartyService.update(
                 this.dossier.id, this.editingParty.id, this.partyForm)
@@ -1285,7 +1435,6 @@ export class DossierDetail implements OnInit {
 
         obs$.subscribe({
             next: () => {
-
                 this.targetedPartyService.findAll(this.dossier!.id).subscribe({
                     next: p => {
                         this.parties         = p;
@@ -1293,18 +1442,13 @@ export class DossierDetail implements OnInit {
                         this.showPartyDialog = false;
                         this.messageService.add({
                             severity: 'success',
-                            summary: this.editingParty ? 'Partie modifiée' : 'Partie ajoutée'
+                            summary: this.editingParty
+                                ? 'Partie modifiée' : 'Partie ajoutée'
                         });
                     },
                     error: () => {
-                        // Mutation OK mais rechargement échoué → on ferme quand même
                         this.savingParty     = false;
                         this.showPartyDialog = false;
-                        this.messageService.add({
-                            severity: 'warn',
-                            summary:  this.editingParty ? 'Partie modifiée' : 'Partie ajoutée',
-                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
-                        });
                     }
                 });
             },
@@ -1322,18 +1466,14 @@ export class DossierDetail implements OnInit {
         if (!this.dossier) return;
         this.targetedPartyService.delete(this.dossier.id, partyId).subscribe({
             next: () => {
-              
                 this.targetedPartyService.findAll(this.dossier!.id).subscribe({
                     next: p => {
                         this.parties = p;
-                        this.messageService.add({ severity: 'info', summary: 'Partie supprimée' });
-                    },
-                    error: () => {
                         this.messageService.add({
-                            severity: 'warn', summary: 'Partie supprimée',
-                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                            severity: 'info', summary: 'Partie supprimée'
                         });
-                    }
+                    },
+                    error: () => {}
                 });
             },
             error: err => {
@@ -1345,8 +1485,6 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    
-
     openAddWitness(): void {
         this.editingWitness    = null;
         this.witnessForm       = this.emptyWitnessForm();
@@ -1356,27 +1494,27 @@ export class DossierDetail implements OnInit {
     openEditWitness(w: WitnessResponse): void {
         this.editingWitness = w;
         this.witnessForm = {
-            firstName: w.firstName, lastName: w.lastName, profession: w.profession,
-            phoneNumber: w.phoneNumber, email: w.email, address: w.address,
+            firstName: w.firstName, lastName: w.lastName,
+            profession: w.profession, phoneNumber: w.phoneNumber,
+            email: w.email, address: w.address,
             testimonyNature: w.testimonyNature,
             relationWithParties: w.relationWithParties,
             interrogationDate: w.interrogationDate,
-            consentToContact: w.consentToContact, anonymous: w.anonymous
+            consentToContact: w.consentToContact,
+            anonymous: w.anonymous
         };
         this.showWitnessDialog = true;
     }
 
     saveWitness(): void {
-        if (!this.dossier || !this.witnessForm.firstName?.trim()
-            || (!this.witnessForm.anonymous && !this.witnessForm.lastName?.trim())) {
+        if (!this.dossier || !this.witnessForm.firstName?.trim()) {
             this.messageService.add({
                 severity: 'warn', summary: 'Champs obligatoires',
-                detail:   'Prénom et Nom sont requis (sauf témoin anonyme).'
+                detail: 'Le prénom est requis.'
             });
             return;
         }
         this.savingWitness = true;
-
         const obs$ = this.editingWitness
             ? this.witnessService.update(
                 this.dossier.id, this.editingWitness.id, this.witnessForm)
@@ -1384,25 +1522,20 @@ export class DossierDetail implements OnInit {
 
         obs$.subscribe({
             next: () => {
-                
                 this.witnessService.findAll(this.dossier!.id).subscribe({
                     next: w => {
-                        this.witnesses          = w;
-                        this.savingWitness      = false;
-                        this.showWitnessDialog  = false;
+                        this.witnesses         = w;
+                        this.savingWitness     = false;
+                        this.showWitnessDialog = false;
                         this.messageService.add({
                             severity: 'success',
-                            summary: this.editingWitness ? 'Témoin modifié' : 'Témoin ajouté'
+                            summary: this.editingWitness
+                                ? 'Témoin modifié' : 'Témoin ajouté'
                         });
                     },
                     error: () => {
                         this.savingWitness     = false;
                         this.showWitnessDialog = false;
-                        this.messageService.add({
-                            severity: 'warn',
-                            summary:  this.editingWitness ? 'Témoin modifié' : 'Témoin ajouté',
-                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
-                        });
                     }
                 });
             },
@@ -1423,14 +1556,11 @@ export class DossierDetail implements OnInit {
                 this.witnessService.findAll(this.dossier!.id).subscribe({
                     next: w => {
                         this.witnesses = w;
-                        this.messageService.add({ severity: 'info', summary: 'Témoin supprimé' });
-                    },
-                    error: () => {
                         this.messageService.add({
-                            severity: 'warn', summary: 'Témoin supprimé',
-                            detail:   'Rafraîchissez si la liste n\'est pas à jour.'
+                            severity: 'info', summary: 'Témoin supprimé'
                         });
-                    }
+                    },
+                    error: () => {}
                 });
             },
             error: err => {
@@ -1451,7 +1581,9 @@ export class DossierDetail implements OnInit {
                 this.savingObs     = false;
                 this.showObsDialog = false;
                 this.obsForm       = { type: '', content: '', confidential: false };
-                this.messageService.add({ severity: 'success', summary: 'Observation ajoutée' });
+                this.messageService.add({
+                    severity: 'success', summary: 'Observation ajoutée'
+                });
             },
             error: err => {
                 this.savingObs = false;
@@ -1462,7 +1594,6 @@ export class DossierDetail implements OnInit {
             }
         });
     }
-
 
     loadBlob(att: AttachmentResponse): void {
         const url = this.attachmentService.getDownloadUrl(att.id);
@@ -1527,24 +1658,30 @@ export class DossierDetail implements OnInit {
             && !this.isImage(att) && !this.isWord(att) && !this.isVideo(att);
     }
 
-
     private buildWorkflowSteps(dossier: DossierResponse): void {
         const order: DossierStatus[] = [
             'SOUMIS', 'RECU', 'EN_ETUDE_OPPORTUNITE', 'EN_REVUE_CTADP',
-            'RECEVABLE', 'EN_INVESTIGATION', 'RAPPORT_PRODUIT', 'DECISION_RENDUE', 'CLOS'
+            'RECEVABLE', 'EN_INVESTIGATION', 'RAPPORT_PRODUIT',
+            'DECISION_RENDUE', 'CLOS'
         ];
         const labels: Record<string, string> = {
             SOUMIS: 'Soumis', RECU: 'Reçu — B4 remis',
-            EN_ETUDE_OPPORTUNITE: 'Étude opportunité', EN_REVUE_CTADP: 'Revue CTADP',
-            RECEVABLE: 'Déclaré recevable', EN_INVESTIGATION: 'En investigation',
-            RAPPORT_PRODUIT: 'Rapport produit', DECISION_RENDUE: 'Décision rendue',
+            EN_ETUDE_OPPORTUNITE: 'Étude opportunité',
+            EN_REVUE_CTADP: 'Revue CTADP',
+            RECEVABLE: 'Déclaré recevable',
+            EN_INVESTIGATION: 'En investigation',
+            RAPPORT_PRODUIT: 'Rapport produit',
+            DECISION_RENDUE: 'Décision rendue',
             CLOS: 'Dossier clôturé'
         };
         const icons: Record<string, string> = {
             SOUMIS: 'pi pi-upload', RECU: 'pi pi-inbox',
-            EN_ETUDE_OPPORTUNITE: 'pi pi-search', EN_REVUE_CTADP: 'pi pi-users',
-            RECEVABLE: 'pi pi-check', EN_INVESTIGATION: 'pi pi-eye',
-            RAPPORT_PRODUIT: 'pi pi-file', DECISION_RENDUE: 'pi pi-gavel',
+            EN_ETUDE_OPPORTUNITE: 'pi pi-search',
+            EN_REVUE_CTADP: 'pi pi-users',
+            RECEVABLE: 'pi pi-check',
+            EN_INVESTIGATION: 'pi pi-eye',
+            RAPPORT_PRODUIT: 'pi pi-file',
+            DECISION_RENDUE: 'pi pi-gavel',
             CLOS: 'pi pi-lock'
         };
         const idx = order.indexOf(dossier.status);
@@ -1559,7 +1696,6 @@ export class DossierDetail implements OnInit {
                 : undefined
         }));
     }
-
 
     openTransition(type: string, title: string, placeholder: string): void {
         this.currentTransitionType = type;
@@ -1623,7 +1759,8 @@ export class DossierDetail implements OnInit {
                 const link    = document.createElement('a');
                 link.href     = URL.createObjectURL(blob);
                 link.download = `dossier-${this.dossier!.number || this.dossier!.id}.pdf`;
-                link.click(); URL.revokeObjectURL(link.href);
+                link.click();
+                URL.revokeObjectURL(link.href);
             },
             error: () => this.messageService.add({
                 severity: 'error', summary: 'Erreur',
@@ -1632,27 +1769,23 @@ export class DossierDetail implements OnInit {
         });
     }
 
-
-    hasRole(roles: string[]): boolean { return this.keycloakService.hasAnyRole(roles); }
-
-    canEditDossier(): boolean {
-        return !this.isClosed() && this.hasRole([
-            'AGENT_BRPD', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE',
-            'CGEA', 'CGE', 'ADMIN_DDIC'
-        ]);
+    hasRole(roles: string[]): boolean {
+        return this.keycloakService.hasAnyRole(roles);
     }
 
     isClosed(): boolean {
-        return ['CLOS', 'CLASSE', 'IRRECEVABLE'].includes(this.dossier?.status || '');
+        return ['CLOS', 'CLASSE', 'IRRECEVABLE'].includes(
+            this.dossier?.status || '');
     }
 
     isInvestigationVisible(): boolean {
         return this.investigationStatuses.includes(
-            this.dossier?.status as DossierStatus
-        );
+            this.dossier?.status as DossierStatus);
     }
 
-    formatSize(bytes: number): string { return this.attachmentService.formatSize(bytes); }
+    formatSize(bytes: number): string {
+        return this.attachmentService.formatSize(bytes);
+    }
 
     getInitials(name: string): string {
         return (name || '').trim().split(' ').filter(Boolean)
@@ -1677,9 +1810,12 @@ export class DossierDetail implements OnInit {
 
     getObsTypeLabel(type: string): string {
         const l: Record<string, string> = {
-            INTERNAL_NOTE: 'Note interne', ADMISSIBILITY_ANALYSIS: 'Analyse recevabilité',
-            CTADP_OPINION: 'Avis CTADP', COMPLEMENT_REQUEST: 'Demande complément',
-            CGE_DECISION: 'Décision CGE', FIELD_FINDING: 'Constat terrain',
+            INTERNAL_NOTE: 'Note interne',
+            ADMISSIBILITY_ANALYSIS: 'Analyse recevabilité',
+            CTADP_OPINION: 'Avis CTADP',
+            COMPLEMENT_REQUEST: 'Demande complément',
+            CGE_DECISION: 'Décision CGE',
+            FIELD_FINDING: 'Constat terrain',
             TRANSFER_NOTE: 'Note transfert'
         };
         return l[type] || type;
@@ -1688,22 +1824,35 @@ export class DossierDetail implements OnInit {
     getStatusLabel(status: string): string {
         const l: Record<string, string> = {
             SOUMIS: 'Soumis', RECU: 'Reçu',
-            EN_ETUDE_OPPORTUNITE: 'En étude', EN_ATTENTE_COMPLEMENT: 'Complément',
-            EN_REVUE_CTADP: 'CTADP', RECEVABLE: 'Recevable',
-            IRRECEVABLE: 'Irrecevable', TRANSFERE: 'Transféré',
-            EN_INVESTIGATION: 'Investigation', RAPPORT_PRODUIT: 'Rapport',
-            DECISION_RENDUE: 'Décision', CLOS: 'Clôturé', CLASSE: 'Classé'
+            EN_ETUDE_OPPORTUNITE: 'En étude',
+            EN_ATTENTE_COMPLEMENT: 'Complément',
+            EN_REVUE_CTADP: 'CTADP',
+            RECEVABLE: 'Recevable',
+            IRRECEVABLE: 'Irrecevable',
+            TRANSFERE: 'Transféré',
+            EN_INVESTIGATION: 'Investigation',
+            RAPPORT_PRODUIT: 'Rapport',
+            DECISION_RENDUE: 'Décision',
+            CLOS: 'Clôturé',
+            CLASSE: 'Classé'
         };
         return l[status] || status;
     }
 
     getStatusSeverity(status: string): TagSeverity {
         const m: Record<string, TagSeverity> = {
-            SOUMIS: 'info', RECU: 'info', EN_ETUDE_OPPORTUNITE: 'warn',
-            EN_ATTENTE_COMPLEMENT: 'warn', EN_REVUE_CTADP: 'warn',
-            RECEVABLE: 'success', IRRECEVABLE: 'danger', TRANSFERE: 'secondary',
-            EN_INVESTIGATION: 'warn', RAPPORT_PRODUIT: 'info',
-            DECISION_RENDUE: 'success', CLOS: 'success', CLASSE: 'secondary'
+            SOUMIS: 'info', RECU: 'info',
+            EN_ETUDE_OPPORTUNITE: 'warn',
+            EN_ATTENTE_COMPLEMENT: 'warn',
+            EN_REVUE_CTADP: 'warn',
+            RECEVABLE: 'success',
+            IRRECEVABLE: 'danger',
+            TRANSFERE: 'secondary',
+            EN_INVESTIGATION: 'warn',
+            RAPPORT_PRODUIT: 'info',
+            DECISION_RENDUE: 'success',
+            CLOS: 'success',
+            CLASSE: 'secondary'
         };
         return m[status] ?? 'info';
     }
@@ -1718,11 +1867,12 @@ export class DossierDetail implements OnInit {
 
     getModeLabel(mode: string): string {
         const l: Record<string, string> = {
-            IN_PERSON: 'Guichet BRPD', WEB_FORM: 'Formulaire Web', EMAIL: 'Email',
-            SMS: 'SMS', PHONE: 'Téléphone', GREEN_NUMBER: 'Numéro Vert',
-            SOCIAL_MEDIA: 'Réseaux Sociaux', AUDIO_COUNTER: 'Comptoir Audio',
-            PAPER_FORM: 'Formulaire Papier', POSTAL_MAIL: 'Courrier Postal',
-            PRESS_MEDIA: 'Presse', AUDIT_REPORT: 'Rapport Audit'
+            IN_PERSON: 'Guichet BRPD', WEB_FORM: 'Formulaire Web',
+            EMAIL: 'Email', SMS: 'SMS', PHONE: 'Téléphone',
+            GREEN_NUMBER: 'Numéro Vert', SOCIAL_MEDIA: 'Réseaux Sociaux',
+            AUDIO_COUNTER: 'Comptoir Audio', PAPER_FORM: 'Formulaire Papier',
+            POSTAL_MAIL: 'Courrier Postal', PRESS_MEDIA: 'Presse',
+            AUDIT_REPORT: 'Rapport Audit'
         };
         return l[mode] || mode;
     }
@@ -1731,15 +1881,61 @@ export class DossierDetail implements OnInit {
         return {
             partyType: '', firstName: '', name: '', position: '',
             institution: '', organization: '', address: '',
-            phoneNumber: '', email: '', relationWithDeclarant: '', allegedRole: ''
+            phoneNumber: '', email: '', relationWithDeclarant: '',
+            allegedRole: ''
         };
     }
 
     private emptyWitnessForm(): WitnessRequest {
         return {
-            firstName: '', lastName: '', profession: '', phoneNumber: '',
-            email: '', address: '', testimonyNature: '', relationWithParties: '',
+            firstName: '', lastName: '', profession: '',
+            phoneNumber: '', email: '', address: '',
+            testimonyNature: '', relationWithParties: '',
             anonymous: false, consentToContact: false
         };
+    }
+
+    openToggleConfidential(): void {
+        this.confidentialReason     = '';
+        this.showConfidentialDialog = true;
+    }
+
+    executeToggleConfidential(): void {
+        if (!this.dossier) return;
+        this.savingConfidential = true;
+
+        const newValue = !this.dossier.isConfidential;
+
+        this.dossierService.setConfidential(
+            this.dossier.id,
+            newValue,
+            {
+                version: this.dossier.version,
+                reason:  this.confidentialReason
+            }
+        ).subscribe({
+            next: updated => {
+                this.dossier                = updated;
+                this.buildWorkflowSteps(updated);
+                this.savingConfidential     = false;
+                this.showConfidentialDialog = false;
+                this.messageService.add({
+                    severity: 'success',
+                    summary:  newValue
+                        ? 'Dossier marqué confidentiel'
+                        : 'Confidentialité retirée',
+                    detail: newValue
+                        ? 'Seuls CGE, CGEA et ADMIN_DDIC peuvent voir ce dossier'
+                        : 'Le dossier est maintenant accessible à tous les agents'
+                });
+            },
+            error: err => {
+                this.savingConfidential = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Action impossible'
+                });
+            }
+        });
     }
 }

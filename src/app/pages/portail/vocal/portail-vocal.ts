@@ -6,10 +6,11 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
 import { MessageModule } from 'primeng/message';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
@@ -19,9 +20,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     imports: [
         CommonModule, RouterModule, FormsModule,
         ButtonModule, InputTextModule, ToastModule,
-        DialogModule, TagModule, DividerModule, MessageModule
+        DialogModule, ConfirmDialogModule,
+        TagModule, DividerModule, MessageModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     styles: [`
         @keyframes pulse-ring {
             0%   { transform: scale(1);    opacity: .6; }
@@ -109,7 +111,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .idle-icon i { font-size:2.75rem; color:#fff; }
 
-        /* Audio requis — bordure rouge si tenté de passer sans audio */
         .record-idle-error {
             border-color:#ef4444 !important;
             background:#fff5f5 !important;
@@ -178,6 +179,42 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .phone-icon i { font-size:2.25rem; color:#fff; }
 
+        /* ── Protection lanceur d'alerte ── */
+        .protection-trigger {
+            border:2px solid #e5e7eb; border-radius:14px;
+            padding:.875rem 1rem; cursor:pointer; transition:all .2s; background:#fff;
+            margin-top:1rem;
+        }
+        .protection-trigger.selected { border-color:#1d4ed8; background:#eff6ff; }
+
+        .protection-info-box {
+            border-radius:12px; padding:.875rem 1rem;
+            background:#eff6ff; border:1.5px solid #93c5fd; margin-top:.75rem;
+        }
+        .protection-warning {
+            background:#fff5f5; border:1.5px solid #fca5a5;
+            border-radius:12px; padding:.875rem 1rem; margin-top:.625rem;
+        }
+        .protection-conditions {
+            background:#f8faff; border:1.5px solid #bfdbfe;
+            border-radius:12px; padding:1rem; margin-top:.75rem;
+            display:flex; flex-direction:column; gap:.625rem;
+        }
+        .condition-row {
+            display:flex; align-items:flex-start; gap:.75rem; cursor:pointer;
+        }
+        .condition-check {
+            width:20px; height:20px; border-radius:6px; border:2px solid #93c5fd;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; transition:all .2s; margin-top:1px;
+        }
+        .condition-check.checked { background:#2563eb; border-color:#2563eb; }
+        .protection-acknowledged {
+            background:#f0fdf4; border:2px solid #22c55e;
+            border-radius:12px; padding:.875rem 1rem; margin-top:.75rem;
+            display:flex; align-items:center; gap:.75rem;
+        }
+
         .recap-item {
             display:flex; align-items:center; gap:.875rem; padding:.875rem 1rem;
             border-radius:14px; border:1.5px solid #e5e7eb; background:#f9fafb; transition:all .2s;
@@ -192,14 +229,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .recap-title { font-weight:700; font-size:.875rem; color:#111827; }
         .recap-sub   { font-size:.775rem; color:#6b7280; margin-top:2px; }
 
-        .req { color:#ef4444; margin-left:2px; }
         .error-msg { color:#ef4444; font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:4px; }
 
         .field-label {
             display:block; font-weight:700; color:#374151;
             font-size:.875rem; margin-bottom:.5rem;
         }
-        .input-error { border:1.5px solid #ef4444 !important; background:#fff5f5 !important; }
 
         .step-footer {
             display:flex; justify-content:space-between; align-items:center;
@@ -244,23 +279,20 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     `],
     template: `
 <p-toast />
+<p-confirmDialog />
 
 <!-- ── Dialog succès ──────────────────────────────────────── -->
 <p-dialog [(visible)]="showSuccess" header=" "
     [modal]="true" [closable]="false" [style]="{width:'380px'}">
-
     <div class="success-wrap">
-        <div class="success-icon-wrap">
-            <i class="pi pi-check-circle"></i>
-        </div>
+        <div class="success-icon-wrap"><i class="pi pi-check-circle"></i></div>
         <h3 style="font-size:1.4rem;font-weight:900;color:#111827;margin-bottom:.5rem;">
             Merci pour votre témoignage !
         </h3>
         <p style="font-size:.875rem;color:#6b7280;line-height:1.7;margin-bottom:0;">
             Un agent va écouter votre message<br>
-            et créer votre dossier officiel.
+            et traiter votre dossier.
         </p>
-
         <div class="code-box">
             <div class="code-label">Votre code de suivi B4</div>
             <div class="code-value">{{ createdAccessCode }}</div>
@@ -269,7 +301,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Notez ce code ou prenez une photo de cet écran
             </div>
         </div>
-
         <div class="notif-row" *ngIf="phoneNumber || email">
             <div *ngIf="phoneNumber" class="notif-badge sms">
                 <i class="pi pi-mobile" style="font-size:.85rem;"></i>
@@ -281,7 +312,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
     </div>
-
     <ng-template pTemplate="footer">
         <div style="display:flex;gap:.5rem;justify-content:center;">
             <p-button label="Suivre mon dossier" icon="pi pi-search"
@@ -312,9 +342,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     <div class="content">
 
         <div class="page-header">
-            <div class="header-icon">
-                <i class="pi pi-microphone"></i>
-            </div>
+            <div class="header-icon"><i class="pi pi-microphone"></i></div>
             <h1 class="page-title">Parlez, nous écoutons</h1>
             <p class="page-subtitle">
                 Enregistrez votre témoignage.<br>
@@ -322,18 +350,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </p>
         </div>
 
-        <!-- Steps indicator -->
+        <!-- Steps -->
         <div class="steps-bar">
-            <div class="step-dot"
-                [class.active]="currentStep === 1"
-                [class.done]="currentStep > 1">
+            <div class="step-dot" [class.active]="currentStep === 1" [class.done]="currentStep > 1">
                 <i *ngIf="currentStep > 1" class="pi pi-check" style="font-size:.75rem;"></i>
                 <span *ngIf="currentStep <= 1">1</span>
             </div>
             <div class="step-line" [class.done]="currentStep > 1"></div>
-            <div class="step-dot"
-                [class.active]="currentStep === 2"
-                [class.done]="currentStep > 2">
+            <div class="step-dot" [class.active]="currentStep === 2" [class.done]="currentStep > 2">
                 <i *ngIf="currentStep > 2" class="pi pi-check" style="font-size:.75rem;"></i>
                 <span *ngIf="currentStep <= 2">2</span>
             </div>
@@ -358,9 +382,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <div *ngIf="!audioUrl && !isRecording"
                 class="record-idle"
                 [class.record-idle-error]="audioTouched && !audioUrl">
-                <div class="idle-icon">
-                    <i class="pi pi-microphone"></i>
-                </div>
+                <div class="idle-icon"><i class="pi pi-microphone"></i></div>
                 <p style="font-weight:800;font-size:1.05rem;color:#111827;margin-bottom:.5rem;">
                     Appuyez pour parler
                 </p>
@@ -368,11 +390,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     Parlez dans votre langue<br>Moore, Dioula, Fulfuldé…
                 </p>
                 <p-button label="COMMENCER À PARLER"
-                    icon="pi pi-microphone" size="large"
-                    (onClick)="startRecording()" />
+                    icon="pi pi-microphone" size="large" (onClick)="startRecording()" />
             </div>
-            <!-- Message erreur audio manquant -->
-            <div *ngIf="audioTouched && !audioUrl && !isRecording" class="error-msg" style="justify-content:center;margin-bottom:.75rem;">
+            <div *ngIf="audioTouched && !audioUrl && !isRecording"
+                class="error-msg" style="justify-content:center;margin-bottom:.75rem;">
                 <i class="pi pi-exclamation-circle" style="font-size:.875rem;"></i>
                 L'enregistrement audio est obligatoire pour continuer
             </div>
@@ -381,9 +402,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <div *ngIf="isRecording" class="record-active">
                 <div class="pulse-wrap">
                     <div class="pulse-ring"></div>
-                    <div class="active-icon">
-                        <i class="pi pi-microphone"></i>
-                    </div>
+                    <div class="active-icon"><i class="pi pi-microphone"></i></div>
                 </div>
                 <div class="chrono">{{ formatDuration(recordingDuration) }}</div>
                 <div class="rec-badge">
@@ -421,7 +440,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <p-divider />
 
-            <!-- Photos / Preuves -->
+            <!-- Photos -->
             <div>
                 <p style="font-weight:700;color:#111827;margin-bottom:.75rem;
                     display:flex;align-items:center;gap:8px;font-size:.875rem;">
@@ -454,15 +473,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div class="step-footer">
                 <span style="font-size:.78rem;color:#9ca3af;">
-                    <i class="pi pi-info-circle"></i>
-                    L'audio est obligatoire
+                    <i class="pi pi-info-circle"></i> L'audio est obligatoire
                 </span>
                 <p-button label="Continuer" icon="pi pi-arrow-right"
                     iconPos="right" (onClick)="goToStep2()" />
             </div>
         </div>
 
-        <!-- ═══ Étape 2 — Contact ═══ -->
+        <!-- ═══ Étape 2 — Contact + Protection ═══ -->
         <div *ngIf="currentStep === 2" class="step-card">
 
             <div class="step-card-title">
@@ -505,18 +523,150 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     style="font-size:1rem;padding:.75rem;border-radius:12px;" />
             </div>
 
-            <p-message severity="info"
-                text="Vos coordonnées restent strictement confidentielles et ne seront pas partagées."
-                styleClass="w-full" />
+            <!-- ══ PROTECTION LANCEUR D'ALERTE ══════════════════════════ -->
+            <div>
+                <!-- Case déclencheur -->
+                <div class="protection-trigger"
+                    [class.selected]="protectionRequested"
+                    (click)="toggleProtectionRequested()">
+                    <div style="display:flex;align-items:center;gap:.875rem;">
+                        <div style="width:22px;height:22px;border-radius:6px;
+                            border:2.5px solid #93c5fd;display:flex;align-items:center;
+                            justify-content:center;flex-shrink:0;transition:all .2s;"
+                            [style.background]="protectionRequested ? '#2563eb' : 'transparent'"
+                            [style.border-color]="protectionRequested ? '#2563eb' : '#93c5fd'">
+                            <i *ngIf="protectionRequested"
+                                class="pi pi-check" style="font-size:.65rem;color:#fff;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:.875rem;color:#1e40af;">
+                                Je demande une protection lanceur d'alerte
+                            </div>
+                            <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">
+                                Loi N°010-2004/AN — Protection garantie par l'État
+                            </div>
+                        </div>
+                        <div style="width:32px;height:32px;border-radius:8px;
+                            background:#eff6ff;display:flex;align-items:center;justify-content:center;">
+                            <i class="pi pi-shield" style="color:#2563eb;font-size:.875rem;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc étendu — si cochée et pas encore confirmée -->
+                <div *ngIf="protectionRequested && !protectionAcknowledged">
+
+                    <!-- Info légale -->
+                    <div class="protection-info-box">
+                        <div style="font-weight:800;color:#1e40af;font-size:.875rem;
+                            display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem;">
+                            <i class="pi pi-info-circle"></i>
+                            À qui s'adresse cette protection ?
+                        </div>
+                        <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;margin:0 0 .5rem 0;">
+                            Réservée aux personnes qui signalent des faits de
+                            <strong>corruption ou d'abus de pouvoir</strong>
+                            dont elles ont eu connaissance dans le cadre de leurs fonctions.
+                        </p>
+                        <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;margin:0;">
+                            Elle garantit la <strong>confidentialité totale de votre identité</strong>
+                            et vous protège contre toute représaille.
+                        </p>
+                    </div>
+
+                    <!-- Avertissement pénal -->
+                    <div class="protection-warning">
+                        <div style="display:flex;align-items:flex-start;gap:.75rem;">
+                            <i class="pi pi-exclamation-triangle"
+                                style="color:#ef4444;font-size:1rem;flex-shrink:0;margin-top:1px;"></i>
+                            <p style="font-size:.8rem;color:#dc2626;margin:0;line-height:1.6;">
+                                <strong>Attention :</strong> invoquer cette protection de manière
+                                abusive est passible de <strong>sanctions pénales</strong>
+                                en vertu de la Loi N°010-2004/AN.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3 conditions -->
+                    <div class="protection-conditions">
+                        <div style="font-size:.78rem;font-weight:800;color:#1e40af;
+                            text-transform:uppercase;letter-spacing:1px;margin-bottom:.25rem;">
+                            Je confirme les 3 conditions :
+                        </div>
+
+                        <div class="condition-row" (click)="cond1 = !cond1">
+                            <div class="condition-check" [class.checked]="cond1">
+                                <i *ngIf="cond1" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                            </div>
+                            <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                J'ai eu connaissance de ces faits dans le cadre de mes fonctions
+                                ou de mes activités professionnelles.
+                            </span>
+                        </div>
+
+                        <div class="condition-row" (click)="cond2 = !cond2">
+                            <div class="condition-check" [class.checked]="cond2">
+                                <i *ngIf="cond2" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                            </div>
+                            <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                Je crains des représailles si mon identité est révélée.
+                            </span>
+                        </div>
+
+                        <div class="condition-row" (click)="cond3 = !cond3">
+                            <div class="condition-check" [class.checked]="cond3">
+                                <i *ngIf="cond3" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                            </div>
+                            <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                Je comprends qu'une demande abusive est une infraction pénale.
+                            </span>
+                        </div>
+
+                        <p-button
+                            label="Je confirme sur l'honneur"
+                            icon="pi pi-shield"
+                            severity="info"
+                            styleClass="w-full justify-center mt-2"
+                            [disabled]="!cond1 || !cond2 || !cond3"
+                            (onClick)="confirmProtection()" />
+
+                        <small *ngIf="protectionCondTouched && (!cond1 || !cond2 || !cond3)"
+                            class="error-msg" style="justify-content:center;">
+                            <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                            Cochez les 3 conditions pour continuer
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Badge confirmé -->
+                <div *ngIf="protectionRequested && protectionAcknowledged"
+                    class="protection-acknowledged">
+                    <i class="pi pi-shield" style="color:#16a34a;font-size:1.25rem;flex-shrink:0;"></i>
+                    <div style="flex:1;">
+                        <div style="font-weight:800;color:#166534;font-size:.875rem;">
+                            Protection lanceur d'alerte confirmée
+                        </div>
+                        <div style="font-size:.75rem;color:#16a34a;margin-top:2px;">
+                            Votre identité sera strictement protégée — Loi N°010-2004/AN
+                        </div>
+                    </div>
+                    <p-button icon="pi pi-times" severity="secondary" text size="small"
+                        pTooltip="Annuler" (onClick)="cancelProtection()" />
+                </div>
+            </div>
+            <!-- ══ FIN PROTECTION ════════════════════════════════════════ -->
+
+            <p-message severity="info" styleClass="w-full mt-3"
+                text="Vos coordonnées restent strictement confidentielles." />
 
             <div class="step-footer">
                 <p-button label="Retour" icon="pi pi-arrow-left"
                     severity="secondary" outlined (onClick)="currentStep = 1" />
                 <div class="footer-right">
                     <p-button label="Passer" severity="secondary"
-                        text (onClick)="currentStep = 3" />
+                        text (onClick)="goToStep3Skip()" />
                     <p-button label="Continuer" icon="pi pi-arrow-right"
-                        iconPos="right" (onClick)="currentStep = 3" />
+                        iconPos="right" (onClick)="goToStep3()" />
                 </div>
             </div>
         </div>
@@ -534,12 +684,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div style="display:flex;flex-direction:column;gap:.625rem;margin-bottom:1.5rem;">
 
-                <!-- Audio — obligatoire, mis en rouge si absent -->
-                <div class="recap-item"
-                    [class.ok]="audioUrl"
-                    [class.missing]="!audioUrl">
-                    <div class="recap-icon"
-                        [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'">
+                <!-- Audio -->
+                <div class="recap-item" [class.ok]="audioUrl" [class.missing]="!audioUrl">
+                    <div class="recap-icon" [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'">
                         <i class="pi text-xl"
                             [class.pi-check-circle]="audioUrl"
                             [class.pi-times-circle]="!audioUrl"
@@ -550,9 +697,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             Témoignage audio <span *ngIf="!audioUrl" style="color:#ef4444;">*</span>
                         </div>
                         <div class="recap-sub" [style.color]="!audioUrl ? '#ef4444' : ''">
-                            {{ audioUrl
-                                ? 'Enregistré — ' + formatDuration(recordingDuration)
-                                : 'Manquant — obligatoire' }}
+                            {{ audioUrl ? 'Enregistré — ' + formatDuration(recordingDuration) : 'Manquant — obligatoire' }}
                         </div>
                     </div>
                     <span [style.background]="audioUrl ? '#dcfce7' : '#fee2e2'"
@@ -564,8 +709,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
                 <!-- Fichiers -->
                 <div class="recap-item" [class.ok]="photos.length > 0">
-                    <div class="recap-icon"
-                        [style.background]="photos.length > 0 ? '#dcfce7' : '#f3f4f6'">
+                    <div class="recap-icon" [style.background]="photos.length > 0 ? '#dcfce7' : '#f3f4f6'">
                         <i class="pi text-xl"
                             [class.pi-images]="photos.length > 0"
                             [class.pi-minus-circle]="photos.length === 0"
@@ -574,21 +718,36 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div style="flex:1;">
                         <div class="recap-title">Fichiers joints</div>
                         <div class="recap-sub">
-                            {{ photos.length > 0
-                                ? photos.length + ' fichier(s) sélectionné(s)'
-                                : 'Aucun (optionnel)' }}
+                            {{ photos.length > 0 ? photos.length + ' fichier(s)' : 'Aucun (optionnel)' }}
                         </div>
                     </div>
-                    <span style="background:#f3f4f6;color:#6b7280;font-size:.75rem;
-                                 font-weight:700;padding:4px 10px;border-radius:20px;">
-                        {{ photos.length > 0 ? photos.length + ' fichier(s)' : 'Aucun' }}
+                </div>
+
+                <!-- Protection lanceur d'alerte -->
+                <div class="recap-item" [class.info]="protectionAcknowledged">
+                    <div class="recap-icon"
+                        [style.background]="protectionAcknowledged ? '#dbeafe' : '#f3f4f6'">
+                        <i class="pi pi-shield text-xl"
+                            [style.color]="protectionAcknowledged ? '#2563eb' : '#d1d5db'"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div class="recap-title">Protection lanceur d'alerte</div>
+                        <div class="recap-sub">
+                            {{ protectionAcknowledged
+                                ? 'Demandée et confirmée — Loi N°010-2004/AN'
+                                : 'Non demandée (optionnel)' }}
+                        </div>
+                    </div>
+                    <span [style.background]="protectionAcknowledged ? '#dbeafe' : '#f3f4f6'"
+                        [style.color]="protectionAcknowledged ? '#1d4ed8' : '#9ca3af'"
+                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
+                        {{ protectionAcknowledged ? 'Actif' : 'Aucune' }}
                     </span>
                 </div>
 
                 <!-- SMS -->
                 <div class="recap-item" [class.info]="phoneNumber">
-                    <div class="recap-icon"
-                        [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'">
+                    <div class="recap-icon" [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'">
                         <i class="pi text-xl"
                             [class.pi-mobile]="phoneNumber"
                             [class.pi-minus-circle]="!phoneNumber"
@@ -596,21 +755,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                     <div style="flex:1;">
                         <div class="recap-title">SMS de confirmation</div>
-                        <div class="recap-sub">
-                            {{ phoneNumber || 'Pas de numéro fourni (optionnel)' }}
-                        </div>
+                        <div class="recap-sub">{{ phoneNumber || 'Pas de numéro (optionnel)' }}</div>
                     </div>
-                    <span [style.background]="phoneNumber ? '#dbeafe' : '#f3f4f6'"
-                        [style.color]="phoneNumber ? '#1d4ed8' : '#9ca3af'"
-                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
-                        {{ phoneNumber ? 'SMS prévu' : 'Ignoré' }}
-                    </span>
                 </div>
 
                 <!-- Email -->
                 <div class="recap-item" [class.info]="email">
-                    <div class="recap-icon"
-                        [style.background]="email ? '#fef9c3' : '#f3f4f6'">
+                    <div class="recap-icon" [style.background]="email ? '#fef9c3' : '#f3f4f6'">
                         <i class="pi text-xl"
                             [class.pi-envelope]="email"
                             [class.pi-minus-circle]="!email"
@@ -618,38 +769,27 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                     <div style="flex:1;">
                         <div class="recap-title">Email de confirmation</div>
-                        <div class="recap-sub">
-                            {{ email || "Pas d'email fourni (optionnel)" }}
-                        </div>
+                        <div class="recap-sub">{{ email || "Pas d'email (optionnel)" }}</div>
                     </div>
-                    <span [style.background]="email ? '#fef9c3' : '#f3f4f6'"
-                        [style.color]="email ? '#854d0e' : '#9ca3af'"
-                        style="font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:20px;">
-                        {{ email ? 'Email prévu' : 'Ignoré' }}
-                    </span>
                 </div>
 
             </div>
 
-            <!-- Avertissement audio manquant à l'étape 3 -->
+            <!-- Avertissement audio manquant -->
             <div *ngIf="!audioUrl"
                 style="display:flex;align-items:center;gap:.75rem;padding:.875rem;
-                border-radius:12px;background:#fff5f5;border:1.5px solid #fca5a5;
-                margin-bottom:1rem;">
+                border-radius:12px;background:#fff5f5;border:1.5px solid #fca5a5;margin-bottom:1rem;">
                 <i class="pi pi-exclamation-triangle" style="color:#ef4444;font-size:1.25rem;flex-shrink:0;"></i>
                 <div>
-                    <div style="font-weight:700;color:#dc2626;font-size:.875rem;">
-                        Témoignage audio manquant
-                    </div>
+                    <div style="font-weight:700;color:#dc2626;font-size:.875rem;">Témoignage audio manquant</div>
                     <div style="font-size:.8rem;color:#ef4444;margin-top:2px;">
                         Retournez à l'étape 1 pour enregistrer votre témoignage.
                     </div>
                 </div>
             </div>
 
-            <p-message severity="success"
-                text="Un agent va écouter votre témoignage et créer votre dossier officiel."
-                styleClass="w-full" />
+            <p-message severity="success" styleClass="w-full"
+                text="Un agent va écouter votre témoignage et créer votre dossier officiel." />
 
             <div class="step-footer" style="margin-top:1.25rem;">
                 <p-button label="Retour" icon="pi pi-arrow-left"
@@ -665,7 +805,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <i class="pi pi-shield"></i>
             ASCE-LC — Plateforme sécurisée — Burkina Faso
         </div>
-
     </div>
 </div>
     `
@@ -674,9 +813,10 @@ export class PortailVocal {
 
     router = inject(Router);
 
-    private dossierService    = inject(DossierService);
-    private attachmentService = inject(AttachmentService);
-    private messageService    = inject(MessageService);
+    private dossierService      = inject(DossierService);
+    private attachmentService   = inject(AttachmentService);
+    private messageService      = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
 
     currentStep       = 1;
     submitting        = false;
@@ -686,6 +826,13 @@ export class PortailVocal {
 
     phoneNumber = '';
     email       = '';
+
+    protectionRequested    = false;
+    protectionAcknowledged = false;
+    cond1 = false;
+    cond2 = false;
+    cond3 = false;
+    protectionCondTouched  = false;
 
     isRecording       = false;
     audioBlob:        Blob | null   = null;
@@ -699,6 +846,7 @@ export class PortailVocal {
     photos:        File[]   = [];
     photoPreviews: string[] = [];
 
+
     goToSuivi(): void {
         this.showSuccess = false;
         setTimeout(() => this.router.navigate(['/portail/suivi']), 150);
@@ -709,18 +857,70 @@ export class PortailVocal {
         setTimeout(() => this.router.navigate(['/portail']), 150);
     }
 
-
     goToStep2(): void {
         this.audioTouched = true;
         if (!this.audioUrl) {
             this.messageService.add({
-                severity: 'warn',
-                summary:  'Audio requis',
+                severity: 'warn', summary: 'Audio requis',
                 detail:   'Veuillez enregistrer votre témoignage avant de continuer.'
             });
             return;
         }
         this.currentStep = 2;
+    }
+
+    goToStep3(): void {
+        if (this.protectionRequested && !this.protectionAcknowledged) {
+            this.protectionCondTouched = true;
+            this.messageService.add({
+                severity: 'warn',
+                summary:  'Protection lanceur d\'alerte',
+                detail:   'Vous devez confirmer les 3 conditions et valider sur l\'honneur.'
+            });
+            return;
+        }
+        this.currentStep = 3;
+    }
+
+    goToStep3Skip(): void {
+        this.cancelProtection();
+        this.currentStep = 3;
+    }
+
+
+    toggleProtectionRequested(): void {
+        if (this.protectionRequested) {
+            this.cancelProtection();
+        } else {
+            this.protectionRequested    = true;
+            this.protectionAcknowledged = false;
+            this.cond1 = this.cond2 = this.cond3 = false;
+        }
+    }
+
+    confirmProtection(): void {
+        this.protectionCondTouched = true;
+        if (!this.cond1 || !this.cond2 || !this.cond3) return;
+
+        this.confirmationService.confirm({
+            header:       'Confirmation sur l\'honneur',
+            message:      'En confirmant, vous attestez sur l\'honneur que votre demande '
+                        + 'de protection lanceur d\'alerte est justifiée '
+                        + '(Loi N°010-2004/AN).',
+            acceptLabel:  'Je confirme sur l\'honneur',
+            rejectLabel:  'Annuler',
+            acceptIcon:   'pi pi-shield',
+            rejectButtonProps: { severity: 'secondary', outlined: true },
+            accept: () => { this.protectionAcknowledged = true; },
+            reject: () => { }
+        });
+    }
+
+    cancelProtection(): void {
+        this.protectionRequested    = false;
+        this.protectionAcknowledged = false;
+        this.protectionCondTouched  = false;
+        this.cond1 = this.cond2 = this.cond3 = false;
     }
 
 
@@ -729,28 +929,22 @@ export class PortailVocal {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(stream);
             const chunks: BlobPart[] = [];
-
-            this.mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
+            this.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
             this.mediaRecorder.onstop = () => {
                 this.audioBlob = new Blob(chunks, { type: 'audio/webm' });
                 this.audioUrl  = URL.createObjectURL(this.audioBlob);
                 stream.getTracks().forEach(t => t.stop());
                 this.stopBars();
             };
-
             this.mediaRecorder.start();
             this.isRecording       = true;
             this.recordingDuration = 0;
             this.recordingTimer    = setInterval(() => this.recordingDuration++, 1000);
             this.startBars();
-
         } catch {
             this.messageService.add({
-                severity: 'error',
-                summary:  'Microphone',
-                detail:   "Veuillez autoriser l'accès au microphone"
+                severity: 'error', summary: 'Microphone',
+                detail: "Veuillez autoriser l'accès au microphone"
             });
         }
     }
@@ -765,10 +959,8 @@ export class PortailVocal {
 
     deleteAudio(): void {
         if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
-        this.audioBlob         = null;
-        this.audioUrl          = null;
-        this.recordingDuration = 0;
-        this.audioTouched      = false;
+        this.audioBlob = null; this.audioUrl = null;
+        this.recordingDuration = 0; this.audioTouched = false;
     }
 
     private startBars(): void {
@@ -823,13 +1015,14 @@ export class PortailVocal {
             object:         'Témoignage vocal en attente de traitement',
             description:    'Témoignage audio soumis via le portail citoyen.',
             declarantData: {
-                typeDeclarant:         'CITIZEN' as any,
-                phoneNumber:           this.phoneNumber || undefined,
-                email:                 this.email       || undefined,
-                anonymous:             !this.phoneNumber && !this.email,
-                dataProcessingConsent: true,
-                notificationsAccepted: true,
-                protectionRequested:   false
+                typeDeclarant:          'CITIZEN' as any,
+                phoneNumber:            this.phoneNumber || undefined,
+                email:                  this.email       || undefined,
+                anonymous:              !this.phoneNumber && !this.email,
+                dataProcessingConsent:  true,
+                notificationsAccepted:  true,
+                protectionRequested:    this.protectionRequested,
+                protectionAcknowledged: this.protectionAcknowledged
             }
         };
 

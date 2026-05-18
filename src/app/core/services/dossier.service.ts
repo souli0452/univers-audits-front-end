@@ -16,7 +16,7 @@ export class DossierService {
     private http    = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/dossiers`;
 
-    // ── Lecture
+    
 
     findAll(page = 0, size = 20): Observable<PageResponse<DossierResponse>> {
         const params = new HttpParams()
@@ -66,7 +66,6 @@ export class DossierService {
         );
     }
 
-    // ── Suivi citoyen 
 
     trackByAccessCode(accessCode: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(
@@ -74,7 +73,6 @@ export class DossierService {
         );
     }
 
-    // ── Création 
 
     submit(request: DossierCreateRequest): Observable<DossierResponse> {
         return this.http.post<DossierResponse>(
@@ -150,6 +148,17 @@ export class DossierService {
             `${this.baseUrl}/${id}/declare-inadmissible`, request
         );
     }
+
+    setConfidential(
+    id: string,
+    value: boolean,
+    request: StatusTransitionRequest
+): Observable<DossierResponse> {
+    return this.http.patch<DossierResponse>(
+        `${this.baseUrl}/${id}/confidential?value=${value}`,
+        request
+    );
+}
 
     transfer(
         id: string,

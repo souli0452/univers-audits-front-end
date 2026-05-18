@@ -374,7 +374,6 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
 
 </div>
 
-<!-- ── Squelettes partagés ─────────────────────────────────── -->
 <ng-template #skKpi>
     <p-skeleton height="2.5rem" borderRadius="8px" />
 </ng-template>

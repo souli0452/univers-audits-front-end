@@ -41,7 +41,6 @@ export type TypeDeclarant =
     | 'ANONYMOUS'
     | 'ASCE_SELF_REFERRAL';
 
-
 export function isVersionConflict(err: any): boolean {
     return err?.status === 409;
 }
@@ -109,6 +108,7 @@ export interface DossierResponse {
     submissionMode: SubmissionMode;
     object: string;
     description?: string;
+    motifs?: string;
     incidentLocation?: string;
     incidentPeriod?: string;
     estimatedLoss?: number;
@@ -158,7 +158,6 @@ export interface DeclarantCreateRequest {
     dataProcessingConsent?: boolean;
     notificationsAccepted?: boolean;
 }
-
 
 export interface StatusTransitionRequest {
     version: number;

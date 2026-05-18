@@ -463,7 +463,6 @@ export class AgentsList implements OnInit {
                         if (idxFiltered !== -1)
                             this.filteredAgents[idxFiltered] = updated;
 
-                        // Force re-render
                         this.allAgents      = [...this.allAgents];
                         this.filteredAgents = [...this.filteredAgents];
 

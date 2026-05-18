@@ -9,7 +9,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
@@ -20,9 +21,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
-        ToastModule, DialogModule
+        ToastModule, DialogModule, ConfirmDialogModule
     ],
-    providers: [MessageService],
+    providers: [MessageService, ConfirmationService],
     styles: [`
         @keyframes slide-up {
             from { opacity:0; transform:translateY(20px); }
@@ -220,6 +221,44 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .radio-dot.active-anon { border-color:#f59e0b; background:#f59e0b; }
         .radio-inner { width:8px; height:8px; border-radius:50%; background:#fff; }
 
+        /* ── Protection lanceur d'alerte ─────────────────────────────── */
+        .protection-trigger {
+            border:2.5px solid #e5e7eb; border-radius:14px;
+            padding:1rem 1.25rem; cursor:pointer; transition:all .2s; background:#fff;
+        }
+        .protection-trigger.selected {
+            border-color:#1d4ed8; background:#eff6ff;
+        }
+
+        .protection-info-box {
+            border-radius:14px; padding:1rem 1.25rem;
+            background:#eff6ff; border:1.5px solid #93c5fd;
+            margin-top:.75rem;
+        }
+        .protection-warning {
+            background:#fff5f5; border:1.5px solid #fca5a5;
+            border-radius:12px; padding:.875rem 1rem; margin-top:.625rem;
+        }
+        .protection-conditions {
+            background:#f8faff; border:1.5px solid #bfdbfe;
+            border-radius:12px; padding:1rem; margin-top:.75rem;
+            display:flex; flex-direction:column; gap:.625rem;
+        }
+        .condition-row {
+            display:flex; align-items:flex-start; gap:.75rem; cursor:pointer;
+        }
+        .condition-check {
+            width:20px; height:20px; border-radius:6px; border:2px solid #93c5fd;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; transition:all .2s; margin-top:1px;
+        }
+        .condition-check.checked { background:#2563eb; border-color:#2563eb; }
+        .protection-acknowledged {
+            background:#f0fdf4; border:2px solid #22c55e;
+            border-radius:12px; padding:.875rem 1rem; margin-top:.75rem;
+            display:flex; align-items:center; gap:.75rem;
+        }
+
         .recap-section {
             background:#f9fafb; border-radius:14px; padding:1rem 1.25rem;
             border:1.5px solid #e5e7eb;
@@ -276,7 +315,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             color:#9ca3af; font-size:.75rem; padding-bottom:1rem;
         }
 
-        /* Consent error */
         .consent-box-error {
             border:1.5px solid #ef4444 !important;
             background:#fff5f5 !important;
@@ -290,8 +328,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     `],
     template: `
 <p-toast />
+<p-confirmDialog />
 
-<!-- ── Dialog succès ──────────────────────────────────────── -->
 <p-dialog [(visible)]="showSuccess" header=" " [modal]="true"
     [closable]="false" [style]="{width:'400px'}">
     <div class="success-body">
@@ -311,7 +349,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Notez ce code ou prenez une photo
             </div>
         </div>
-
         <div class="notif-row" *ngIf="fd['phoneNumber'].value || fd['email'].value">
             <div *ngIf="fd['phoneNumber'].value" class="notif-badge sms">
                 <i class="pi pi-mobile" style="font-size:.85rem;"></i>
@@ -322,7 +359,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Email envoyé à {{ fd['email'].value }}
             </div>
         </div>
-
         <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;
                     padding:.875rem;font-size:.8rem;color:#92400e;text-align:left;
                     margin-top:.75rem;">
@@ -340,7 +376,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     </ng-template>
 </p-dialog>
 
-<!-- ── Page principale ────────────────────────────────────── -->
 <div class="page">
 
     <nav class="navbar">
@@ -368,7 +403,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <p>Formulaire sécurisé — vos données sont strictement protégées</p>
         </div>
 
-        <!-- Steps -->
         <div class="steps-bar">
             <div class="step-item"
                 *ngFor="let s of steps; let i = index; let last = last">
@@ -389,9 +423,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 1 — Les faits ═══ -->
         <div *ngIf="currentStep === 1" class="card">
-
             <div class="card-title">
                 <div class="card-title-icon" style="background:#dcfce7;">
                     <i class="pi pi-file-edit" style="color:#16a34a;"></i>
@@ -410,11 +442,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             [class.selected]="f['type'].value === type.value"
                             (click)="f['type'].setValue(type.value)">
                             <div class="type-icon"
-                                [style.background]="f['type'].value === type.value
-                                    ? '#dcfce7' : '#f3f4f6'">
+                                [style.background]="f['type'].value === type.value ? '#dcfce7' : '#f3f4f6'">
                                 <i [class]="type.icon"
-                                    [style.color]="f['type'].value === type.value
-                                        ? '#16a34a' : '#9ca3af'"
+                                    [style.color]="f['type'].value === type.value ? '#16a34a' : '#9ca3af'"
                                     style="font-size:1.1rem;"></i>
                             </div>
                             <div class="type-name">{{ type.label }}</div>
@@ -423,7 +453,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Objet -->
                 <div class="field">
                     <label>Résumé du signalement <span class="req">*</span></label>
                     <input pInputText [formControl]="f['object']"
@@ -438,7 +467,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </small>
                 </div>
 
-                <!-- Description -->
                 <div class="field">
                     <label>Description détaillée <span class="req">*</span></label>
                     <textarea pTextarea [formControl]="f['description']"
@@ -459,14 +487,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Lieu + Période -->
                 <div class="grid2">
                     <div class="field">
                         <label>Lieu des faits</label>
                         <div style="display:flex;align-items:center;gap:8px;
                             border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-map-marker"
-                                style="color:#9ca3af;font-size:.875rem;"></i>
+                            <i class="pi pi-map-marker" style="color:#9ca3af;font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentLocation']"
                                 placeholder="Service, ville..."
                                 style="border:none;outline:none;background:transparent;
@@ -477,8 +503,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <label>Période approximative</label>
                         <div style="display:flex;align-items:center;gap:8px;
                             border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-calendar"
-                                style="color:#9ca3af;font-size:.875rem;"></i>
+                            <i class="pi pi-calendar" style="color:#9ca3af;font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentPeriod']"
                                 placeholder="Ex: Janvier 2024"
                                 style="border:none;outline:none;background:transparent;
@@ -504,13 +529,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         Témoignage audio
                         <span style="color:#9ca3af;font-weight:400;"> — optionnel</span>
                     </label>
-
                     <div *ngIf="!audioUrl && !isRecording" class="audio-idle">
                         <div class="audio-idle-icon">
                             <i class="pi pi-microphone"></i>
                         </div>
-                        <p style="font-size:.875rem;color:#374151;font-weight:600;
-                                   margin-bottom:.375rem;">
+                        <p style="font-size:.875rem;color:#374151;font-weight:600;margin-bottom:.375rem;">
                             Enregistrez votre témoignage vocal
                         </p>
                         <p style="font-size:.8rem;color:#9ca3af;margin-bottom:1rem;">
@@ -520,13 +543,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             icon="pi pi-microphone" severity="secondary" outlined
                             (onClick)="startRecording()" />
                     </div>
-
                     <div *ngIf="isRecording" class="audio-recording">
                         <div class="rec-pulse-wrap">
                             <div class="rec-ring"></div>
-                            <div class="rec-icon">
-                                <i class="pi pi-microphone"></i>
-                            </div>
+                            <div class="rec-icon"><i class="pi pi-microphone"></i></div>
                         </div>
                         <div class="rec-timer">{{ formatDuration(recordingDuration) }}</div>
                         <div class="rec-label-badge">
@@ -536,22 +556,18 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <p-button label="Arrêter" icon="pi pi-stop-circle"
                             severity="danger" (onClick)="stopRecording()" />
                     </div>
-
                     <div *ngIf="audioUrl && !isRecording">
                         <div class="audio-done">
                             <div class="done-icon"><i class="pi pi-check"></i></div>
                             <div style="flex:1;">
-                                <div style="font-weight:700;color:#166534;font-size:.875rem;">
-                                    Audio enregistré ✓
-                                </div>
+                                <div style="font-weight:700;color:#166534;font-size:.875rem;">Audio enregistré ✓</div>
                                 <div style="font-size:.8rem;color:#16a34a;margin-top:2px;">
                                     Durée : {{ formatDuration(recordingDuration) }}
                                 </div>
                             </div>
                         </div>
                         <audio [src]="audioUrl" controls
-                            style="width:100%;border-radius:8px;margin-bottom:.625rem;">
-                        </audio>
+                            style="width:100%;border-radius:8px;margin-bottom:.625rem;"></audio>
                         <p-button label="Supprimer et recommencer" icon="pi pi-trash"
                             severity="danger" text size="small" (onClick)="deleteAudio()" />
                     </div>
@@ -565,41 +581,33 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             — max {{ maxFiles }} fichiers, {{ maxSizeMB }}MB chacun
                         </span>
                     </label>
-
                     <div class="upload-zone" (click)="fileInput.click()"
                         (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
                         <input #fileInput type="file" multiple style="display:none;"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
                             (change)="onFileSelect($event)" />
                         <i class="pi pi-cloud-upload"
-                            style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;display:block;">
-                        </i>
-                        <p style="font-size:.875rem;font-weight:600;color:#374151;
-                                   margin-bottom:.25rem;">
+                            style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;display:block;"></i>
+                        <p style="font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.25rem;">
                             Cliquez ou glissez vos fichiers ici
                         </p>
                         <p style="font-size:.75rem;color:#9ca3af;">
                             PDF, Word, Images, Audio, Vidéo
                         </p>
                     </div>
-
                     <div *ngIf="attachments.length > 0"
                         style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
-                        <div *ngFor="let file of attachments; let i = index"
-                            class="file-item">
+                        <div *ngFor="let file of attachments; let i = index" class="file-item">
                             <div class="file-icon" [style.background]="getFileBg(file)">
                                 <i [class]="getFileIcon(file)"
-                                    [style.color]="getFileColor(file)"
-                                    style="font-size:1rem;"></i>
+                                    [style.color]="getFileColor(file)" style="font-size:1rem;"></i>
                             </div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:.875rem;font-weight:600;color:#111827;
                                             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                     {{ file.name }}
                                 </div>
-                                <div style="font-size:.75rem;color:#9ca3af;">
-                                    {{ formatFileSize(file.size) }}
-                                </div>
+                                <div style="font-size:.75rem;color:#9ca3af;">{{ formatFileSize(file.size) }}</div>
                             </div>
                             <p-button icon="pi pi-times" severity="danger"
                                 text size="small" (onClick)="removeAttachment(i)" />
@@ -630,8 +638,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
                 Vos coordonnées
             </div>
-            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;
-                       margin-top:-.75rem;">
+            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;margin-top:-.75rem;">
                 Informations strictement confidentielles. Vous pouvez rester anonyme.
             </p>
 
@@ -641,8 +648,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     [class.selected-id]="!fd['anonymous'].value"
                     (click)="fd['anonymous'].setValue(false)">
                     <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot"
-                            [class.active-id]="!fd['anonymous'].value">
+                        <div class="radio-dot" [class.active-id]="!fd['anonymous'].value">
                             <div *ngIf="!fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
@@ -654,20 +660,17 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                         </div>
                         <div style="width:32px;height:32px;border-radius:8px;
-                            background:#dcfce7;display:flex;align-items:center;
-                            justify-content:center;">
-                            <i class="pi pi-id-card"
-                                style="color:#16a34a;font-size:.875rem;"></i>
+                            background:#dcfce7;display:flex;align-items:center;justify-content:center;">
+                            <i class="pi pi-id-card" style="color:#16a34a;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
 
                 <div class="anon-option"
                     [class.selected-anon]="fd['anonymous'].value"
-                    (click)="fd['anonymous'].setValue(true)">
+                    (click)="setAnonymous()">
                     <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot"
-                            [class.active-anon]="fd['anonymous'].value">
+                        <div class="radio-dot" [class.active-anon]="fd['anonymous'].value">
                             <div *ngIf="fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
@@ -679,10 +682,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                         </div>
                         <div style="width:32px;height:32px;border-radius:8px;
-                            background:#fef9c3;display:flex;align-items:center;
-                            justify-content:center;">
-                            <i class="pi pi-eye-slash"
-                                style="color:#ca8a04;font-size:.875rem;"></i>
+                            background:#fef9c3;display:flex;align-items:center;justify-content:center;">
+                            <i class="pi pi-eye-slash" style="color:#ca8a04;font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -732,21 +733,148 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Protection lanceur d'alerte -->
-                <div style="display:flex;align-items:flex-start;gap:.875rem;
-                    padding:.875rem;border-radius:12px;background:#eff6ff;
-                    border:1.5px solid #bfdbfe;">
-                    <p-checkbox [formControl]="fd['protectionRequested']"
-                        [binary]="true" inputId="protection" />
-                    <label for="protection" style="cursor:pointer;">
-                        <div style="font-weight:700;font-size:.875rem;color:#1e40af;">
-                            Je demande une protection lanceur d'alerte
+                <!-- ══ PROTECTION LANCEUR D'ALERTE — Avec friction ══════════ -->
+                <div>
+                    <!-- Case déclencheur -->
+                    <div class="protection-trigger"
+                        [class.selected]="fd['protectionRequested'].value"
+                        (click)="toggleProtectionRequested()">
+                        <div style="display:flex;align-items:center;gap:.875rem;">
+                            <div style="width:22px;height:22px;border-radius:6px;
+                                border:2.5px solid #93c5fd;display:flex;align-items:center;
+                                justify-content:center;flex-shrink:0;transition:all .2s;"
+                                [style.background]="fd['protectionRequested'].value ? '#2563eb' : 'transparent'"
+                                [style.border-color]="fd['protectionRequested'].value ? '#2563eb' : '#93c5fd'">
+                                <i *ngIf="fd['protectionRequested'].value"
+                                    class="pi pi-check"
+                                    style="font-size:.65rem;color:#fff;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:.875rem;color:#1e40af;">
+                                    Je demande une protection lanceur d'alerte
+                                </div>
+                                <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">
+                                    Loi N°010-2004/AN — Protection garantie par l'État
+                                </div>
+                            </div>
+                            <div style="width:32px;height:32px;border-radius:8px;
+                                background:#eff6ff;display:flex;align-items:center;justify-content:center;">
+                                <i class="pi pi-shield" style="color:#2563eb;font-size:.875rem;"></i>
+                            </div>
                         </div>
-                        <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">
-                            Loi N°010-2004/AN — Protection garantie par l'État
+                    </div>
+
+                    <!-- Bloc étendu — affiché si case cochée et pas encore confirmé -->
+                    <div *ngIf="fd['protectionRequested'].value && !protectionAcknowledged">
+
+                        <!-- Information légale -->
+                        <div class="protection-info-box">
+                            <div style="font-weight:800;color:#1e40af;font-size:.875rem;
+                                display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem;">
+                                <i class="pi pi-info-circle"></i>
+                                À qui s'adresse cette protection ?
+                            </div>
+                            <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;margin:0 0 .625rem 0;">
+                                Cette protection est réservée aux personnes qui signalent
+                                des faits de <strong>corruption, détournement de fonds publics
+                                ou abus de pouvoir</strong> dont elles ont eu connaissance
+                                <strong>dans le cadre de leurs fonctions ou activités</strong>.
+                            </p>
+                            <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;margin:0;">
+                                Elle garantit la <strong>confidentialité totale de votre identité</strong>
+                                et vous protège contre toute représaille, licenciement
+                                ou sanction liée à votre signalement.
+                            </p>
                         </div>
-                    </label>
+
+                        <!-- Avertissement pénal -->
+                        <div class="protection-warning">
+                            <div style="display:flex;align-items:flex-start;gap:.75rem;">
+                                <i class="pi pi-exclamation-triangle"
+                                    style="color:#ef4444;font-size:1rem;flex-shrink:0;margin-top:1px;"></i>
+                                <p style="font-size:.8rem;color:#dc2626;margin:0;line-height:1.6;">
+                                    <strong>Attention :</strong> invoquer cette protection de manière abusive
+                                    ou pour masquer une fausse déclaration est passible de
+                                    <strong>sanctions pénales</strong> en vertu de la Loi N°010-2004/AN.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 3 conditions à cocher -->
+                        <div class="protection-conditions">
+                            <div style="font-size:.78rem;font-weight:800;color:#1e40af;
+                                text-transform:uppercase;letter-spacing:1px;margin-bottom:.25rem;">
+                                Je confirme les 3 conditions suivantes :
+                            </div>
+
+                            <div class="condition-row" (click)="cond1 = !cond1">
+                                <div class="condition-check" [class.checked]="cond1">
+                                    <i *ngIf="cond1" class="pi pi-check"
+                                        style="font-size:.6rem;color:#fff;"></i>
+                                </div>
+                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                    J'ai eu connaissance de ces faits dans le cadre
+                                    de mes fonctions, de mon travail ou de mes activités professionnelles.
+                                </span>
+                            </div>
+
+                            <div class="condition-row" (click)="cond2 = !cond2">
+                                <div class="condition-check" [class.checked]="cond2">
+                                    <i *ngIf="cond2" class="pi pi-check"
+                                        style="font-size:.6rem;color:#fff;"></i>
+                                </div>
+                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                    Je crains des représailles directes si mon identité
+                                    est révélée (licenciement, menaces, sanctions...).
+                                </span>
+                            </div>
+
+                            <div class="condition-row" (click)="cond3 = !cond3">
+                                <div class="condition-check" [class.checked]="cond3">
+                                    <i *ngIf="cond3" class="pi pi-check"
+                                        style="font-size:.6rem;color:#fff;"></i>
+                                </div>
+                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                    Je comprends qu'invoquer cette protection
+                                    de manière abusive constitue une infraction pénale.
+                                </span>
+                            </div>
+
+                            <!-- Bouton confirmation sur l'honneur — actif seulement si 3/3 -->
+                            <p-button
+                                label="Je confirme sur l'honneur"
+                                icon="pi pi-shield"
+                                severity="info"
+                                styleClass="w-full justify-center mt-2"
+                                [disabled]="!cond1 || !cond2 || !cond3"
+                                (onClick)="confirmProtection()" />
+
+                            <small *ngIf="protectionCondTouched && (!cond1 || !cond2 || !cond3)"
+                                class="error-msg" style="justify-content:center;">
+                                <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                                Veuillez cocher les 3 conditions pour continuer
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Badge de confirmation — affiché une fois les 3 conditions validées -->
+                    <div *ngIf="fd['protectionRequested'].value && protectionAcknowledged"
+                        class="protection-acknowledged">
+                        <i class="pi pi-shield" style="color:#16a34a;font-size:1.25rem;flex-shrink:0;"></i>
+                        <div style="flex:1;">
+                            <div style="font-weight:800;color:#166534;font-size:.875rem;">
+                                Protection lanceur d'alerte confirmée
+                            </div>
+                            <div style="font-size:.75rem;color:#16a34a;margin-top:2px;">
+                                Votre identité sera strictement protégée — Loi N°010-2004/AN
+                            </div>
+                        </div>
+                        <p-button icon="pi pi-times" severity="secondary" text size="small"
+                            pTooltip="Annuler la demande" (onClick)="cancelProtection()" />
+                    </div>
                 </div>
+                <!-- ══ FIN PROTECTION ══════════════════════════════════════ -->
+
             </div>
 
             <!-- Consentement obligatoire -->
@@ -756,8 +884,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 border:1.5px solid #e5e7eb;">
                 <p-checkbox [formControl]="fd['dataProcessingConsent']"
                     [binary]="true" inputId="consent" />
-                <label for="consent"
-                    style="font-size:.875rem;color:#374151;cursor:pointer;">
+                <label for="consent" style="font-size:.875rem;color:#374151;cursor:pointer;">
                     J'accepte le traitement de mes données personnelles par l'ASCE-LC.
                     <span class="req">*</span>
                 </label>
@@ -850,6 +977,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <span class="recap-key">Email</span>
                             <span class="recap-val">{{ fd['email'].value }}</span>
                         </div>
+                        <!-- Récap protection lanceur d'alerte -->
+                        <div *ngIf="protectionAcknowledged" class="recap-row">
+                            <span class="recap-key">Protection</span>
+                            <span class="recap-val" style="color:#1d4ed8;display:flex;align-items:center;gap:.375rem;">
+                                <i class="pi pi-shield" style="font-size:.75rem;"></i>
+                                Lanceur d'alerte confirmée
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -864,14 +999,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         Notifications prévues
                     </div>
                     <div *ngIf="fd['phoneNumber'].value"
-                        style="font-size:.8rem;color:#166534;display:flex;
-                               align-items:center;gap:.5rem;">
+                        style="font-size:.8rem;color:#166534;display:flex;align-items:center;gap:.5rem;">
                         <i class="pi pi-mobile" style="font-size:.8rem;"></i>
                         SMS → {{ fd['phoneNumber'].value }}
                     </div>
                     <div *ngIf="fd['email'].value"
-                        style="font-size:.8rem;color:#166534;display:flex;
-                               align-items:center;gap:.5rem;margin-top:4px;">
+                        style="font-size:.8rem;color:#166534;display:flex;align-items:center;gap:.5rem;margin-top:4px;">
                         <i class="pi pi-envelope" style="font-size:.8rem;"></i>
                         Email → {{ fd['email'].value }}
                     </div>
@@ -881,8 +1014,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <div style="display:flex;align-items:flex-start;gap:.875rem;
                     padding:.875rem;border-radius:12px;background:#fffbeb;
                     border:1.5px solid #fde68a;">
-                    <i class="pi pi-exclamation-triangle"
-                        style="color:#d97706;margin-top:1px;"></i>
+                    <i class="pi pi-exclamation-triangle" style="color:#d97706;margin-top:1px;"></i>
                     <p style="font-size:.8rem;color:#92400e;line-height:1.6;">
                         En soumettant, vous certifiez l'exactitude des informations.
                         Toute fausse déclaration est passible de poursuites.
@@ -912,16 +1044,22 @@ export class DepotPlainte {
 
     router = inject(Router);
 
-    private fb                = inject(FormBuilder);
-    private dossierService    = inject(DossierService);
-    private messageService    = inject(MessageService);
-    private attachmentService = inject(AttachmentService);
+    private fb                  = inject(FormBuilder);
+    private dossierService      = inject(DossierService);
+    private messageService      = inject(MessageService);
+    private attachmentService   = inject(AttachmentService);
+    private confirmationService = inject(ConfirmationService);
 
     currentStep       = 1;
     submitting        = false;
     showSuccess       = false;
     createdAccessCode = '';
     consentTouched    = false;
+    cond1 = false;
+    cond2 = false;
+    cond3 = false;
+    protectionAcknowledged    = false;
+    protectionCondTouched     = false;
 
     readonly steps = [
         { id: 1, label: 'Les faits'    },
@@ -967,18 +1105,62 @@ export class DepotPlainte {
     get fd() { return this.declarantForm.controls; }
 
     typeOptions = [
-        {
-            label: 'Plainte', value: 'COMPLAINT',
-            description: 'Je suis victime ou témoin',
-            icon: 'pi pi-exclamation-circle'
-        },
-        {
-            label: 'Dénonciation', value: 'DENUNCIATION',
-            description: 'Je signale des faits',
-            icon: 'pi pi-megaphone'
-        }
+        { label: 'Plainte',       value: 'COMPLAINT',    description: 'Je suis victime ou témoin', icon: 'pi pi-exclamation-circle' },
+        { label: 'Dénonciation',  value: 'DENUNCIATION', description: 'Je signale des faits',      icon: 'pi pi-megaphone'          }
     ];
 
+    // ── Gestion protection lanceur d'alerte ──────────────────────
+
+    toggleProtectionRequested(): void {
+        if (this.fd['protectionRequested'].value) {
+            // Si déjà cochée → décocher et tout réinitialiser
+            this.cancelProtection();
+        } else {
+            // Cocher : affiche le bloc d'information + conditions
+            this.fd['protectionRequested'].setValue(true);
+            this.protectionAcknowledged = false;
+            this.cond1 = this.cond2 = this.cond3 = false;
+        }
+    }
+
+    confirmProtection(): void {
+        this.protectionCondTouched = true;
+        if (!this.cond1 || !this.cond2 || !this.cond3) return;
+
+        // Modal "sur l'honneur" — dernier rempart avant validation
+        this.confirmationService.confirm({
+            header:       'Confirmation sur l\'honneur',
+            message:      'En confirmant, vous attestez sur l\'honneur que votre demande '
+                        + 'de protection lanceur d\'alerte est justifiée et que vous '
+                        + 'avez bien pris connaissance de ses conditions légales '
+                        + '(Loi N°010-2004/AN).',
+            acceptLabel:  'Je confirme sur l\'honneur',
+            rejectLabel:  'Annuler',
+            acceptIcon:   'pi pi-shield',
+            rejectButtonProps: { severity: 'secondary', outlined: true },
+            accept: () => {
+                this.protectionAcknowledged = true;
+            },
+            reject: () => {
+                
+            }
+        });
+    }
+
+    cancelProtection(): void {
+        this.fd['protectionRequested'].setValue(false);
+        this.protectionAcknowledged    = false;
+        this.protectionCondTouched     = false;
+        this.cond1 = this.cond2 = this.cond3 = false;
+    }
+
+  
+    setAnonymous(): void {
+        this.fd['anonymous'].setValue(true);
+        this.cancelProtection();
+    }
+
+    
 
     goToStep2(): void {
         this.dossierForm.markAllAsTouched();
@@ -1001,9 +1183,20 @@ export class DepotPlainte {
             });
             return;
         }
+
+        if (this.fd['protectionRequested'].value && !this.protectionAcknowledged) {
+            this.protectionCondTouched = true;
+            this.messageService.add({
+                severity: 'warn',
+                summary:  'Protection lanceur d\'alerte',
+                detail:   'Vous devez confirmer les 3 conditions et valider sur l\'honneur '
+                        + 'avant de continuer.'
+            });
+            return;
+        }
+
         this.currentStep = 3;
     }
-
 
     goToSuivi(): void {
         this.showSuccess = false;
@@ -1018,30 +1211,23 @@ export class DepotPlainte {
 
     async startRecording(): Promise<void> {
         try {
-            const stream = await navigator.mediaDevices
-                .getUserMedia({ audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(stream);
             const chunks: BlobPart[] = [];
-
-            this.mediaRecorder.ondataavailable = e => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
+            this.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
             this.mediaRecorder.onstop = () => {
                 this.audioBlob = new Blob(chunks, { type: 'audio/webm' });
                 this.audioUrl  = URL.createObjectURL(this.audioBlob);
                 stream.getTracks().forEach(t => t.stop());
             };
-
             this.mediaRecorder.start();
             this.isRecording       = true;
             this.recordingDuration = 0;
-            this.recordingTimer    =
-                setInterval(() => this.recordingDuration++, 1000);
-
+            this.recordingTimer    = setInterval(() => this.recordingDuration++, 1000);
         } catch {
             this.messageService.add({
                 severity: 'error', summary: 'Microphone',
-                detail:   "Impossible d'accéder au microphone"
+                detail: "Impossible d'accéder au microphone"
             });
         }
     }
@@ -1056,9 +1242,7 @@ export class DepotPlainte {
 
     deleteAudio(): void {
         if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
-        this.audioBlob         = null;
-        this.audioUrl          = null;
-        this.recordingDuration = 0;
+        this.audioBlob = null; this.audioUrl = null; this.recordingDuration = 0;
     }
 
     formatDuration(seconds: number): string {
@@ -1067,12 +1251,8 @@ export class DepotPlainte {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    
 
-    onFileSelect(event: any): void {
-        this.addFiles(Array.from(event.target.files));
-    }
-
+    onFileSelect(event: any): void { this.addFiles(Array.from(event.target.files)); }
     onDrop(event: DragEvent): void {
         event.preventDefault();
         this.addFiles(Array.from(event.dataTransfer?.files || []));
@@ -1083,7 +1263,7 @@ export class DepotPlainte {
             if (f.size > this.maxSizeMB * 1024 * 1024) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Fichier trop volumineux',
-                    detail:   `${f.name} dépasse ${this.maxSizeMB}MB`
+                    detail: `${f.name} dépasse ${this.maxSizeMB}MB`
                 });
                 return false;
             }
@@ -1092,9 +1272,7 @@ export class DepotPlainte {
         this.attachments = [...this.attachments, ...valid].slice(0, this.maxFiles);
     }
 
-    removeAttachment(index: number): void {
-        this.attachments.splice(index, 1);
-    }
+    removeAttachment(index: number): void { this.attachments.splice(index, 1); }
 
     getFileIcon(file: File): string {
         if (file.type.includes('image')) return 'pi pi-image';
@@ -1132,7 +1310,6 @@ export class DepotPlainte {
         return this.typeOptions.find(o => o.value === type)?.label || type;
     }
 
-    // ── Soumission ────────────────────────────────────────────
 
     submit(): void {
         this.submitting = true;
@@ -1146,18 +1323,18 @@ export class DepotPlainte {
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {
-                typeDeclarant: this.fd['anonymous'].value
-                    ? 'ANONYMOUS' as any : 'CITIZEN' as any,
-                firstName:             this.fd['firstName'].value   || undefined,
-                lastName:              this.fd['lastName'].value    || undefined,
-                email:                 this.fd['email'].value       || undefined,
-                phoneNumber:           this.fd['phoneNumber'].value || undefined,
-                commune:               this.fd['commune'].value     || undefined,
-                province:              this.fd['province'].value    || undefined,
-                anonymous:             this.fd['anonymous'].value             || false,
-                dataProcessingConsent: this.fd['dataProcessingConsent'].value || true,
-                notificationsAccepted: this.fd['notificationsAccepted'].value || true,
-                protectionRequested:   this.fd['protectionRequested'].value   || false
+                typeDeclarant:          this.fd['anonymous'].value ? 'ANONYMOUS' as any : 'CITIZEN' as any,
+                firstName:              this.fd['firstName'].value   || undefined,
+                lastName:               this.fd['lastName'].value    || undefined,
+                email:                  this.fd['email'].value       || undefined,
+                phoneNumber:            this.fd['phoneNumber'].value || undefined,
+                commune:                this.fd['commune'].value     || undefined,
+                province:               this.fd['province'].value    || undefined,
+                anonymous:              this.fd['anonymous'].value             || false,
+                dataProcessingConsent:  this.fd['dataProcessingConsent'].value || true,
+                notificationsAccepted:  this.fd['notificationsAccepted'].value || true,
+                protectionRequested:    this.fd['protectionRequested'].value   || false,
+                protectionAcknowledged: this.protectionAcknowledged
             }
         };
 
@@ -1174,26 +1351,18 @@ export class DepotPlainte {
                 }
                 if (allFiles.length > 0) {
                     this.attachmentService.upload(dossier.id, allFiles).subscribe({
-                        next:  () => {
-                            this.submitting  = false;
-                            this.showSuccess = true;
-                        },
-                        error: () => {
-                            this.submitting  = false;
-                            this.showSuccess = true;
-                        }
+                        next:  () => { this.submitting = false; this.showSuccess = true; },
+                        error: () => { this.submitting = false; this.showSuccess = true; }
                     });
                 } else {
-                    this.submitting  = false;
-                    this.showSuccess = true;
+                    this.submitting = false; this.showSuccess = true;
                 }
             },
             error: err => {
                 this.submitting = false;
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
-                    detail: err.error?.message
-                        || 'Impossible de soumettre. Réessayez.'
+                    detail: err.error?.message || 'Impossible de soumettre. Réessayez.'
                 });
             }
         });

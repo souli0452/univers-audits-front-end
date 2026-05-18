@@ -193,7 +193,6 @@ export class InvestigationService {
         );
     }
 
-    // Backend attend ?reason= en query param
     approveCge(
         id: string,
         reason: string

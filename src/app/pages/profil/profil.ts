@@ -425,7 +425,6 @@ export class Profil implements OnInit {
             next: () => {
                 this.savingProfile    = false;
                 this.showEditProfile  = false;
-                // Mettre à jour l'affichage local
                 this.userInfo = {
                     ...this.userInfo,
                     firstName: this.profileForm.value.firstName!,
