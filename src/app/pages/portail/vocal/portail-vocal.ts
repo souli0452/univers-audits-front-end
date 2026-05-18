@@ -170,6 +170,19 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
         }
 
+        /* ── Boutons Photo / Galerie ── */
+        .media-buttons {
+            display:flex; gap:.75rem; margin-bottom:1rem;
+        }
+        .media-btn {
+            flex:1; display:flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.75rem; border-radius:12px; border:1.5px solid #e5e7eb;
+            background:#fff; cursor:pointer; font-weight:700; font-size:.875rem;
+            color:#374151; transition:all .2s;
+        }
+        .media-btn:hover { border-color:#16a34a; color:#16a34a; background:#f0fdf4; }
+        .media-btn i { font-size:1.1rem; }
+
         .phone-hero { text-align:center; margin-bottom:1.5rem; }
         .phone-icon {
             width:80px; height:80px; border-radius:50%;
@@ -449,24 +462,40 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <span style="background:#f3f4f6;color:#6b7280;font-size:.7rem;
                         padding:2px 8px;border-radius:12px;font-weight:600;">Optionnel</span>
                 </p>
-                <div style="display:flex;gap:.75rem;margin-bottom:1rem;">
-                    <input #cameraInput type="file" accept="image/*"
-                        capture="user" style="display:none;"
-                        (change)="onPhotoSelect($event)" />
-                    <p-button label="Photo" icon="pi pi-camera"
-                        severity="secondary" outlined styleClass="flex-1"
-                        (onClick)="cameraInput.click()" />
-                    <input #galleryInput type="file"
-                        accept="image/*,video/*,.pdf" multiple
-                        style="display:none;" (change)="onFileSelect($event)" />
-                    <p-button label="Galerie" icon="pi pi-images"
-                        severity="secondary" outlined styleClass="flex-1"
-                        (onClick)="galleryInput.click()" />
+
+               
+
+                <!-- Input caméra : capture="environment" = ouvre l'appareil photo directement -->
+                <input #cameraInput
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style="display:none;"
+                    (change)="onPhotoSelect($event)" />
+
+                <!-- Input galerie : PAS d'attribut capture = ouvre le sélecteur de fichiers -->
+                <input #galleryInput
+                    type="file"
+                    accept="image/*,video/*,.pdf"
+                    multiple
+                    style="display:none;"
+                    (change)="onFileSelect($event)" />
+
+                <div class="media-buttons">
+                    <button class="media-btn" (click)="cameraInput.click()" type="button">
+                        <i class="pi pi-camera" style="color:#16a34a;"></i>
+                        Photo
+                    </button>
+                    <button class="media-btn" (click)="galleryInput.click()" type="button">
+                        <i class="pi pi-images" style="color:#16a34a;"></i>
+                        Galerie
+                    </button>
                 </div>
+
                 <div *ngIf="photos.length > 0" class="photos-grid">
                     <div *ngFor="let photo of photos; let i = index" class="photo-thumb">
                         <img [src]="getPhotoPreview(photo)" alt="Photo" />
-                        <button class="photo-remove" (click)="removePhoto(i)">×</button>
+                        <button class="photo-remove" (click)="removePhoto(i)" type="button">×</button>
                     </div>
                 </div>
             </div>
@@ -525,7 +554,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <!-- ══ PROTECTION LANCEUR D'ALERTE ══════════════════════════ -->
             <div>
-                <!-- Case déclencheur -->
                 <div class="protection-trigger"
                     [class.selected]="protectionRequested"
                     (click)="toggleProtectionRequested()">
@@ -553,10 +581,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Bloc étendu — si cochée et pas encore confirmée -->
                 <div *ngIf="protectionRequested && !protectionAcknowledged">
-
-                    <!-- Info légale -->
                     <div class="protection-info-box">
                         <div style="font-weight:800;color:#1e40af;font-size:.875rem;
                             display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem;">
@@ -574,7 +599,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         </p>
                     </div>
 
-                    <!-- Avertissement pénal -->
                     <div class="protection-warning">
                         <div style="display:flex;align-items:flex-start;gap:.75rem;">
                             <i class="pi pi-exclamation-triangle"
@@ -587,7 +611,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         </div>
                     </div>
 
-                    <!-- 3 conditions -->
                     <div class="protection-conditions">
                         <div style="font-size:.78rem;font-weight:800;color:#1e40af;
                             text-transform:uppercase;letter-spacing:1px;margin-bottom:.25rem;">
@@ -638,7 +661,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Badge confirmé -->
                 <div *ngIf="protectionRequested && protectionAcknowledged"
                     class="protection-acknowledged">
                     <i class="pi pi-shield" style="color:#16a34a;font-size:1.25rem;flex-shrink:0;"></i>
@@ -654,7 +676,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         pTooltip="Annuler" (onClick)="cancelProtection()" />
                 </div>
             </div>
-            <!-- ══ FIN PROTECTION ════════════════════════════════════════ -->
 
             <p-message severity="info" styleClass="w-full mt-3"
                 text="Vos coordonnées restent strictement confidentielles." />
@@ -775,7 +796,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             </div>
 
-            <!-- Avertissement audio manquant -->
             <div *ngIf="!audioUrl"
                 style="display:flex;align-items:center;gap:.75rem;padding:.875rem;
                 border-radius:12px;background:#fff5f5;border:1.5px solid #fca5a5;margin-bottom:1rem;">
