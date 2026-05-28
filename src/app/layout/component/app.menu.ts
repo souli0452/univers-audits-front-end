@@ -32,7 +32,6 @@ export class AppMenu {
     ngOnInit() {
     this.model = [
 
-        // ── Navigation principale ──────────────────────────
         {
             label: 'Navigation',
             items: [
@@ -51,7 +50,6 @@ export class AppMenu {
 
         { separator: true },
 
-        // ── Dossiers ───────────────────────────────────────
         {
             label: 'Dossiers',
             items: [
@@ -69,13 +67,17 @@ export class AppMenu {
                     label: 'Dépôt audio',
                     icon: 'pi pi-fw pi-microphone',
                     routerLink: ['/app/dossiers/audio']
+                },
+                {
+                    label: 'Rapports',
+                    icon:  'pi pi-chart-bar',
+                    routerLink: ['/app/rapports']
                 }
             ]
         },
 
         { separator: true },
 
-        // ── Investigations ─────────────────────────────────
         {
             label: 'Investigations',
             items: [
@@ -89,7 +91,6 @@ export class AppMenu {
 
         { separator: true },
 
-        // ── Administration — rôles restreints ──────────────
         {
             label: 'Administration',
             visible: this.keycloakService.hasAnyRole([
@@ -100,13 +101,27 @@ export class AppMenu {
                     label: 'Agents',
                     icon: 'pi pi-fw pi-users',
                     routerLink: ['/app/administration/agents']
+                },
+                {
+                    label: 'Rôles & Permissions',
+                    icon: 'pi pi-fw pi-shield',
+                    routerLink: ['/app/administration/roles']
+                },
+                {
+                    label: 'Journal d\'audit',
+                    icon: 'pi pi-fw pi-history',
+                    routerLink: ['/app/administration/audit']
+                },
+                {
+                    label: 'Paramètres du portail',
+                    icon: 'pi pi-fw pi-sliders-h',
+                    routerLink: ['/app/administration/parametres-portail']
                 }
-            ]
+                            ]
         },
 
         { separator: true },
 
-        // ── Compte ─────────────────────────────────────────
         {
             label: 'Compte',
             items: [

@@ -27,7 +27,6 @@ const MAX_DURATION_SECONDS = 600;
     template: `
 <p-toast />
 
-<!-- ══ ÉCRAN DE CONFIRMATION après création ═══════════════ -->
 <div *ngIf="createdDossier" class="flex flex-col items-center justify-center
      min-h-96 gap-6 p-8">
     <div class="w-20 h-20 bg-green-100 rounded-full flex items-center

@@ -6,7 +6,6 @@ import { authGuard } from './app/core/guards/auth.guard';
 
 export const appRoutes: Routes = [
 
-    // Portail public — page d'accueil sans auth
     {
         path: '',
         loadComponent: () =>
@@ -19,7 +18,6 @@ export const appRoutes: Routes = [
             import('./app/pages/portail/portail.routes')
     },
 
-    // Application interne — avec auth et layout Sakai
     {
         path: 'app',
         component: AppLayout,
@@ -52,6 +50,12 @@ export const appRoutes: Routes = [
                     import('./app/pages/administration/administration.routes')
             },
             {
+                path: 'rapports',
+                loadComponent: () =>
+                    import('./app/pages/rapports/rapport-etat/rapport-etat.component')
+                    .then(m => m.RapportEtatComponent)
+            },
+            {
                 path: 'profil',
                 loadComponent: () =>
                     import('./app/pages/profil/profil')
@@ -59,9 +63,6 @@ export const appRoutes: Routes = [
             }
         ]
     },
-
-    // Suivi public sans auth
-    
 
     { path: 'notfound', component: Notfound },
     {

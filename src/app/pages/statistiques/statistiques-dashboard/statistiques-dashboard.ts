@@ -9,8 +9,7 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
-import { StatistiqueService } from '../../../core/services/statistique.service';
-import { StatistiqueResponse } from '../../../core/models/dossier.model';
+import { StatistiqueService, StatistiqueResponse } from '../../../core/services/statistique.service';
 
 @Component({
     selector: 'app-statistiques-dashboard',
@@ -33,7 +32,7 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 Statistiques
             </h1>
             <p class="text-surface-400 text-sm mt-1">
-                Tableau de bord analytique ASCE-LC
+                Tableau de bord analytique — Processus D
                 <span *ngIf="stats?.period"
                     class="ml-2 px-2 py-0.5 bg-primary-50 text-primary-600
                            rounded-full text-xs font-medium">
@@ -46,9 +45,9 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 [options]="periodOptions"
                 optionLabel="label" optionValue="value"
                 (onChange)="onPeriodChange()"
-                styleClass="text-sm" />
+                styleClass="text-sm"/>
             <p-button icon="pi pi-refresh" severity="secondary" outlined
-                pTooltip="Actualiser" (onClick)="loadStats()" />
+                pTooltip="Actualiser" (onClick)="loadStats()"/>
         </div>
     </div>
 
@@ -112,7 +111,8 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 : 'bg-white dark:bg-surface-800 border-surface-100 dark:border-surface-700'">
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 rounded-xl flex items-center justify-center"
-                    [class]="hasAlerts ? 'bg-red-100 dark:bg-red-900' : 'bg-surface-100 dark:bg-surface-700'">
+                    [class]="hasAlerts ? 'bg-red-100 dark:bg-red-900'
+                                       : 'bg-surface-100 dark:bg-surface-700'">
                     <i class="pi pi-bell"
                         [class]="hasAlerts ? 'text-red-600' : 'text-surface-400'"></i>
                 </div>
@@ -126,12 +126,36 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 <div class="text-xs text-surface-400 mt-1">Dépassements légaux</div>
             </ng-container>
         </div>
+    </div>
 
+    <!-- ── KPIs secondaires ────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-surface-800 rounded-xl p-4
+                    border border-surface-100 dark:border-surface-700">
+            <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Investigués</div>
+            <div class="text-2xl font-black text-purple-600">{{ stats?.investigatedCount || 0 }}</div>
+        </div>
+        <div class="bg-white dark:bg-surface-800 rounded-xl p-4
+                    border border-surface-100 dark:border-surface-700">
+            <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Rapports produits</div>
+            <div class="text-2xl font-black text-blue-600">{{ stats?.reportsProduced || 0 }}</div>
+        </div>
+        <div class="bg-white dark:bg-surface-800 rounded-xl p-4
+                    border border-surface-100 dark:border-surface-700">
+            <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Renvoyés justice</div>
+            <div class="text-2xl font-black text-indigo-600">{{ stats?.referredToJustice || 0 }}</div>
+        </div>
+        <div class="bg-white dark:bg-surface-800 rounded-xl p-4
+                    border border-surface-100 dark:border-surface-700">
+            <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Transférés</div>
+            <div class="text-2xl font-black text-surface-500">{{ stats?.transferredCount || 0 }}</div>
+        </div>
     </div>
 
     <!-- ── Graphiques ligne 1 ──────────────────────────────── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
+        <!-- Répartition par statut -->
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
@@ -144,10 +168,32 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
             </h3>
             <div *ngIf="!loading && statusChartData; else skChart">
                 <p-chart type="doughnut" [data]="statusChartData"
-                    [options]="doughnutOptions" height="280px" />
+                    [options]="doughnutOptions" height="280px"/>
             </div>
         </div>
 
+        <!-- Tendance mensuelle -->
+        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                    border border-surface-100 dark:border-surface-700 shadow-sm">
+            <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
+                       flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900
+                            flex items-center justify-center">
+                    <i class="pi pi-chart-line text-teal-600 text-xs"></i>
+                </div>
+                Évolution mensuelle
+            </h3>
+            <div *ngIf="!loading && trendChartData; else skChart">
+                <p-chart type="line" [data]="trendChartData"
+                    [options]="lineOptions" height="280px"/>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Graphiques ligne 2 ──────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Canaux de réception -->
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
@@ -157,31 +203,13 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                     <i class="pi pi-chart-bar text-purple-600 text-xs"></i>
                 </div>
                 Canaux de réception
+                <span class="text-xs text-surface-400 font-normal ml-1">
+                    (§D.2 Point 2)
+                </span>
             </h3>
             <div *ngIf="!loading && modeChartData; else skChart">
                 <p-chart type="bar" [data]="modeChartData"
-                    [options]="barOptions" height="280px" />
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ── Graphiques ligne 2 ──────────────────────────────── -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
-                    border border-surface-100 dark:border-surface-700 shadow-sm">
-            <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
-                       flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900
-                            flex items-center justify-center">
-                    <i class="pi pi-chart-pie text-green-600 text-xs"></i>
-                </div>
-                Types de saisine
-            </h3>
-            <div *ngIf="!loading && typeChartData; else skChart">
-                <p-chart type="pie" [data]="typeChartData"
-                    [options]="doughnutOptions" height="280px" />
+                    [options]="barOptions" height="280px"/>
             </div>
         </div>
 
@@ -194,21 +222,24 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                             flex items-center justify-center">
                     <i class="pi pi-gauge text-amber-600 text-xs"></i>
                 </div>
-                Indicateurs de performance
+                Délais réglementaires
+                <span class="text-xs text-surface-400 font-normal ml-1">
+                    (§D.2 Point 10)
+                </span>
             </h3>
 
-            <div *ngIf="!loading && stats; else skChart" class="flex flex-col gap-5">
+            <div *ngIf="!loading && stats; else skChart" class="flex flex-col gap-4">
 
-                <!-- Délai moyen enregistrement -->
+                <!-- Enregistrement — 7 jours -->
                 <div>
-                    <div class="flex justify-between text-sm mb-2">
+                    <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-surface-500 font-medium">
-                            Délai moyen enregistrement
+                            Enregistrement B4
                         </span>
-                        <span class="font-bold"
+                        <span class="font-bold text-xs"
                             [class]="getDelayTextClass(stats.avgRegistrationDelayDays, 7)">
                             {{ (stats.avgRegistrationDelayDays || 0) | number:'1.0-1' }}j
-                            <span class="text-surface-400 font-normal">/ 7j</span>
+                            <span class="text-surface-300 font-normal"> / 7j</span>
                         </span>
                     </div>
                     <div class="h-2.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
@@ -219,16 +250,16 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                     </div>
                 </div>
 
-                <!-- Durée investigation -->
+                <!-- Investigation — 90 jours -->
                 <div>
-                    <div class="flex justify-between text-sm mb-2">
+                    <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-surface-500 font-medium">
-                            Durée moyenne investigation
+                            Durée investigation
                         </span>
-                        <span class="font-bold"
+                        <span class="font-bold text-xs"
                             [class]="getDelayTextClass(stats.avgInvestigationDurationDays, 90)">
                             {{ (stats.avgInvestigationDurationDays || 0) | number:'1.0-1' }}j
-                            <span class="text-surface-400 font-normal">/ 90j</span>
+                            <span class="text-surface-300 font-normal"> / 90j</span>
                         </span>
                     </div>
                     <div class="h-2.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
@@ -239,13 +270,47 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                     </div>
                 </div>
 
+                <!-- Approbation DEI — 15 jours -->
+                <div *ngIf="stats.avgDeiApprovalDays !== null && stats.avgDeiApprovalDays !== undefined">
+                    <div class="flex justify-between text-sm mb-1.5">
+                        <span class="text-surface-500 font-medium">Approbation DEI</span>
+                        <span class="font-bold text-xs"
+                            [class]="getDelayTextClass(stats.avgDeiApprovalDays, 15)">
+                            {{ stats.avgDeiApprovalDays | number:'1.0-1' }}j
+                            <span class="text-surface-300 font-normal"> / 15j</span>
+                        </span>
+                    </div>
+                    <div class="h-2.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-700"
+                            [class]="getDelayClass(stats.avgDeiApprovalDays, 15)"
+                            [style.width]="getDelayWidth(stats.avgDeiApprovalDays, 15)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approbation CGE — 20 jours -->
+                <div *ngIf="stats.avgCgeApprovalDays !== null && stats.avgCgeApprovalDays !== undefined">
+                    <div class="flex justify-between text-sm mb-1.5">
+                        <span class="text-surface-500 font-medium">Approbation CGE</span>
+                        <span class="font-bold text-xs"
+                            [class]="getDelayTextClass(stats.avgCgeApprovalDays, 20)">
+                            {{ stats.avgCgeApprovalDays | number:'1.0-1' }}j
+                            <span class="text-surface-300 font-normal"> / 20j</span>
+                        </span>
+                    </div>
+                    <div class="h-2.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-700"
+                            [class]="getDelayClass(stats.avgCgeApprovalDays, 20)"
+                            [style.width]="getDelayWidth(stats.avgCgeApprovalDays, 20)">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Taux recevabilité -->
                 <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-surface-500 font-medium">
-                            Taux de recevabilité
-                        </span>
-                        <span class="font-bold text-green-600">
+                    <div class="flex justify-between text-sm mb-1.5">
+                        <span class="text-surface-500 font-medium">Taux de recevabilité</span>
+                        <span class="font-bold text-xs text-green-600">
                             {{ (stats.admissibilityRate || 0) | number:'1.0-1' }}%
                         </span>
                     </div>
@@ -258,51 +323,46 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 </div>
 
                 <!-- Alertes -->
-                <div class="grid grid-cols-2 gap-3 mt-1">
-                    <div class="p-3 rounded-xl border text-center transition-all"
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                    <div class="p-2.5 rounded-xl border text-center transition-all"
                         [class]="(stats.overdueAcknowledgments || 0) > 0
-                            ? 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-                            : 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'">
-                        <div class="text-2xl font-black mb-1"
-                            [class]="(stats.overdueAcknowledgments || 0) > 0 ? 'text-red-600' : 'text-green-600'">
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-green-50 border-green-200'">
+                        <div class="text-xl font-black mb-0.5"
+                            [class]="(stats.overdueAcknowledgments || 0) > 0
+                                ? 'text-red-600' : 'text-green-600'">
                             {{ stats.overdueAcknowledgments || 0 }}
                         </div>
-                        <div class="text-xs text-surface-400 font-medium">Accusés en retard</div>
+                        <div class="text-xs text-surface-400">AR en retard</div>
                     </div>
-                    <div class="p-3 rounded-xl border text-center transition-all"
+                    <div class="p-2.5 rounded-xl border text-center transition-all"
+                        [class]="(stats.overdueComplements || 0) > 0
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-green-50 border-green-200'">
+                        <div class="text-xl font-black mb-0.5"
+                            [class]="(stats.overdueComplements || 0) > 0
+                                ? 'text-amber-600' : 'text-green-600'">
+                            {{ stats.overdueComplements || 0 }}
+                        </div>
+                        <div class="text-xs text-surface-400">Compléments</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl border text-center transition-all"
                         [class]="(stats.overdueInvestigations || 0) > 0
-                            ? 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-                            : 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'">
-                        <div class="text-2xl font-black mb-1"
-                            [class]="(stats.overdueInvestigations || 0) > 0 ? 'text-red-600' : 'text-green-600'">
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-green-50 border-green-200'">
+                        <div class="text-xl font-black mb-0.5"
+                            [class]="(stats.overdueInvestigations || 0) > 0
+                                ? 'text-red-600' : 'text-green-600'">
                             {{ stats.overdueInvestigations || 0 }}
                         </div>
-                        <div class="text-xs text-surface-400 font-medium">Enquêtes en retard</div>
+                        <div class="text-xs text-surface-400">Enquêtes</div>
                     </div>
                 </div>
-
-                <!-- Renvoyés justice -->
-                <div *ngIf="(stats.referredToJustice || 0) > 0"
-                    class="p-3 rounded-xl border border-purple-200 dark:border-purple-800
-                           bg-purple-50 dark:bg-purple-950 flex items-center gap-3">
-                    <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-xl
-                                flex items-center justify-center flex-shrink-0">
-                        <i class="pi pi-send text-purple-600"></i>
-                    </div>
-                    <div>
-                        <div class="text-lg font-black text-purple-700 dark:text-purple-300">
-                            {{ stats.referredToJustice }}
-                        </div>
-                        <div class="text-xs text-surface-400">Renvoyés en justice</div>
-                    </div>
-                </div>
-
             </div>
         </div>
-
     </div>
 
-    <!-- ── Tableau récapitulatif ───────────────────────────── -->
+    <!-- ── Tableau récapitulatif par statut ────────────────── -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                 border border-surface-100 dark:border-surface-700 shadow-sm">
         <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
@@ -334,7 +394,7 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                                hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors">
                         <td class="py-3 px-3">
                             <p-tag [value]="row.label" [severity]="row.severity"
-                                styleClass="text-xs" />
+                                styleClass="text-xs"/>
                         </td>
                         <td class="text-right py-3 px-3 font-black text-surface-900
                                    dark:text-surface-0 text-base">
@@ -355,16 +415,12 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
                 </tbody>
                 <tfoot>
                     <tr class="border-t-2 border-surface-200 dark:border-surface-600">
-                        <td class="py-3 px-3 font-bold text-surface-700 dark:text-surface-200">
-                            Total
-                        </td>
+                        <td class="py-3 px-3 font-bold text-surface-700 dark:text-surface-200">Total</td>
                         <td class="text-right py-3 px-3 font-black text-surface-900
                                    dark:text-surface-0 text-lg">
                             {{ stats.totalDossiers }}
                         </td>
-                        <td class="text-right py-3 px-3 font-bold text-surface-500">
-                            100%
-                        </td>
+                        <td class="text-right py-3 px-3 font-bold text-surface-500">100%</td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -375,13 +431,13 @@ import { StatistiqueResponse } from '../../../core/models/dossier.model';
 </div>
 
 <ng-template #skKpi>
-    <p-skeleton height="2.5rem" borderRadius="8px" />
+    <p-skeleton height="2.5rem" borderRadius="8px"/>
 </ng-template>
 <ng-template #skChart>
-    <p-skeleton height="280px" borderRadius="12px" />
+    <p-skeleton height="280px" borderRadius="12px"/>
 </ng-template>
 <ng-template #skTable>
-    <p-skeleton height="200px" borderRadius="12px" />
+    <p-skeleton height="200px" borderRadius="12px"/>
 </ng-template>
     `
 })
@@ -397,18 +453,12 @@ export class StatistiquesDashboard implements OnInit {
 
     statusChartData: any = null;
     modeChartData:   any = null;
-    typeChartData:   any = null;
+    trendChartData:  any = null;
     statusTableData: any[] = [];
 
     readonly doughnutOptions = {
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: { padding: 14, font: { size: 11 } }
-            }
-        },
-        responsive: true,
-        maintainAspectRatio: false
+        plugins: { legend: { position: 'bottom', labels: { padding: 14, font: { size: 11 } } } },
+        responsive: true, maintainAspectRatio: false
     };
 
     readonly barOptions = {
@@ -417,29 +467,38 @@ export class StatistiquesDashboard implements OnInit {
             y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
             x: { grid: { display: false } }
         },
-        responsive: true,
-        maintainAspectRatio: false
+        responsive: true, maintainAspectRatio: false
+    };
+
+    readonly lineOptions = {
+        plugins: { legend: { display: true, position: 'bottom' } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } }
+        },
+        responsive: true, maintainAspectRatio: false,
+        elements: { line: { tension: 0.4 }, point: { radius: 3 } }
     };
 
     readonly periodOptions = [
-        { label: 'Cette année',       value: 'year'   },
+        { label: 'Cette année',       value: 'year'    },
         { label: 'Ce trimestre',      value: 'quarter' },
         { label: 'Ce mois',           value: 'month'   },
         { label: '30 derniers jours', value: '30days'  }
     ];
 
-    get hasAlerts():  boolean { return this.totalAlerts > 0; }
+    get hasAlerts():   boolean { return this.totalAlerts > 0; }
     get totalAlerts(): number {
         return (this.stats?.overdueAcknowledgments || 0)
-             + (this.stats?.overdueInvestigations  || 0);
+             + (this.stats?.overdueInvestigations  || 0)
+             + (this.stats?.overdueComplements     || 0);
     }
 
     ngOnInit(): void { this.loadStats(); }
 
     onPeriodChange(): void {
-        this.selectedPeriodLabel = this.periodOptions.find(
-            p => p.value === this.selectedPeriod
-        )?.label || '';
+        this.selectedPeriodLabel = this.periodOptions
+            .find(p => p.value === this.selectedPeriod)?.label || '';
         this.loadStats();
     }
 
@@ -467,7 +526,6 @@ export class StatistiquesDashboard implements OnInit {
     private getPeriodDates(): { start: string; end: string } {
         const now = new Date();
         let start: Date;
-
         switch (this.selectedPeriod) {
             case 'month':
                 start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -481,7 +539,6 @@ export class StatistiquesDashboard implements OnInit {
             default:
                 start = new Date(now.getFullYear(), 0, 1);
         }
-
         return { start: start.toISOString(), end: now.toISOString() };
     }
 
@@ -490,7 +547,7 @@ export class StatistiquesDashboard implements OnInit {
                          '#06b6d4','#ec4899','#10b981','#f97316',
                          '#6366f1','#14b8a6','#ef4444','#84cc16'];
 
-        const statusLabels: Record<string,string> = {
+        const statusLabels: Record<string, string> = {
             SOUMIS:'Soumis', RECU:'Reçu',
             EN_ETUDE_OPPORTUNITE:'Étude', EN_ATTENTE_COMPLEMENT:'Complément',
             EN_REVUE_CTADP:'CTADP', RECEVABLE:'Recevable',
@@ -498,44 +555,62 @@ export class StatistiquesDashboard implements OnInit {
             EN_INVESTIGATION:'Investigation', RAPPORT_PRODUIT:'Rapport',
             DECISION_RENDUE:'Décision', CLOS:'Clôturé', CLASSE:'Classé'
         };
-        const modeLabels: Record<string,string> = {
+        const modeLabels: Record<string, string> = {
             IN_PERSON:'Guichet', WEB_FORM:'Web', EMAIL:'Email',
-            SMS:'SMS', PHONE:'Tel', GREEN_NUMBER:'N°Vert',
-            SOCIAL_MEDIA:'Réseaux', AUDIO_COUNTER:'Audio', PAPER_FORM:'Formulaire'
-        };
-        const typeLabels: Record<string,string> = {
-            COMPLAINT:'Plainte', DENUNCIATION:'Dénonciation',
-            AUTO_REFERRAL:'Auto-saisine', ANONYMOUS:'Anonyme'
+            SMS:'SMS', PHONE:'Tél', GREEN_NUMBER:'N°Vert',
+            SOCIAL_MEDIA:'Réseaux', AUDIO_COUNTER:'Audio',
+            PAPER_FORM:'Formulaire', POSTAL_MAIL:'Courrier'
         };
 
-        const sEntries = Object.entries(stats.countByStatus       || {}).filter(([,v]) => v > 0);
-        const mEntries = Object.entries(stats.countBySubmissionMode|| {}).filter(([,v]) => v > 0);
-        const tEntries = Object.entries(stats.countByType         || {}).filter(([,v]) => v > 0);
-
+        
+        const sEntries = Object.entries(stats.countByStatus || {})
+            .filter(([, v]) => v > 0);
         this.statusChartData = {
             labels:   sEntries.map(([k]) => statusLabels[k] || k),
-            datasets: [{ data: sEntries.map(([,v]) => v),
-                backgroundColor: palette.slice(0, sEntries.length), borderWidth: 2 }]
+            datasets: [{ data: sEntries.map(([, v]) => v),
+                backgroundColor: palette.slice(0, sEntries.length),
+                borderWidth: 2 }]
         };
 
+        const mEntries = Object.entries(stats.countBySubmissionMode || {})
+            .filter(([, v]) => v > 0);
         this.modeChartData = {
             labels:   mEntries.map(([k]) => modeLabels[k] || k),
-            datasets: [{ label: 'Dossiers', data: mEntries.map(([,v]) => v),
+            datasets: [{ label: 'Dossiers', data: mEntries.map(([, v]) => v),
                 backgroundColor: mEntries.map((_, i) => palette[i % palette.length]),
                 borderRadius: 8, borderWidth: 0 }]
         };
 
-        this.typeChartData = {
-            labels:   tEntries.map(([k]) => typeLabels[k] || k),
-            datasets: [{ data: tEntries.map(([,v]) => v),
-                backgroundColor: ['#3b82f6','#22c55e','#f59e0b','#8b5cf6'],
-                borderWidth: 2 }]
-        };
+    
+        if (stats.monthlyTrend?.length) {
+            const months = stats.monthlyTrend.map(m => {
+                const [year, month] = m.month.split('-');
+                return new Date(+year, +month - 1).toLocaleDateString('fr-FR',
+                    { month: 'short', year: '2-digit' });
+            });
+            this.trendChartData = {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Dossiers reçus',
+                        data:  stats.monthlyTrend.map(m => m.count),
+                        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.1)',
+                        fill: true, borderWidth: 2
+                    },
+                    {
+                        label: 'Investigations',
+                        data:  stats.monthlyTrend.map(m => m.investigations),
+                        borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,.1)',
+                        fill: true, borderWidth: 2
+                    }
+                ]
+            };
+        }
     }
 
     private buildTable(stats: StatistiqueResponse): void {
         const total = stats.totalDossiers || 1;
-        const cfg: Record<string,{label:string;severity:any;color:string}> = {
+        const cfg: Record<string, { label: string; severity: any; color: string }> = {
             SOUMIS:                { label:'Soumis',        severity:'info',      color:'#3b82f6' },
             RECU:                  { label:'Reçu',          severity:'info',      color:'#06b6d4' },
             EN_ETUDE_OPPORTUNITE:  { label:'En étude',      severity:'warn',      color:'#f59e0b' },
@@ -552,7 +627,7 @@ export class StatistiquesDashboard implements OnInit {
         };
 
         this.statusTableData = Object.entries(stats.countByStatus || {})
-            .filter(([,v]) => v > 0)
+            .filter(([, v]) => v > 0)
             .map(([status, count]) => ({
                 status, count,
                 percentage: (count / total) * 100,
@@ -583,6 +658,6 @@ export class StatistiquesDashboard implements OnInit {
     }
 
     getDelayWidth(value: number | undefined, max: number): string {
-        return Math.min((value || 0), max) / max * 100 + '%';
+        return Math.min(value || 0, max) / max * 100 + '%';
     }
 }

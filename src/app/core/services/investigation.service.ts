@@ -5,6 +5,7 @@ import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { PageResponse } from '../models/dossier.model';
 
+
 export interface AgentSummaryInMember {
     id:                string;
     firstName:         string;
@@ -23,32 +24,32 @@ export interface InvestigationMemberResponse {
 }
 
 export interface InvestigationResponse {
-    id: string;
-    dossierId: string;
-    dossierNumber?: string;
-    dossierObject?: string;
-    status: InvestigationStatus;
-    startDate?: string;
-    plannedEndDate?: string;
-    extendedDeadline?: string;
-    actualEndDate?: string;
-    extensionReason?: string;
-    plannedDurationDays: number;
-    remainingDays?: number;
-    overdue: boolean;
-    memberCount?: number;
-    members?: InvestigationMemberResponse[];
-    finalReport?: string;
-    conclusions?: string;
-    recommendations?: string;
-    outcome?: string;
-    reportSubmittedAt?: string;
-    deiApprovedAt?: string;
+    id:                      string;
+    dossierId:               string;
+    dossierNumber?:          string;
+    dossierObject?:          string;
+    status:                  InvestigationStatus;
+    startDate?:              string;
+    plannedEndDate?:         string;
+    extendedDeadline?:       string;
+    actualEndDate?:          string;
+    extensionReason?:        string;
+    plannedDurationDays:     number;
+    remainingDays?:          number;
+    overdue:                 boolean;
+    memberCount?:            number;
+    members?:                InvestigationMemberResponse[];
+    finalReport?:            string;
+    conclusions?:            string;
+    recommendations?:        string;
+    outcome?:                string;
+    reportSubmittedAt?:      string;
+    deiApprovedAt?:          string;
     legalAdvisorApprovedAt?: string;
-    cgeApprovedAt?: string;
-    cgea?: any;
-    createdAt?: string;
-    updatedAt?: string;
+    cgeApprovedAt?:          string;
+    cgea?:                   any;
+    createdAt?:              string;
+    updatedAt?:              string;
 }
 
 export type InvestigationStatus =
@@ -64,24 +65,40 @@ export type TeamRole =
 
 export interface OpenInvestigationRequest {
     plannedDurationDays: number;
-    notes?: string;
+    notes?:              string;
 }
 
 export interface ExtendDeadlineRequest {
-    newDeadline: string; 
-    reason: string;
+    newDeadline: string;  
+    reason:      string; 
+}
+
+
+export interface ExtendInvestigationRequest {
+    additionalDays: number;  
+    reason:         string;  
 }
 
 export interface SubmitReportRequest {
-    finalReport: string;
-    conclusions: string;
+    finalReport:      string;
+    conclusions:      string;
     recommendations?: string;
-    outcome: string;
+    outcome:          string;
 }
 
 export interface AddMemberRequest {
-    agentId: string;
+    agentId:  string;
     teamRole: TeamRole;
+}
+
+export interface InvestigationStatsResponse {
+    total:              number;
+    enCours:            number;
+    suspendues:         number;
+    terminees:          number;
+    enRetard:           number;
+    delaiMoyenJours:    number;
+    tauxRespectDelai:   number;  
 }
 
 @Injectable({ providedIn: 'root' })
@@ -90,10 +107,8 @@ export class InvestigationService {
     private http    = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/investigations`;
 
-    findAll(
-        page = 0,
-        size = 20
-    ): Observable<PageResponse<InvestigationResponse>> {
+
+    findAll(page = 0, size = 20): Observable<PageResponse<InvestigationResponse>> {
         const params = new HttpParams()
             .set('page', page)
             .set('size', size)
@@ -104,33 +119,33 @@ export class InvestigationService {
     }
 
     findById(id: string): Observable<InvestigationResponse> {
-        return this.http.get<InvestigationResponse>(
-            `${this.baseUrl}/${id}`
-        );
+        return this.http.get<InvestigationResponse>(`${this.baseUrl}/${id}`);
     }
 
-    
-    findByDossier(
-        dossierId: string
-    ): Observable<InvestigationResponse | null> {
+    findByDossier(dossierId: string): Observable<InvestigationResponse | null> {
         return this.http.get<InvestigationResponse>(
             `${this.baseUrl}/dossier/${dossierId}`,
             { observe: 'response' }
         ).pipe(
-            map(response =>
-                response.status === 204 ? null : response.body
-            ),
+            map(response => response.status === 204 ? null : response.body),
             catchError(() => of(null))
         );
     }
+
+    getStats(): Observable<InvestigationStatsResponse> {
+        return this.http.get<InvestigationStatsResponse>(
+            `${this.baseUrl}/stats`
+        );
+    }
+
+  
 
     open(
         dossierId: string,
         request: OpenInvestigationRequest
     ): Observable<InvestigationResponse> {
         return this.http.post<InvestigationResponse>(
-            `${this.baseUrl}/dossier/${dossierId}/open`,
-            request
+            `${this.baseUrl}/dossier/${dossierId}/open`, request
         );
     }
 
@@ -140,22 +155,14 @@ export class InvestigationService {
         );
     }
 
-   
-    suspend(
-        id: string,
-        reason: string
-    ): Observable<InvestigationResponse> {
+    suspend(id: string, reason: string): Observable<InvestigationResponse> {
         const params = new HttpParams().set('reason', reason);
         return this.http.patch<InvestigationResponse>(
             `${this.baseUrl}/${id}/suspend`, {}, { params }
         );
     }
 
-   
-    resume(
-        id: string,
-        reason?: string
-    ): Observable<InvestigationResponse> {
+    resume(id: string, reason?: string): Observable<InvestigationResponse> {
         let params = new HttpParams();
         if (reason) params = params.set('reason', reason);
         return this.http.patch<InvestigationResponse>(
@@ -163,6 +170,7 @@ export class InvestigationService {
         );
     }
 
+   
     extendDeadline(
         id: string,
         request: ExtendDeadlineRequest
@@ -171,6 +179,32 @@ export class InvestigationService {
             `${this.baseUrl}/${id}/extend-deadline`, request
         );
     }
+
+  
+    extend(
+        id: string,
+        request: ExtendInvestigationRequest
+    ): Observable<InvestigationResponse> {
+        return this.http.patch<InvestigationResponse>(
+            `${this.baseUrl}/${id}/extend`, request
+        );
+    }
+
+ 
+    extendByDaysClient(
+        currentDeadline: string,
+        id: string,
+        additionalDays: number,
+        reason: string
+    ): Observable<InvestigationResponse> {
+        const current    = new Date(currentDeadline);
+        current.setDate(current.getDate() + additionalDays);
+        const newDeadline = current.toISOString().split('T')[0];
+
+        return this.extendDeadline(id, { newDeadline, reason });
+    }
+
+   
 
     submitReport(
         id: string,
@@ -181,27 +215,29 @@ export class InvestigationService {
         );
     }
 
+   
     approveDei(id: string): Observable<InvestigationResponse> {
         return this.http.patch<InvestigationResponse>(
             `${this.baseUrl}/${id}/approve-dei`, {}
         );
     }
 
+   
     approveLegal(id: string): Observable<InvestigationResponse> {
         return this.http.patch<InvestigationResponse>(
             `${this.baseUrl}/${id}/approve-legal`, {}
         );
     }
 
-    approveCge(
-        id: string,
-        reason: string
-    ): Observable<InvestigationResponse> {
+   
+    approveCge(id: string, reason: string): Observable<InvestigationResponse> {
         const params = new HttpParams().set('reason', reason);
         return this.http.patch<InvestigationResponse>(
             `${this.baseUrl}/${id}/approve-cge`, {}, { params }
         );
     }
+
+   
 
     addMember(
         id: string,
@@ -219,5 +255,25 @@ export class InvestigationService {
         return this.http.delete<InvestigationResponse>(
             `${this.baseUrl}/${id}/members/${agentId}`
         );
+    }
+
+    
+    getRemainingDays(plannedEndDate: string): number {
+        const end  = new Date(plannedEndDate);
+        const now  = new Date();
+        const diff = end.getTime() - now.getTime();
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    }
+
+    
+    getStatusLabel(status: InvestigationStatus): string {
+        const labels: Record<InvestigationStatus, string> = {
+            INITIATED:   'Initiée',
+            IN_PROGRESS: 'En cours',
+            SUSPENDED:   'Suspendue',
+            COMPLETED:   'Terminée',
+            ARCHIVED:    'Archivée'
+        };
+        return labels[status] ?? status;
     }
 }

@@ -120,12 +120,17 @@ export interface DossierResponse {
     transferDate?: string;
     transferInstitution?: string;
     closingDate?: string;
+    complementMotif?: string;
     acknowledgmentOverdue: boolean;
     daysSinceReception: number;
     declarant?: DeclarantResponse;
     agentInCharge?: AgentSummaryResponse;
     notifications?: NotificationResponse[];
     investigation?: InvestigationSummaryResponse;
+    priority?:         'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
+    priorityReason?:   string;
+    priorityDeadline?: string;   
+    prioritySetAt?:    string;
     createdAt: string;
     updatedAt?: string;
 }
