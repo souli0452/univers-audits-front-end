@@ -29,7 +29,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
 <div class="flex flex-col gap-6">
 
-    <!-- ── En-tête ─────────────────────────────────────────── -->
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
             <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">

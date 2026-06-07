@@ -44,6 +44,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 <p-toast />
 
 <div class="flex flex-col gap-5 pb-10 max-w-6xl mx-auto">
+
+ 
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
             <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
@@ -235,7 +237,6 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         <p-skeleton height="300px" borderRadius="16px"/>
     </div>
 
-
     <ng-container *ngIf="!loading && stats">
 
         <!-- ── Entête rapport ─────────────────────────────── -->
@@ -272,24 +273,34 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             <!-- ── KPIs ───────────────────────────────────── -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-                <div class="p-4 rounded-xl border border-surface-100
-                            bg-surface-50 dark:bg-surface-700">
-                    <div class="text-xs text-surface-400 mb-1">
-                        {{ filtresAppliques ? 'Dossiers sélectionnés' : 'Total dossiers' }}
-                    </div>
-                    <div class="text-3xl font-black text-blue-600">
-                        {{ filtresAppliques ? dossiersFiltered.length : stats.totalDossiers }}
-                    </div>
-                    <div class="text-xs text-surface-300 mt-1">{{ periodLabel }}</div>
+            <div class="p-4 rounded-xl bg-green-50 border border-green-100">
+                <div class="text-xs text-surface-400 mb-1">
+                    {{ filtresAppliques ? 'Dossiers sélectionnés' : 'Total dossiers' }}
                 </div>
+                <div class="text-3xl font-black text-green-600">
+                    {{ filtresAppliques ? dossiersFiltered.length : stats.totalDossiers }}
+                </div>
+                <div class="text-xs text-surface-300 mt-1">{{ periodLabel }}</div>
+            </div>
 
                 <div class="p-4 rounded-xl border border-surface-100
                             bg-surface-50 dark:bg-surface-700">
                     <div class="text-xs text-surface-400 mb-1">Taux recevabilité</div>
-                    <div class="text-3xl font-black text-green-600">
+                    <div class="text-3xl font-black"
+                        [class.text-green-600]="(stats.admissibilityRate||0) >= 70"
+                        [class.text-amber-600]="(stats.admissibilityRate||0) >= 40 && (stats.admissibilityRate||0) < 70"
+                        [class.text-red-600]="(stats.admissibilityRate||0) < 40">
                         {{ (stats.admissibilityRate||0)|number:'1.0-1' }}%
                     </div>
-                    <div class="text-xs text-surface-300 mt-1">Recevables / examinés</div>
+                    <div class="text-xs mt-1"
+                        [class.text-green-600]="(stats.admissibilityRate||0) >= 70"
+                        [class.text-amber-500]="(stats.admissibilityRate||0) >= 40 && (stats.admissibilityRate||0) < 70"
+                        [class.text-red-500]="(stats.admissibilityRate||0) < 40">
+                        Recevables / examinés
+                        <span *ngIf="(stats.admissibilityRate||0) >= 70"> ✓</span>
+                        <span *ngIf="(stats.admissibilityRate||0) >= 40 && (stats.admissibilityRate||0) < 70"> ⚠</span>
+                        <span *ngIf="(stats.admissibilityRate||0) < 40"> ✗</span>
+                    </div>
                 </div>
 
                 <div class="p-4 rounded-xl border border-surface-100
@@ -313,7 +324,11 @@ import { DossierResponse } from '../../../core/models/dossier.model';
                         [class.text-surface-600]="totalAlerts===0">
                         {{ totalAlerts }}
                     </div>
-                    <div class="text-xs text-surface-300 mt-1">Dépassements légaux</div>
+                    <div class="text-xs mt-1"
+                        [class.text-red-500]="totalAlerts > 0"
+                        [class.text-green-600]="totalAlerts === 0">
+                        {{ totalAlerts === 0 ? 'Aucun dépassement ✓' : 'Dépassements légaux ✗' }}
+                    </div>
                 </div>
             </div>
 
@@ -657,10 +672,10 @@ export class RapportEtatComponent implements OnInit {
     ];
 
     readonly prioriteOptions = [
-        {label:'🔴 Critique', value:'CRITIQUE'},
-        {label:'🟠 Urgent',   value:'URGENT'},
-        {label:'🔵 Normal',   value:'NORMAL'},
-        {label:'⚪ Faible',   value:'FAIBLE'},
+        {label:'Critique', value:'CRITIQUE'},
+        {label:'Urgent',   value:'URGENT'},
+        {label:'Normal',   value:'NORMAL'},
+        {label:'Faible',   value:'FAIBLE'},
     ];
 
     get totalAlerts(): number {
@@ -886,7 +901,7 @@ export class RapportEtatComponent implements OnInit {
             const pages=(doc as any).internal.getNumberOfPages();
             for(let i=1;i<=pages;i++){
                 doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150,150,150);
-                doc.text('ASCE-LC — Confidentiel',14,doc.internal.pageSize.getHeight()-8);
+                doc.text('ASCE-LC — Confidentiel — Manuel §D.2',14,doc.internal.pageSize.getHeight()-8);
                 doc.text('Page '+i+'/'+pages,W-14,doc.internal.pageSize.getHeight()-8,{align:'right'});
             }
             const fn='rapport_ASCE_'+this.today.toISOString().split('T')[0]

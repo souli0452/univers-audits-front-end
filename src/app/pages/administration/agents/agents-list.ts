@@ -101,7 +101,6 @@ import { TooltipModule } from 'primeng/tooltip';
         </div>
     </div>
 
-    <!-- ══ FILTRES — même pattern que dossiers-list ══════════ -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl border
                 border-surface-100 dark:border-surface-700 overflow-hidden">
 

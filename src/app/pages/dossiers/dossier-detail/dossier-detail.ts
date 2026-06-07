@@ -104,6 +104,7 @@ export class DossierDetail implements OnInit {
     loading               = true;
     transitioning         = false;
     openingInvestigation  = false;
+    exportingPdf          = false;   
     openDays              = 90;
     attachments:          AttachmentResponse[]    = [];
     parties:              TargetedPartyResponse[] = [];
@@ -194,8 +195,6 @@ export class DossierDetail implements OnInit {
         'RECEVABLE', 'EN_INVESTIGATION', 'RAPPORT_PRODUIT', 'DECISION_RENDUE'
     ];
 
-    
-
     ngOnInit(): void {
         const id = this.route.snapshot.paramMap.get('id');
         if (id) this.loadDossier(id);
@@ -235,8 +234,6 @@ export class DossierDetail implements OnInit {
             next: o => { this.observations = o; }, error: () => {}
         });
     }
-
-  
 
     get todayStr(): string {
         return new Date().toISOString().split('T')[0];
@@ -298,14 +295,12 @@ export class DossierDetail implements OnInit {
 
     getPriorityButtonLabel(p: string | null | undefined): string {
         return {
-            CRITIQUE: '🔴 Critique',
-            URGENT:   '🟠 Urgent',
-            NORMAL:   '🔵 Normal',
-            FAIBLE:   '⚪ Faible'
-        }[p || 'NORMAL'] || '🔵 Normal';
+            CRITIQUE: 'Critique',
+            URGENT:   'Urgent',
+            NORMAL:   'Normal',
+            FAIBLE:   'Faible'
+        }[p || 'NORMAL'] || 'Normal';
     }
-
-
 
     openComplementDialog(): void {
         this.complementMotif      = '';
@@ -349,8 +344,6 @@ export class DossierDetail implements OnInit {
         );
     }
 
-    
-
     canSeeConfidential(): boolean {
         return this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
     }
@@ -377,7 +370,6 @@ export class DossierDetail implements OnInit {
             this.dossier?.status as DossierStatus
         );
     }
-
 
     private handleTransitionError(err: any): void {
         this.transitioning = false;
@@ -414,8 +406,6 @@ export class DossierDetail implements OnInit {
         setTimeout(() => { this.justRefreshedAfterConflict = false; }, 5000);
     }
 
-    
-
     openInvestigation(): void {
         if (!this.dossier) return;
         this.openingInvestigation = true;
@@ -441,8 +431,6 @@ export class DossierDetail implements OnInit {
                 }
             });
     }
-
-   
 
     openAddParty(): void {
         this.editingParty    = null;
@@ -520,8 +508,6 @@ export class DossierDetail implements OnInit {
             }
         });
     }
-
-  
 
     openAddWitness(): void {
         this.editingWitness    = null;
@@ -603,8 +589,6 @@ export class DossierDetail implements OnInit {
         });
     }
 
-   
-
     saveObservation(): void {
         if (!this.dossier || !this.obsForm.type || !this.obsForm.content) return;
         this.savingObs = true;
@@ -625,7 +609,6 @@ export class DossierDetail implements OnInit {
             }
         });
     }
-
 
     loadBlob(att: AttachmentResponse): void {
         const url = this.attachmentService.getDownloadUrl(att.id);
@@ -691,8 +674,6 @@ export class DossierDetail implements OnInit {
             && !this.isWord(att) && !this.isVideo(att);
     }
 
-
-
     buildWorkflowSteps(dossier: DossierResponse): void {
         const order: DossierStatus[] = [
             'SOUMIS', 'RECU', 'EN_ETUDE_OPPORTUNITE', 'EN_ATTENTE_COMPLEMENT',
@@ -732,8 +713,6 @@ export class DossierDetail implements OnInit {
             }));
     }
 
-
-
     openTransition(type: string, title: string, placeholder: string): void {
         this.currentTransitionType = type;
         this.transitionDialogTitle = title;
@@ -762,12 +741,11 @@ export class DossierDetail implements OnInit {
         this.openTransition('declare-inadmissible', 'Déclarer irrecevable',
             'Le CGEA adressera une réponse motivée au déclarant dans 3 jours ouvrables.');
     }
-
     openClose(): void {
         const isDecision = this.dossier?.status === 'DECISION_RENDUE';
         this.openTransition('close', 'Clôturer le dossier',
             isDecision
-                ? 'Le dossier sera définitivement clôturé (CLOS) après transmission aux autorités. Indiquez le motif de clôture (Manuel §C.4).'
+                ? 'Clôture définitive après transmission aux autorités. Indiquez le motif.'
                 : 'Le dossier sera clôturé et classé sans suite. Indiquez le motif.'
         );
     }
@@ -803,26 +781,427 @@ export class DossierDetail implements OnInit {
         });
     }
 
- 
-    exportPdf(): void {
-        if (!this.dossier) return;
-        const url = `${environment.apiUrl}/pdf/dossier/${this.dossier.id}`;
-        this.http.get(url, { responseType: 'blob' as 'json' }).subscribe({
-            next: (blob: any) => {
-                const link    = document.createElement('a');
-                link.href     = URL.createObjectURL(blob);
-                link.download = `dossier-${this.dossier!.number || this.dossier!.id}.pdf`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-            },
-            error: () => this.messageService.add({
-                severity: 'error', summary: 'Erreur',
-                detail: 'Impossible de générer le PDF'
-            })
-        });
-    }
-
   
+    async exportPdf(): Promise<void> {
+        if (!this.dossier) return;
+        this.exportingPdf = true;
+
+        try {
+            const { default: jsPDF }     = await import('jspdf');
+            const { default: autoTable } = await import('jspdf-autotable');
+
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const W   = doc.internal.pageSize.getWidth();
+            const d   = this.dossier;
+
+            const VERT   = [22,  163,  74] as [number,number,number];
+            const VERT_L = [240, 253, 244] as [number,number,number];
+            const GRIS   = [100, 116, 139] as [number,number,number];
+            const GRIS_L = [248, 250, 252] as [number,number,number];
+            const ROUGE  = [220,  38,  38] as [number,number,number];
+            const BLEU   = [29,   78, 216] as [number,number,number];
+            const VIOLET = [109,  40, 217] as [number,number,number];
+
+            let y = 0;
+
+            const sectionTitle = (num: string, title: string, color = VERT) => {
+                if (y > 242) { doc.addPage(); y = 14; }
+                doc.setFillColor(...VERT_L);
+                doc.rect(14, y, W - 28, 7, 'F');
+                doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...color);
+                doc.text(`${num}. ${title}`, 16, y + 5);
+                doc.setTextColor(0, 0, 0);
+                y += 10;
+            };
+
+           
+            doc.setFillColor(...VERT);
+            doc.rect(0, 0, W, 30, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+            doc.text('ASCE-LC — INTÉGRITÉ+', 14, 11);
+
+            doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+            doc.text('Dossier détaillé — Document officiel confidentiel', 14, 18);
+
+            doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+            doc.text(d.number || 'SANS NUMÉRO', W - 14, 12, { align: 'right' });
+            doc.setFontSize(7);
+            doc.text(
+                'Généré le ' + new Date().toLocaleDateString('fr-FR')
+                + ' à ' + new Date().toLocaleTimeString('fr-FR'),
+                W - 14, 18, { align: 'right' }
+            );
+            doc.setTextColor(0, 0, 0);
+            y = 37;
+
+            sectionTitle('1', 'INFORMATIONS GÉNÉRALES');
+
+            autoTable(doc, {
+                startY: y,
+                body: [
+                    ['Numéro dossier',   d.number || '—',
+                     'Statut',           this.getStatusLabel(d.status)],
+                    ['Type',             this.getTypeLabel(d.type || ''),
+                     'Canal de réception', this.getModeLabel(d.submissionMode || '')],
+                    ['Date de création', d.createdAt
+                        ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '—',
+                     'Date de réception', d.receptionDate
+                        ? new Date(d.receptionDate).toLocaleDateString('fr-FR') : '—'],
+                    ['Code de suivi citoyen', d.accessCode || '—',
+                     'Version du dossier',   'v' + (d.version || 0)],
+                    ['Priorité',          this.getPriorityButtonLabel(d.priority),
+                     'Confidentiel',      d.isConfidential ? '🔒 OUI' : 'NON'],
+                    ...(d.estimatedLoss ? [[
+                        'Montant estimé (FCFA)',
+                        Number(d.estimatedLoss).toLocaleString('fr-FR') + ' FCFA',
+                        '', ''
+                    ]] : []),
+                    ...(d.eligibilityDecisionDate ? [[
+                        'Date de décision d\'éligibilité',
+                        new Date(d.eligibilityDecisionDate).toLocaleDateString('fr-FR'),
+                        '', ''
+                    ]] : []),
+                    ...(d.closingDate ? [[
+                        'Date de clôture',
+                        new Date(d.closingDate).toLocaleDateString('fr-FR'),
+                        '', ''
+                    ]] : [])
+                ],
+                theme: 'grid',
+                bodyStyles: { fontSize: 8.5 },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 50, fillColor: GRIS_L },
+                    1: { cellWidth: 42 },
+                    2: { fontStyle: 'bold', cellWidth: 50, fillColor: GRIS_L },
+                    3: { cellWidth: 40 }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            y = (doc as any).lastAutoTable.finalY + 6;
+
+            sectionTitle('2', 'OBJET ET DESCRIPTION DES FAITS');
+
+            autoTable(doc, {
+                startY: y,
+                body: [
+                    ['Objet du signalement', d.object || '—'],
+                    ...(d.description      ? [['Description détaillée', d.description]]      : []),
+                    ...(d.incidentLocation ? [['Lieu des faits',         d.incidentLocation]] : []),
+                    ...(d.incidentPeriod   ? [['Période approximative',  d.incidentPeriod]]   : [])
+                ],
+                theme: 'grid',
+                bodyStyles: { fontSize: 8.5, minCellHeight: 9 },
+                columnStyles: {
+                    0: { fontStyle: 'bold', cellWidth: 50, fillColor: GRIS_L },
+                    1: { cellWidth: 132 }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            y = (doc as any).lastAutoTable.finalY + 6;
+
+            if (d.declarant) {
+                sectionTitle('3', 'DÉCLARANT');
+                const dec = d.declarant;
+                autoTable(doc, {
+                    startY: y,
+                    body: [
+                        ['Identité / Affichage', dec.displayName || 'ANONYME',
+                         'Type de déclarant',   dec.anonymous ? 'ANONYME' : 'CITOYEN'],
+                        ...(dec.phoneNumber ? [[
+                            'Téléphone', dec.phoneNumber, '', '']] : []),
+                        ...(dec.email ? [['Email', dec.email, '', '']] : []),
+                        ...(dec.commune ? [[
+                            'Commune', dec.commune,
+                            'Province', dec.province || '—']] : []),
+                        ['Protection lanceur d\'alerte',
+                            dec.protectionRequested
+                                ? '✓ DEMANDÉE — Loi N°010-2004/AN'
+                                : 'Non demandée',
+                            '', '']
+                    ],
+                    theme: 'grid',
+                    bodyStyles: { fontSize: 8.5 },
+                    columnStyles: {
+                        0: { fontStyle: 'bold', cellWidth: 50, fillColor: GRIS_L },
+                        1: { cellWidth: 42 },
+                        2: { fontStyle: 'bold', cellWidth: 50, fillColor: GRIS_L },
+                        3: { cellWidth: 40 }
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+                y = (doc as any).lastAutoTable.finalY + 6;
+            }
+
+       
+            doc.addPage(); y = 14;
+
+            sectionTitle('4', `PARTIES VISÉES (${this.parties.length})`, ROUGE);
+
+            if (this.parties.length === 0) {
+                doc.setFontSize(8); doc.setTextColor(...GRIS);
+                doc.text('Aucune partie visée enregistrée.', 16, y + 3);
+                doc.setTextColor(0, 0, 0);
+                y += 8;
+            } else {
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Prénom & Nom', 'Type de partie', 'Rôle allégué',
+                             'Poste / Institution', 'Téléphone']],
+                    body: this.parties.map(p => [
+                        ((p.firstName || '') + ' ' + (p.name || '')).trim(),
+                        this.getPartyTypeLabel(p.partyType),
+                        p.allegedRole ? this.getAllegedRoleLabel(p.allegedRole) : '—',
+                        [p.position, p.institution].filter(Boolean).join(' / ') || '—',
+                        p.phoneNumber || '—'
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: ROUGE, fontSize: 8, textColor: [255,255,255] },
+                    bodyStyles: { fontSize: 8 },
+                    columnStyles: {
+                        0: { cellWidth: 38 }, 1: { cellWidth: 30 },
+                        2: { cellWidth: 28 }, 3: { cellWidth: 60 }, 4: { cellWidth: 26 }
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+                y = (doc as any).lastAutoTable.finalY + 8;
+            }
+
+            sectionTitle('5', `TÉMOINS (${this.witnesses.length})`, BLEU);
+
+            if (this.witnesses.length === 0) {
+                doc.setFontSize(8); doc.setTextColor(...GRIS);
+                doc.text('Aucun témoin enregistré.', 16, y + 3);
+                doc.setTextColor(0, 0, 0);
+                y += 8;
+            } else {
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Prénom & Nom', 'Profession', 'Téléphone',
+                             'Nature du témoignage', 'Ano.']],
+                    body: this.witnesses.map(w => [
+                        w.anonymous ? 'ANONYME'
+                            : ((w.firstName || '') + ' ' + (w.lastName || '')).trim(),
+                        w.profession || '—',
+                        w.phoneNumber || '—',
+                        (w.testimonyNature || '—').substring(0, 80)
+                            + ((w.testimonyNature || '').length > 80 ? '…' : ''),
+                        w.anonymous ? 'OUI' : 'NON'
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: BLEU, fontSize: 8, textColor: [255,255,255] },
+                    bodyStyles: { fontSize: 8 },
+                    columnStyles: {
+                        0: { cellWidth: 34 }, 1: { cellWidth: 28 },
+                        2: { cellWidth: 24 }, 3: { cellWidth: 84 }, 4: { cellWidth: 12 }
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+                y = (doc as any).lastAutoTable.finalY + 6;
+            }
+
+          
+            doc.addPage(); y = 14;
+
+            sectionTitle('6', `OBSERVATIONS (${this.observations.length})`, VIOLET);
+
+            if (this.observations.length === 0) {
+                doc.setFontSize(8); doc.setTextColor(...GRIS);
+                doc.text('Aucune observation enregistrée.', 16, y + 3);
+                doc.setTextColor(0, 0, 0);
+                y += 8;
+            } else {
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Date', 'Type', 'Auteur', 'Contenu', 'Conf.']],
+                    body: this.observations.map(obs => [
+                        obs.createdAt
+                            ? new Date(obs.createdAt).toLocaleDateString('fr-FR') : '—',
+                        this.getObsTypeLabel(obs.type),
+                        obs.authorFullName || '—',
+                        (obs.content || '').substring(0, 110)
+                            + ((obs.content || '').length > 110 ? '…' : ''),
+                        obs.confidential ? '🔒' : '—'
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: VIOLET, fontSize: 8, textColor: [255,255,255] },
+                    bodyStyles: { fontSize: 7.5, minCellHeight: 8 },
+                    columnStyles: {
+                        0: { cellWidth: 18 }, 1: { cellWidth: 30 },
+                        2: { cellWidth: 30 }, 3: { cellWidth: 96 }, 4: { cellWidth: 8 }
+                    },
+                    didParseCell: (data: any) => {
+                        if (data.section === 'body') {
+                            const o = this.observations[data.row.index];
+                            if (o?.confidential) {
+                                data.cell.styles.fillColor = [255, 237, 213];
+                                data.cell.styles.textColor = [154, 52, 18];
+                            }
+                        }
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+                y = (doc as any).lastAutoTable.finalY + 6;
+
+                const nbConfi = this.observations.filter(o => o.confidential).length;
+                if (nbConfi > 0) {
+                    doc.setFontSize(7); doc.setTextColor(180, 80, 20);
+                    doc.text(
+                        `⚠  ${nbConfi} observation(s) confidentielle(s) (fond orange) — `
+                        + 'accès restreint CGE/CGEA/Admin DDIC',
+                        14, y
+                    );
+                    doc.setTextColor(0, 0, 0);
+                    y += 5;
+                }
+            }
+
+            if (y > 200) { doc.addPage(); y = 14; }
+            sectionTitle('7', `PIÈCES JOINTES (${this.attachments.length})`);
+
+            if (this.attachments.length === 0) {
+                doc.setFontSize(8); doc.setTextColor(...GRIS);
+                doc.text('Aucune pièce jointe.', 16, y + 3);
+                doc.setTextColor(0, 0, 0);
+                y += 8;
+            } else {
+                autoTable(doc, {
+                    startY: y,
+                    head: [['Nom du fichier', 'Type MIME', 'Taille', 'Date d\'ajout', 'Audio']],
+                    body: this.attachments.map(att => [
+                        att.originalName,
+                        att.mimeType,
+                        this.formatSize(att.fileSizeBytes),
+                        '—',
+                        att.isAudio ? 'OUI' : '—'
+                    ]),
+                    theme: 'striped',
+                    headStyles: { fillColor: GRIS, fontSize: 8, textColor: [255,255,255] },
+                    bodyStyles: { fontSize: 8 },
+                    columnStyles: {
+                        0: { cellWidth: 68 }, 1: { cellWidth: 50 },
+                        2: { cellWidth: 20 }, 3: { cellWidth: 30 }, 4: { cellWidth: 14 }
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+                y = (doc as any).lastAutoTable.finalY + 6;
+            }
+
+            
+            doc.addPage(); y = 14;
+
+            sectionTitle('8', 'WORKFLOW — HISTORIQUE DES ÉTAPES DE TRAITEMENT');
+
+            autoTable(doc, {
+                startY: y,
+                head: [['N°', 'Étape', 'Statut', 'Date', 'État du traitement']],
+                body: this.workflowSteps.map((step, i) => [
+                    String(i + 1),
+                    step.label,
+                    step.status,
+                    step.date ? new Date(step.date).toLocaleDateString('fr-FR') : '—',
+                    step.active
+                        ? '▶  EN COURS ACTUELLEMENT'
+                        : step.completed
+                        ? '✓  Terminé'
+                        : '○  À venir'
+                ]),
+                theme: 'grid',
+                headStyles: { fillColor: VERT, fontSize: 8.5, textColor: [255,255,255] },
+                bodyStyles: { fontSize: 8.5, minCellHeight: 9 },
+                columnStyles: {
+                    0: { cellWidth: 8,  halign: 'center' },
+                    1: { cellWidth: 58 },
+                    2: { cellWidth: 38 },
+                    3: { cellWidth: 22 },
+                    4: { cellWidth: 56 }
+                },
+                didParseCell: (data: any) => {
+                    if (data.section === 'body') {
+                        const step = this.workflowSteps[data.row.index];
+                        if (step?.active) {
+                            data.cell.styles.fillColor = [220, 252, 231];
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.textColor = [22, 101, 52];
+                        } else if (step?.completed) {
+                            data.cell.styles.fillColor = [248, 250, 252];
+                            data.cell.styles.textColor = GRIS;
+                        } else {
+                            data.cell.styles.textColor = [190, 190, 190];
+                        }
+                    }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            y = (doc as any).lastAutoTable.finalY + 8;
+
+            if (d.priority && d.priority !== 'NORMAL') {
+                const isC = d.priority === 'CRITIQUE';
+                const bgColor  = (isC ? [254, 226, 226] : [255, 247, 237]) as [number,number,number];
+                const txtColor = (isC ? ROUGE           : [180, 80, 0])    as [number,number,number];
+                doc.setFillColor(...bgColor);
+                doc.rect(14, y, W - 28, 20, 'F');
+                doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...txtColor);
+                doc.text(
+                    `PRIORITÉ ${this.getPriorityButtonLabel(d.priority).toUpperCase()} `
+                    + (isC ? '— TRAITEMENT IMMÉDIAT REQUIS' : '— À TRAITER RAPIDEMENT'),
+                    16, y + 7
+                );
+                if (d.priorityReason) {
+                    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+                    doc.text('Motif : ' + d.priorityReason, 16, y + 14);
+                }
+                if (d.priorityDeadline) {
+                    doc.setFontSize(8);
+                    doc.text(
+                        'Échéance : '
+                        + new Date(d.priorityDeadline).toLocaleDateString('fr-FR'),
+                        W - 14, y + 7, { align: 'right' }
+                    );
+                }
+                doc.setTextColor(0, 0, 0);
+            }
+
+            
+            const total = (doc as any).internal.getNumberOfPages();
+            for (let pg = 1; pg <= total; pg++) {
+                doc.setPage(pg);
+                const pH = doc.internal.pageSize.getHeight();
+                doc.setDrawColor(...VERT);
+                doc.setLineWidth(0.4);
+                doc.line(14, pH - 13, W - 14, pH - 13);
+                doc.setFontSize(7); doc.setTextColor(...GRIS);
+                doc.text(
+                    'ASCE-LC — Autorité Supérieure de Contrôle d\'État et de Lutte contre la Corruption— '
+                    + 'Confidentiel — Toute divulgation non autorisée est interdite',
+                    14, pH - 7
+                );
+                doc.text(`Page ${pg} / ${total}`, W - 14, pH - 7, { align: 'right' });
+                doc.setTextColor(0, 0, 0);
+            }
+
+            const filename = `dossier_${d.number || d.id.substring(0,8)}_`
+                + new Date().toISOString().split('T')[0] + '.pdf';
+            doc.save(filename);
+
+            this.messageService.add({
+                severity: 'success', summary: 'PDF exporté',
+                detail: filename + ' — ' + total + ' page(s)'
+            });
+
+        } catch (err) {
+            console.error(err);
+            this.messageService.add({
+                severity: 'error', summary: 'Erreur export PDF',
+                detail: 'Vérifiez que jspdf et jspdf-autotable sont installés.'
+            });
+        } finally {
+            this.exportingPdf = false;
+        }
+    }
 
     openToggleConfidential(): void {
         this.confidentialReason     = '';
@@ -858,8 +1237,6 @@ export class DossierDetail implements OnInit {
             }
         });
     }
-
-    
 
     hasRole(roles: string[]): boolean { return this.keycloakService.hasAnyRole(roles); }
     formatSize(bytes: number): string { return this.attachmentService.formatSize(bytes); }

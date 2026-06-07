@@ -85,7 +85,12 @@ export class AppMenu {
                     label: 'Toutes les enquêtes',
                     icon: 'pi pi-fw pi-search',
                     routerLink: ['/app/investigations']
-                }
+                },
+                {
+            label: 'Rapport investigations',
+            icon:  'pi pi-fw pi-chart-bar',
+            routerLink: ['/app/rapports/investigations']
+        }
             ]
         },
 

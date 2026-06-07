@@ -25,17 +25,12 @@ import { DossierService } from '../../../core/services/dossier.service';
     ],
     providers: [MessageService],
     styles: [`
-        /* ── Champs obligatoires en rouge ── */
         .req { color: #ef4444; margin-left: 2px; }
         .error-msg {
-            color: #ef4444;
-            font-size: .75rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 4px;
+            color: #ef4444; font-size: .75rem;
+            display: flex; align-items: center;
+            gap: 4px; margin-top: 4px;
         }
-        /* Forcer la bordure rouge sur les composants PrimeNG invalides */
         :host ::ng-deep .p-select.ng-invalid.ng-dirty .p-select-label,
         :host ::ng-deep .p-select.ng-invalid.ng-dirty {
             border-color: #ef4444 !important;
@@ -66,7 +61,6 @@ import { DossierService } from '../../../core/services/dossier.service';
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Formulaire principal -->
         <div class="lg:col-span-2">
 
             <p-stepper [value]="currentStep">
@@ -93,14 +87,12 @@ import { DossierService } from '../../../core/services/dossier.service';
 
                 <p-step-panels>
 
-                    <!-- ═══ Étape 1 ═══ -->
                     <p-step-panel [value]="1">
                         <ng-template #content let-activateCallback="activateCallback">
                         <div class="flex flex-col gap-5 pt-4">
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                <!-- Type de saisine -->
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Type de saisine <span class="req">*</span>
@@ -118,7 +110,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                     </small>
                                 </div>
 
-                                <!-- Canal de réception -->
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                         Canal de réception <span class="req">*</span>
@@ -137,7 +128,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                 </div>
                             </div>
 
-                            <!-- Objet -->
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                     Objet de la plainte <span class="req">*</span>
@@ -153,7 +143,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                 </small>
                             </div>
 
-                            <!-- Description -->
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                     Description détaillée <span class="req">*</span>
@@ -230,7 +219,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                         </ng-template>
                     </p-step-panel>
 
-                    <!-- ═══ Étape 2 ═══ -->
                     <p-step-panel [value]="2">
                         <ng-template #content let-activateCallback="activateCallback">
                         <div class="flex flex-col gap-5 pt-4">
@@ -295,7 +283,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                             placeholder="Nom de famille" class="w-full" />
                                     </div>
 
-                                    <!-- Email -->
                                     <div class="flex flex-col gap-1.5">
                                         <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                             Email
@@ -308,7 +295,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                             type="email" class="w-full" />
                                     </div>
 
-                                    <!-- Téléphone -->
                                     <div class="flex flex-col gap-1.5">
                                         <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                             Téléphone
@@ -338,7 +324,7 @@ import { DossierService } from '../../../core/services/dossier.service';
 
                                 </div>
 
-                                <!-- Consentements -->
+                                <!-- ── Consentements ── -->
                                 <div class="flex flex-col gap-3 p-4 bg-surface-50 dark:bg-surface-700
                                             rounded-xl border border-surface-100 dark:border-surface-600">
                                     <h4 class="text-sm font-semibold text-surface-600 dark:text-surface-300
@@ -347,7 +333,7 @@ import { DossierService } from '../../../core/services/dossier.service';
                                         Consentements
                                     </h4>
 
-                                    <!-- dataProcessingConsent — obligatoire -->
+                                    <!-- Traitement données (obligatoire) -->
                                     <div>
                                         <div class="flex items-start gap-2 p-2 rounded-lg"
                                             [class.bg-red-50]="consentTouched && !fd['dataProcessingConsent'].value"
@@ -368,6 +354,7 @@ import { DossierService } from '../../../core/services/dossier.service';
                                         </small>
                                     </div>
 
+                                    <!-- Notifications -->
                                     <div class="flex items-start gap-2">
                                         <p-checkbox [formControl]="fd['notificationsAccepted']"
                                             [binary]="true" inputId="notif" />
@@ -377,6 +364,7 @@ import { DossierService } from '../../../core/services/dossier.service';
                                         </label>
                                     </div>
 
+                                    <!-- Protection lanceur d'alerte -->
                                     <div class="flex items-start gap-2">
                                         <p-checkbox [formControl]="fd['protectionRequested']"
                                             [binary]="true" inputId="protection" />
@@ -385,6 +373,29 @@ import { DossierService } from '../../../core/services/dossier.service';
                                             Je demande une protection en tant que lanceur d'alerte
                                         </label>
                                     </div>
+
+                                    <div *ngIf="fd['protectionRequested'].value">
+                                        <div class="flex items-start gap-2 p-2 rounded-lg"
+                                            [class.bg-red-50]="consentTouched && fd['protectionRequested'].value && !fd['protectionAcknowledged'].value"
+                                            [style.border]="consentTouched && fd['protectionRequested'].value && !fd['protectionAcknowledged'].value
+                                                ? '1.5px solid #ef4444' : '1.5px solid #fde68a'">
+                                            <p-checkbox [formControl]="fd['protectionAcknowledged']"
+                                                [binary]="true" inputId="protectionAck" />
+                                            <label for="protectionAck"
+                                                class="text-sm text-surface-700 dark:text-surface-200 cursor-pointer leading-relaxed">
+                                                J'ai pris connaissance des conditions de protection
+                                                prévues par la <strong>Loi N°010-2004/AN</strong>
+                                                sur la protection des lanceurs d'alerte
+                                                <span class="req">*</span>
+                                            </label>
+                                        </div>
+                                        <small class="error-msg"
+                                            *ngIf="consentTouched && fd['protectionRequested'].value && !fd['protectionAcknowledged'].value">
+                                            <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                                            Vous devez confirmer avoir pris connaissance de la loi N°010-2004/AN
+                                        </small>
+                                    </div>
+
                                 </div>
                             </div>
 
@@ -413,12 +424,10 @@ import { DossierService } from '../../../core/services/dossier.service';
                         </ng-template>
                     </p-step-panel>
 
-                    <!-- ═══ Étape 3 ═══ -->
                     <p-step-panel [value]="3">
                         <ng-template #content let-activateCallback="activateCallback">
                         <div class="flex flex-col gap-5 pt-4">
 
-                            <!-- Récapitulatif -->
                             <div class="bg-surface-50 dark:bg-surface-700 rounded-xl
                                         border border-surface-100 dark:border-surface-600 overflow-hidden">
                                 <div class="px-4 py-3 bg-primary-50 dark:bg-primary-950
@@ -523,7 +532,6 @@ import { DossierService } from '../../../core/services/dossier.service';
                                 </div>
                             </div>
 
-                            <!-- Succès inline -->
                             <div *ngIf="submitSuccess"
                                 class="flex items-center gap-4 p-5 bg-green-50 dark:bg-green-950
                                        rounded-xl border border-green-200 dark:border-green-800">
@@ -575,7 +583,7 @@ import { DossierService } from '../../../core/services/dossier.service';
 
         </div>
 
-        <!-- Aide contextuelle -->
+        <!-- ── Colonne droite ── -->
         <div class="flex flex-col gap-4">
 
             <div class="bg-white dark:bg-surface-800 rounded-2xl p-5 border
@@ -686,31 +694,32 @@ export class DossierForm {
     });
 
     declarantForm = this.fb.group({
-        typeDeclarant:         ['CITIZEN'],
-        quality:               [''],
-        firstName:             [''],
-        lastName:              [''],
-        email:                 [''],
-        phoneNumber:           [''],
-        commune:               [''],
-        province:              [''],
-        anonymous:             [false],
-        dataProcessingConsent: [true],
-        notificationsAccepted: [true],
-        protectionRequested:   [false]
+        typeDeclarant:          ['CITIZEN'],
+        quality:                [null as string | null],   
+        firstName:              [''],
+        lastName:               [''],
+        email:                  [''],
+        phoneNumber:            [''],
+        commune:                [''],
+        province:               [''],
+        anonymous:              [false],
+        dataProcessingConsent:  [true],
+        notificationsAccepted:  [true],
+        protectionRequested:    [false],
+        protectionAcknowledged: [false]                  
     });
 
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
-    typeOptions = [
-        { label: 'Plainte',      value: 'COMPLAINT'    },
-        { label: 'Dénonciation', value: 'DENUNCIATION' },
-        { label: 'Auto-saisine', value: 'AUTO_REFERRAL'},
-        { label: 'Anonyme',      value: 'ANONYMOUS'    }
+    readonly typeOptions = [
+        { label: 'Plainte',      value: 'COMPLAINT'     },
+        { label: 'Dénonciation', value: 'DENUNCIATION'  },
+        { label: 'Auto-saisine', value: 'AUTO_REFERRAL' },
+        { label: 'Anonyme',      value: 'ANONYMOUS'     }
     ];
 
-    modeOptions = [
+    readonly modeOptions = [
         { label: 'Guichet BRPD',      value: 'IN_PERSON'     },
         { label: 'Formulaire Web',    value: 'WEB_FORM'      },
         { label: 'Email',             value: 'EMAIL'         },
@@ -724,14 +733,14 @@ export class DossierForm {
         { label: 'Fax',               value: 'FAX'           }
     ];
 
-    declarantTypeOptions = [
+    readonly declarantTypeOptions = [
         { label: 'Citoyen',           value: 'CITIZEN'          },
         { label: 'Entreprise',        value: 'COMPANY'          },
         { label: 'Association',       value: 'ASSOCIATION'      },
         { label: 'Autorité publique', value: 'PUBLIC_AUTHORITY' }
     ];
 
-    qualityOptions = [
+    readonly qualityOptions = [
         { label: 'Victime',      value: 'VICTIM'         },
         { label: 'Témoin',       value: 'WITNESS'        },
         { label: 'Représentant', value: 'REPRESENTATIVE' }
@@ -743,21 +752,35 @@ export class DossierForm {
             if (this.dossierForm.invalid) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Champs requis',
-                    detail:   'Veuillez remplir tous les champs obligatoires.'
+                    detail: 'Veuillez remplir tous les champs obligatoires.'
                 });
                 return;
             }
         }
+
         if (step === 3) {
             this.consentTouched = true;
-            if (!this.fd['anonymous'].value && !this.fd['dataProcessingConsent'].value) {
+            const isAnon      = this.fd['anonymous'].value;
+            const hasConsent  = this.fd['dataProcessingConsent'].value;
+            const wantsProtec = this.fd['protectionRequested'].value;
+            const hasAck      = this.fd['protectionAcknowledged'].value;
+
+            if (!isAnon && !hasConsent) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Consentement requis',
-                    detail:   'Vous devez accepter le traitement de vos données.'
+                    detail: 'Vous devez accepter le traitement de vos données.'
+                });
+                return;
+            }
+            if (!isAnon && wantsProtec && !hasAck) {
+                this.messageService.add({
+                    severity: 'warn', summary: 'Consentement requis',
+                    detail: 'Vous devez confirmer avoir pris connaissance de la Loi N°010-2004/AN.'
                 });
                 return;
             }
         }
+
         this.currentStep = step;
         activateCallback(step);
     }
@@ -772,6 +795,8 @@ export class DossierForm {
         this.fd['anonymous'].setValue(!current);
         if (!current) {
             this.fd['dataProcessingConsent'].setValue(true);
+            this.fd['protectionRequested'].setValue(false);
+            this.fd['protectionAcknowledged'].setValue(false);
         }
     }
 
@@ -780,28 +805,60 @@ export class DossierForm {
             this.dossierForm.markAllAsTouched();
             this.messageService.add({
                 severity: 'warn', summary: 'Validation',
-                detail:   'Veuillez remplir tous les champs obligatoires'
+                detail: 'Veuillez remplir tous les champs obligatoires'
             });
             return;
         }
 
         this.submitting = true;
 
-        const request = {
-            ...this.dossierForm.value,
-            declarantData: {
-                ...this.declarantForm.value,
-                email:        this.fd['email'].value       || undefined,
-                phoneNumber:  this.fd['phoneNumber'].value || undefined,
-                typeDeclarant: this.fd['anonymous'].value
-                    ? 'ANONYMOUS'
-                    : (this.fd['typeDeclarant'].value ?? 'CITIZEN')
-            }
-        } as any;
+        const isAnon = this.fd['anonymous'].value;
 
-        if (!request.estimatedLoss)    delete request.estimatedLoss;
-        if (!request.incidentLocation) delete request.incidentLocation;
-        if (!request.incidentPeriod)   delete request.incidentPeriod;
+        const cleanStr = (v: any) => (v && v.toString().trim()) ? v : undefined;
+
+        const declarantData = isAnon
+            ? {
+                typeDeclarant:          'ANONYMOUS',
+                anonymous:              true,
+                dataProcessingConsent:  true,
+                notificationsAccepted:  false,
+                protectionRequested:    false,
+                protectionAcknowledged: false
+              }
+            : {
+                typeDeclarant:          this.fd['typeDeclarant'].value   || 'CITIZEN',
+                quality:                cleanStr(this.fd['quality'].value),
+                firstName:              cleanStr(this.fd['firstName'].value),
+                lastName:               cleanStr(this.fd['lastName'].value),
+                email:                  cleanStr(this.fd['email'].value),
+                phoneNumber:            cleanStr(this.fd['phoneNumber'].value),
+                commune:                cleanStr(this.fd['commune'].value),
+                province:               cleanStr(this.fd['province'].value),
+                anonymous:              false,
+                dataProcessingConsent:  this.fd['dataProcessingConsent'].value  ?? false,
+                notificationsAccepted:  this.fd['notificationsAccepted'].value  ?? false,
+                protectionRequested:    this.fd['protectionRequested'].value    ?? false,
+                protectionAcknowledged: this.fd['protectionAcknowledged'].value ?? false  // ✅
+              };
+
+        const request: any = {
+            type:           this.f['type'].value,
+            submissionMode: this.f['submissionMode'].value,
+            object:         this.f['object'].value,
+            description:    this.f['description'].value,
+            isConfidential: this.f['isConfidential'].value ?? false,
+            declarantData
+        };
+
+        const loc = cleanStr(this.f['incidentLocation'].value);
+        const per = cleanStr(this.f['incidentPeriod'].value);
+        const loss = this.f['estimatedLoss'].value;
+
+        if (loc)  request.incidentLocation = loc;
+        if (per)  request.incidentPeriod   = per;
+        if (loss) request.estimatedLoss    = loss;
+
+        console.log('📤 Requête envoyée :', JSON.stringify(request, null, 2));
 
         this.dossierService.submit(request).subscribe({
             next: dossier => {
@@ -820,9 +877,24 @@ export class DossierForm {
             },
             error: err => {
                 this.submitting = false;
+
+                console.error('❌ Erreur backend :', err.error);
+
+                const validationErrors = err.error?.validationErrors;
+                let detail = err.error?.message || 'Impossible de créer le dossier';
+
+                if (validationErrors && Object.keys(validationErrors).length > 0) {
+                    detail = Object.entries(validationErrors)
+                        .map(([field, msg]) => `• ${field} : ${msg}`)
+                        .join('\n');
+                    console.error('❌ Champs invalides :', validationErrors);
+                }
+
                 this.messageService.add({
-                    severity: 'error', summary: 'Erreur',
-                    detail: err.error?.message || 'Impossible de créer le dossier'
+                    severity: 'error',
+                    summary:  'Erreur de validation',
+                    detail,
+                    life:     8000
                 });
             }
         });

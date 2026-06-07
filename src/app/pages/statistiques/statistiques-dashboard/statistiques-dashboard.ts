@@ -25,7 +25,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
 
 <div class="flex flex-col gap-6">
 
-    <!-- ── En-tête ─────────────────────────────────────────── -->
     <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
             <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">
@@ -51,7 +50,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
         </div>
     </div>
 
-    <!-- ── KPIs principaux ─────────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
@@ -128,7 +126,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
         </div>
     </div>
 
-    <!-- ── KPIs secondaires ────────────────────────────────── -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="bg-white dark:bg-surface-800 rounded-xl p-4
                     border border-surface-100 dark:border-surface-700">
@@ -152,10 +149,8 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
         </div>
     </div>
 
-    <!-- ── Graphiques ligne 1 ──────────────────────────────── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <!-- Répartition par statut -->
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
@@ -172,7 +167,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
             </div>
         </div>
 
-        <!-- Tendance mensuelle -->
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4
@@ -190,7 +184,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
         </div>
     </div>
 
-    <!-- ── Graphiques ligne 2 ──────────────────────────────── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         <!-- Canaux de réception -->
@@ -203,9 +196,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
                     <i class="pi pi-chart-bar text-purple-600 text-xs"></i>
                 </div>
                 Canaux de réception
-                <span class="text-xs text-surface-400 font-normal ml-1">
-                    (§D.2 Point 2)
-                </span>
             </h3>
             <div *ngIf="!loading && modeChartData; else skChart">
                 <p-chart type="bar" [data]="modeChartData"
@@ -223,14 +213,10 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
                     <i class="pi pi-gauge text-amber-600 text-xs"></i>
                 </div>
                 Délais réglementaires
-                <span class="text-xs text-surface-400 font-normal ml-1">
-                    (§D.2 Point 10)
-                </span>
             </h3>
 
             <div *ngIf="!loading && stats; else skChart" class="flex flex-col gap-4">
 
-                <!-- Enregistrement — 7 jours -->
                 <div>
                     <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-surface-500 font-medium">
@@ -250,7 +236,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
                     </div>
                 </div>
 
-                <!-- Investigation — 90 jours -->
                 <div>
                     <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-surface-500 font-medium">
@@ -362,7 +347,6 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
         </div>
     </div>
 
-    <!-- ── Tableau récapitulatif par statut ────────────────── -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                 border border-surface-100 dark:border-surface-700 shadow-sm">
         <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4

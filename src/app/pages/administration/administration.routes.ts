@@ -21,6 +21,7 @@ export default [
         loadComponent: () =>
             import('./agent-form/agent-form').then(m => m.AgentForm)
     },
+    
     {
         path: 'roles',
         loadComponent: () =>

@@ -128,10 +128,8 @@ const GROUP_ICONS: Record<string, string> = {
                             </span>
                         </div>
 
-                        <!-- IMAGE_URL : aperçu + upload + saisie manuelle -->
                         <div *ngIf="item.valueType === 'IMAGE_URL'" class="flex gap-3 items-start">
 
-                            <!-- Aperçu image -->
                             <div class="w-20 h-20 rounded-xl border-2 border-dashed
                                         border-surface-200 dark:border-surface-600
                                         bg-surface-50 dark:bg-surface-900
@@ -155,7 +153,6 @@ const GROUP_ICONS: Record<string, string> = {
                                 </div>
                             </div>
 
-                            <!-- Contrôles droite -->
                             <div class="flex-1 flex flex-col gap-2">
                                 <!-- Bouton upload principal -->
                                 <p-button
@@ -189,7 +186,6 @@ const GROUP_ICONS: Record<string, string> = {
                             </div>
                         </div>
 
-                        <!-- TEXT long : textarea -->
                         <textarea *ngIf="item.valueType === 'TEXT' && isLongText(item.configKey)"
                             pTextarea [(ngModel)]="editValues[item.configKey]"
                             rows="3" class="w-full text-sm resize-none"></textarea>

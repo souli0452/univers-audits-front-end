@@ -170,7 +170,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
         }
 
-        /* ── Boutons Photo / Galerie ── */
         .media-buttons {
             display:flex; gap:.75rem; margin-bottom:1rem;
         }
@@ -192,7 +191,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .phone-icon i { font-size:2.25rem; color:#fff; }
 
-        /* ── Protection lanceur d'alerte ── */
         .protection-trigger {
             border:2px solid #e5e7eb; border-radius:14px;
             padding:.875rem 1rem; cursor:pointer; transition:all .2s; background:#fff;
@@ -294,7 +292,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 <p-toast />
 <p-confirmDialog />
 
-<!-- ── Dialog succès ──────────────────────────────────────── -->
 <p-dialog [(visible)]="showSuccess" header=" "
     [modal]="true" [closable]="false" [style]="{width:'380px'}">
     <div class="success-wrap">
@@ -335,7 +332,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     </ng-template>
 </p-dialog>
 
-<!-- ── Page ───────────────────────────────────────────────── -->
 <div class="page-wrapper">
 
     <nav class="top-nav">
@@ -363,7 +359,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </p>
         </div>
 
-        <!-- Steps -->
         <div class="steps-bar">
             <div class="step-dot" [class.active]="currentStep === 1" [class.done]="currentStep > 1">
                 <i *ngIf="currentStep > 1" class="pi pi-check" style="font-size:.75rem;"></i>
@@ -380,7 +375,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 1 — Enregistrement ═══ -->
         <div *ngIf="currentStep === 1" class="step-card">
 
             <div class="step-card-title">
@@ -391,7 +385,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Enregistrez votre témoignage <span style="color:#ef4444;margin-left:2px;">*</span>
             </div>
 
-            <!-- Idle -->
             <div *ngIf="!audioUrl && !isRecording"
                 class="record-idle"
                 [class.record-idle-error]="audioTouched && !audioUrl">
@@ -509,7 +502,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 2 — Contact + Protection ═══ -->
         <div *ngIf="currentStep === 2" class="step-card">
 
             <div class="step-card-title">
@@ -552,7 +544,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     style="font-size:1rem;padding:.75rem;border-radius:12px;" />
             </div>
 
-            <!-- ══ PROTECTION LANCEUR D'ALERTE ══════════════════════════ -->
             <div>
                 <div class="protection-trigger"
                     [class.selected]="protectionRequested"
@@ -692,7 +683,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 3 — Récapitulatif ═══ -->
         <div *ngIf="currentStep === 3" class="step-card">
 
             <div class="step-card-title">

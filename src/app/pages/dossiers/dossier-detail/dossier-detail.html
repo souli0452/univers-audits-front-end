@@ -1,7 +1,6 @@
 <p-toast />
 <p-confirmDialog />
 
-<!-- ── Dialog transition générique ───────────────────────── -->
 <p-dialog [(visible)]="showTransitionDialog" [header]="transitionDialogTitle"
     [modal]="true" [style]="{width:'500px'}" [draggable]="false">
     <div class="flex flex-col gap-4 py-2">
@@ -21,7 +20,6 @@
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog "Demander complément" — motif OBLIGATOIRE ──── -->
 <p-dialog [(visible)]="showComplementDialog"
     header="Demander un complément au déclarant"
     [modal]="true" [style]="{width:'520px'}" [draggable]="false">
@@ -63,7 +61,6 @@
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog conflit de version ──────────────────────────── -->
 <p-dialog [(visible)]="showVersionConflictDialog"
     header="Conflit de version détecté"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false" [closable]="false">
@@ -96,7 +93,6 @@
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog Partie visée ────────────────────────────────── -->
 <p-dialog [(visible)]="showPartyDialog"
     [header]="editingParty ? 'Modifier la partie' : 'Ajouter une partie visée'"
     [modal]="true" [style]="{width:'560px'}" [draggable]="false">
@@ -166,7 +162,6 @@
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog Témoin ──────────────────────────────────────── -->
 <p-dialog [(visible)]="showWitnessDialog"
     [header]="editingWitness ? 'Modifier le témoin' : 'Ajouter un témoin'"
     [modal]="true" [style]="{width:'540px'}" [draggable]="false">
@@ -301,7 +296,6 @@
     </ng-template>
 </p-dialog>
 
-<!-- ── Dialog Priorité ────────────────────────────────────── -->
 <p-dialog [(visible)]="showPriorityDialog"
     header="Définir la priorité du dossier"
     [modal]="true" [style]="{width:'500px'}" [draggable]="false">
@@ -327,7 +321,7 @@
                     </div>
                     <div>
                         <div class="font-bold text-sm text-red-700">
-                            🔴 Critique — Traitement immédiat requis
+                            Critique — Traitement immédiat requis
                         </div>
                         <div class="text-xs text-red-500 mt-0.5">
                             Affiché en premier dans la liste, tous agents notifiés
@@ -351,7 +345,7 @@
                     </div>
                     <div>
                         <div class="font-bold text-sm text-orange-700">
-                            🟠 Urgent — À traiter rapidement
+                            Urgent — À traiter rapidement
                         </div>
                         <div class="text-xs text-orange-500 mt-0.5">
                             Avant les dossiers normaux
@@ -375,7 +369,7 @@
                     </div>
                     <div>
                         <div class="font-bold text-sm text-blue-700">
-                            🔵 Normal — Traitement standard
+                            Normal — Traitement standard
                         </div>
                         <div class="text-xs text-blue-500 mt-0.5">
                             Workflow habituel selon le Manuel
@@ -399,7 +393,7 @@
                     </div>
                     <div>
                         <div class="font-bold text-sm text-surface-600">
-                            ⚪ Faible — Peut attendre
+                            Faible — Peut attendre
                         </div>
                         <div class="text-xs text-surface-400 mt-0.5">
                             Aucune urgence particulière
@@ -454,7 +448,6 @@
 </p-dialog>
 
 
-<!-- ══ PAGE ════════════════════════════════════════════════ -->
 <div *ngIf="!loading; else sk" class="flex flex-col gap-4">
 
     <div *ngIf="dossier?.status === 'DECISION_RENDUE'"
@@ -548,7 +541,7 @@
         <i class="pi pi-exclamation-triangle text-red-600 text-xl flex-shrink-0"></i>
         <div class="flex-1">
             <div class="font-bold text-red-800 flex items-center gap-2">
-                🔴 Dossier CRITIQUE — Traitement immédiat requis
+                Dossier CRITIQUE — Traitement immédiat requis
             </div>
             <div *ngIf="dossier?.priorityReason"
                 class="text-red-600 text-sm mt-0.5">{{ dossier?.priorityReason }}</div>
@@ -564,7 +557,7 @@
         class="flex items-center gap-3 p-3 bg-orange-50 border border-orange-300 rounded-2xl">
         <i class="pi pi-arrow-up text-orange-600 text-xl flex-shrink-0"></i>
         <div class="flex-1">
-            <div class="font-bold text-orange-800">🟠 Dossier URGENT</div>
+            <div class="font-bold text-orange-800">Dossier URGENT</div>
             <div *ngIf="dossier?.priorityReason"
                 class="text-orange-600 text-sm mt-0.5">{{ dossier?.priorityReason }}</div>
         </div>
@@ -575,7 +568,6 @@
         </div>
     </div>
 
-    <!-- ── En-tête ──────────────────────────────────────────── -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100
                 dark:border-surface-700 px-5 py-4">
         <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -615,7 +607,6 @@
                 </div>
             </div>
 
-            <!-- BOUTONS D'ACTION -->
             <div class="flex gap-2 flex-wrap items-center" *ngIf="dossier">
 
                 <p-button *ngIf="dossier.status==='SOUMIS' && hasRole(['AGENT_BRPD'])"
@@ -676,12 +667,13 @@
                 <p-button *ngIf="dossier.status !== 'CLASSE' && dossier.status !== 'TRANSFERE'"
                     label="PDF" icon="pi pi-file-pdf"
                     severity="secondary" outlined size="small"
-                    pTooltip="Exporter en PDF" (onClick)="exportPdf()"/>
-
+    [loading]="exportingPdf"
+    pTooltip="Exporter en PDF (4 pages complètes)" (onClick)="exportPdf()"/>
                 <p-button *ngIf="dossier.status === 'CLASSE' || dossier.status === 'TRANSFERE'"
                     label="Exporter PDF" icon="pi pi-file-pdf"
                     severity="secondary" outlined size="small"
-                    pTooltip="Seule action disponible" (onClick)="exportPdf()"/>
+    [loading]="exportingPdf"
+    pTooltip="Seule action disponible" (onClick)="exportPdf()"/>
 
                 <p-button *ngIf="dossier.status !== 'CLASSE'
                                  && dossier.status !== 'TRANSFERE'

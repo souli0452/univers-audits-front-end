@@ -13,9 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import {
     InvestigationService,
-    InvestigationResponse
-} from '../../../core/services/investigation.service';
-import {
+    InvestigationResponse,
     InvestigationMemberResponse
 } from '../../../core/services/investigation.service';
 
@@ -61,6 +59,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <span *ngIf="isFiltering()" class="text-primary-500">
                     sur {{ allInvestigations.length }} au total
                 </span>
+                <span class="ml-2 text-xs text-surface-300">
+                    <i class="pi pi-sort-down" style="font-size:9px;"></i>
+                    Plus récente en premier
+                </span>
             </p>
         </div>
     </div>
@@ -77,9 +79,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <i class="pi pi-flag text-blue-600"></i>
             </div>
             <div>
-                <div class="text-xl font-bold text-blue-600">
-                    {{ countByStatus('INITIATED') }}
-                </div>
+                <div class="text-xl font-bold text-blue-600">{{ countByStatus('INITIATED') }}</div>
                 <div class="text-xs text-surface-400 uppercase tracking-wide">Initiées</div>
             </div>
         </div>
@@ -93,9 +93,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <i class="pi pi-spin pi-spinner text-green-600"></i>
             </div>
             <div>
-                <div class="text-xl font-bold text-green-600">
-                    {{ countByStatus('IN_PROGRESS') }}
-                </div>
+                <div class="text-xl font-bold text-green-600">{{ countByStatus('IN_PROGRESS') }}</div>
                 <div class="text-xs text-surface-400 uppercase tracking-wide">En cours</div>
             </div>
         </div>
@@ -109,9 +107,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <i class="pi pi-pause text-amber-600"></i>
             </div>
             <div>
-                <div class="text-xl font-bold text-amber-600">
-                    {{ countByStatus('SUSPENDED') }}
-                </div>
+                <div class="text-xl font-bold text-amber-600">{{ countByStatus('SUSPENDED') }}</div>
                 <div class="text-xs text-surface-400 uppercase tracking-wide">Suspendues</div>
             </div>
         </div>
@@ -131,7 +127,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         </div>
     </div>
 
-    <!-- ══ FILTRES ══════════════════════════════════════════ -->
+    <!-- ── Filtres ─────────────────────────────────────────── -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl border
                 border-surface-100 dark:border-surface-700 overflow-hidden">
 
@@ -139,16 +135,13 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     divide-y md:divide-y-0 md:divide-x
                     divide-surface-100 dark:divide-surface-700">
 
-            <!-- Recherche texte -->
             <div class="flex items-center gap-2.5 px-4" style="height:48px;">
                 <i class="pi pi-search text-surface-300 text-sm flex-shrink-0"></i>
                 <input pInputText [(ngModel)]="searchText"
                     placeholder="Numéro dossier, objet, agent..."
                     (ngModelChange)="applyFilters()"
-                    class="flex-1 border-none shadow-none outline-none
-                           bg-transparent text-sm min-w-0"
-                    style="box-shadow:none !important; border:none !important;
-                           padding:0 !important;" />
+                    class="flex-1 border-none shadow-none outline-none bg-transparent text-sm min-w-0"
+                    style="box-shadow:none !important; border:none !important; padding:0 !important;" />
                 <button *ngIf="searchText" (click)="clearSearch()"
                     class="flex-shrink-0 w-5 h-5 flex items-center justify-center
                            text-surface-300 hover:text-surface-600 transition-colors
@@ -157,44 +150,36 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 </button>
             </div>
 
-            <!-- Statut -->
             <div class="flex items-center gap-2 px-3 filter-select" style="height:48px;">
                 <i class="pi pi-tag text-surface-300 text-xs flex-shrink-0"></i>
-                <p-select [(ngModel)]="selectedStatus"
-                    [options]="statusOptions" optionLabel="label" optionValue="value"
-                    placeholder="Statut" [showClear]="true" styleClass="w-full"
-                    appendTo="body"
+                <p-select [(ngModel)]="selectedStatus" [options]="statusOptions"
+                    optionLabel="label" optionValue="value" placeholder="Statut"
+                    [showClear]="true" styleClass="w-full" appendTo="body"
                     (onChange)="applyFilters()" />
             </div>
 
-            <!-- Délai -->
             <div class="flex items-center gap-2 px-3 filter-select" style="height:48px;">
                 <i class="pi pi-clock text-surface-300 text-xs flex-shrink-0"></i>
-                <p-select [(ngModel)]="selectedOverdue"
-                    [options]="overdueOptions" optionLabel="label" optionValue="value"
-                    placeholder="Délai" [showClear]="true" styleClass="w-full"
-                    appendTo="body"
+                <p-select [(ngModel)]="selectedOverdue" [options]="overdueOptions"
+                    optionLabel="label" optionValue="value" placeholder="Délai"
+                    [showClear]="true" styleClass="w-full" appendTo="body"
                     (onChange)="applyFilters()" />
             </div>
 
-            <!-- Rôle équipe -->
             <div class="flex items-center gap-2 px-3 filter-select" style="height:48px;">
                 <i class="pi pi-users text-surface-300 text-xs flex-shrink-0"></i>
-                <p-select [(ngModel)]="selectedRole"
-                    [options]="roleFilterOptions" optionLabel="label" optionValue="value"
-                    placeholder="Rôle équipe" [showClear]="true" styleClass="w-full"
-                    appendTo="body"
+                <p-select [(ngModel)]="selectedRole" [options]="roleFilterOptions"
+                    optionLabel="label" optionValue="value" placeholder="Rôle équipe"
+                    [showClear]="true" styleClass="w-full" appendTo="body"
                     (onChange)="applyFilters()" />
             </div>
 
-            <!-- Actions -->
             <div class="flex items-center justify-center gap-1 px-3" style="height:48px;">
                 <button *ngIf="isFiltering()" (click)="resetFilters()"
                     class="flex items-center gap-1 text-xs text-surface-400
                            hover:text-surface-700 transition-colors px-2 py-1.5
                            rounded-lg hover:bg-surface-50 whitespace-nowrap">
-                    <i class="pi pi-filter-slash text-xs"></i>
-                    Effacer
+                    <i class="pi pi-filter-slash text-xs"></i> Effacer
                 </button>
                 <button (click)="refresh()" title="Actualiser"
                     class="w-8 h-8 flex items-center justify-center rounded-lg
@@ -205,7 +190,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
             </div>
         </div>
 
-        <!-- Bande filtres actifs -->
+        <!-- Badges filtres actifs -->
         <div *ngIf="isFiltering()"
             class="flex items-center gap-2 px-4 py-2 bg-surface-50
                    dark:bg-surface-700/50 border-t border-surface-100
@@ -215,55 +200,41 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 résultat{{ filteredInvestigations.length > 1 ? 's' : '' }}
             </span>
             <span class="text-surface-200 text-xs">·</span>
-
             <span *ngIf="searchText"
                 class="inline-flex items-center gap-1 text-xs bg-white
-                       dark:bg-surface-800 text-surface-600 border border-surface-200
+                       text-surface-600 border border-surface-200
                        px-2 py-0.5 rounded-full shadow-sm max-w-48">
-                <i class="pi pi-search flex-shrink-0" style="font-size:9px;"></i>
+                <i class="pi pi-search" style="font-size:9px;"></i>
                 <span class="truncate">"{{ searchText }}"</span>
                 <button (click)="clearSearch()"
-                    class="flex-shrink-0 ml-0.5 text-surface-300
-                           hover:text-surface-600 transition-colors">
+                    class="ml-0.5 text-surface-300 hover:text-surface-600">
                     <i class="pi pi-times" style="font-size:8px;"></i>
                 </button>
             </span>
-
             <span *ngIf="selectedStatus"
                 class="inline-flex items-center gap-1 text-xs bg-amber-50
-                       text-amber-700 border border-amber-200 px-2 py-0.5
-                       rounded-full shadow-sm">
-                <i class="pi pi-tag text-amber-400 flex-shrink-0" style="font-size:9px;"></i>
+                       text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full shadow-sm">
+                <i class="pi pi-tag text-amber-400" style="font-size:9px;"></i>
                 {{ getStatusLabel(selectedStatus) }}
-                <button (click)="clearStatus()"
-                    class="flex-shrink-0 ml-0.5 text-amber-400
-                           hover:text-amber-700 transition-colors">
+                <button (click)="clearStatus()" class="ml-0.5 text-amber-400 hover:text-amber-700">
                     <i class="pi pi-times" style="font-size:8px;"></i>
                 </button>
             </span>
-
             <span *ngIf="selectedOverdue !== null"
                 class="inline-flex items-center gap-1 text-xs bg-red-50
-                       text-red-700 border border-red-200 px-2 py-0.5
-                       rounded-full shadow-sm">
-                <i class="pi pi-clock text-red-400 flex-shrink-0" style="font-size:9px;"></i>
+                       text-red-700 border border-red-200 px-2 py-0.5 rounded-full shadow-sm">
+                <i class="pi pi-clock text-red-400" style="font-size:9px;"></i>
                 {{ selectedOverdue ? 'En retard' : 'Dans les délais' }}
-                <button (click)="clearOverdue()"
-                    class="flex-shrink-0 ml-0.5 text-red-400
-                           hover:text-red-700 transition-colors">
+                <button (click)="clearOverdue()" class="ml-0.5 text-red-400 hover:text-red-700">
                     <i class="pi pi-times" style="font-size:8px;"></i>
                 </button>
             </span>
-
             <span *ngIf="selectedRole"
                 class="inline-flex items-center gap-1 text-xs bg-purple-50
-                       text-purple-700 border border-purple-200 px-2 py-0.5
-                       rounded-full shadow-sm">
-                <i class="pi pi-users text-purple-400 flex-shrink-0" style="font-size:9px;"></i>
+                       text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full shadow-sm">
+                <i class="pi pi-users text-purple-400" style="font-size:9px;"></i>
                 {{ getRoleLabel(selectedRole) }}
-                <button (click)="clearRole()"
-                    class="flex-shrink-0 ml-0.5 text-purple-400
-                           hover:text-purple-700 transition-colors">
+                <button (click)="clearRole()" class="ml-0.5 text-purple-400 hover:text-purple-700">
                     <i class="pi pi-times" style="font-size:8px;"></i>
                 </button>
             </span>
@@ -287,20 +258,33 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
             <ng-template pTemplate="header">
                 <tr>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-40">Dossier</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4">Objet</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-32">Statut</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-28">Progression</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-28">Délai restant</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-36">Équipe</th>
-                    <th class="text-xs text-surface-400 font-semibold uppercase
-                               tracking-wide py-3 px-4 w-28">Ouverture</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-40">
+                        Dossier
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4">
+                        Objet
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-32">
+                        Statut
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-28">
+                        Progression
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-28">
+                        Délai restant
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-36">
+                        Équipe
+                    </th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase tracking-wide py-3 px-4 w-28">
+                        <div class="flex items-center gap-1">
+                            Date
+                            <i class="pi pi-sort-down text-surface-300"
+                                style="font-size:9px;"
+                                pTooltip="Tri : plus récente en premier"
+                                tooltipPosition="top"></i>
+                        </div>
+                    </th>
                     <th class="w-16"></th>
                 </tr>
             </ng-template>
@@ -318,12 +302,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                                 [class.bg-green-500]="!inv.overdue && inv.status === 'IN_PROGRESS'"
                                 [class.bg-blue-400]="inv.status === 'INITIATED'"
                                 [class.bg-amber-400]="inv.status === 'SUSPENDED'"
-                                [class.bg-surface-300]="inv.status === 'COMPLETED'
-                                    || inv.status === 'ARCHIVED'">
+                                [class.bg-surface-300]="inv.status === 'COMPLETED' || inv.status === 'ARCHIVED'">
                             </div>
                             <span class="font-mono text-xs font-semibold text-primary-600
-                                         bg-primary-50 px-2 py-1 rounded-md
-                                         border border-primary-100">
+                                         bg-primary-50 px-2 py-1 rounded-md border border-primary-100">
                                 {{ inv.dossierNumber || '—' }}
                             </span>
                         </div>
@@ -331,8 +313,8 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
                     <!-- Objet -->
                     <td class="px-4 py-3">
-                        <div class="font-medium text-sm text-surface-900
-                                    dark:text-surface-0 truncate max-w-xs">
+                        <div class="font-medium text-sm text-surface-900 dark:text-surface-0
+                                    truncate max-w-xs">
                             {{ inv.dossierObject || '—' }}
                         </div>
                         <div *ngIf="inv.overdue"
@@ -360,10 +342,8 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                                 <div class="h-full rounded-full"
                                     [style.width]="getProgressForInv(inv) + '%'"
                                     [class.bg-red-500]="inv.overdue"
-                                    [class.bg-amber-400]="!inv.overdue
-                                        && getProgressForInv(inv) >= 80"
-                                    [class.bg-green-500]="!inv.overdue
-                                        && getProgressForInv(inv) < 80">
+                                    [class.bg-amber-400]="!inv.overdue && getProgressForInv(inv) >= 80"
+                                    [class.bg-green-500]="!inv.overdue && getProgressForInv(inv) < 80">
                                 </div>
                             </div>
                         </div>
@@ -389,10 +369,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                             [class.border-green-200]="(inv.remainingDays || 0) > 10">
                             {{ inv.remainingDays }}j
                         </span>
-                        <span *ngIf="!inv.startDate"
-                            class="text-xs text-surface-300">—</span>
+                        <span *ngIf="!inv.startDate" class="text-xs text-surface-300">—</span>
                     </td>
 
+                    <!-- Équipe -->
                     <td class="px-4 py-3">
                         <div *ngIf="getMembers(inv).length; else noTeam"
                             class="flex items-center gap-1">
@@ -421,10 +401,12 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                     <!-- Date ouverture -->
                     <td class="px-4 py-3">
                         <span class="text-xs text-surface-400">
-                            {{ inv.startDate
-                                ? (inv.startDate | date:'dd/MM/yyyy')
-                                : (inv.createdAt | date:'dd/MM/yyyy') }}
+                            {{ getDisplayDate(inv) | date:'dd/MM/yyyy' }}
                         </span>
+                        <div *ngIf="isToday(getDisplayDate(inv))"
+                            class="text-xs text-green-600 font-semibold mt-0.5">
+                            Aujourd'hui
+                        </div>
                     </td>
 
                     <!-- Actions -->
@@ -508,10 +490,14 @@ export class InvestigationsList implements OnInit {
         this.loading = true;
         this.investigationService.findAll(0, 500).subscribe({
             next: page => {
-                this.allInvestigations = [...page.content].sort((a, b) =>
-                    new Date(b.createdAt || 0).getTime()
-                    - new Date(a.createdAt || 0).getTime()
-                );
+                this.allInvestigations = [...page.content].sort((a, b) => {
+                    const dateA = new Date(a.createdAt || a.startDate || 0).getTime();
+                    const dateB = new Date(b.createdAt || b.startDate || 0).getTime();
+                    if (dateB !== dateA) return dateB - dateA;   
+                    const startA = new Date(a.startDate || 0).getTime();
+                    const startB = new Date(b.startDate || 0).getTime();
+                    return startB - startA;
+                });
                 this.applyFilters();
                 this.loading = false;
             },
@@ -531,35 +517,38 @@ export class InvestigationsList implements OnInit {
         return (inv.members || []) as InvestigationMemberResponse[];
     }
 
+    getDisplayDate(inv: InvestigationResponse): string | undefined {
+        return inv.startDate || inv.createdAt;
+    }
+
+    isToday(dateStr?: string): boolean {
+        if (!dateStr) return false;
+        const d   = new Date(dateStr);
+        const now = new Date();
+        return d.getFullYear() === now.getFullYear()
+            && d.getMonth()    === now.getMonth()
+            && d.getDate()     === now.getDate();
+    }
+
     applyFilters(): void {
         const q = this.searchText.trim().toLowerCase();
-
         this.filteredInvestigations = this.allInvestigations.filter(inv => {
             const members = this.getMembers(inv);
-
             if (q) {
                 const memberNames = members
                     .map(m => `${m.agent.firstName} ${m.agent.lastName} ${m.agent.matricule}`)
                     .join(' ');
                 const haystack = [
-                    inv.dossierNumber || '',
-                    inv.dossierObject || '',
-                    memberNames
+                    inv.dossierNumber || '', inv.dossierObject || '', memberNames
                 ].join(' ').toLowerCase();
                 if (!haystack.includes(q)) return false;
             }
-
-            if (this.selectedStatus && inv.status !== this.selectedStatus)
-                return false;
-
-            if (this.selectedOverdue !== null && inv.overdue !== this.selectedOverdue)
-                return false;
-
+            if (this.selectedStatus && inv.status !== this.selectedStatus) return false;
+            if (this.selectedOverdue !== null && inv.overdue !== this.selectedOverdue) return false;
             if (this.selectedRole) {
                 const hasRole = members.some(m => m.teamRole === this.selectedRole);
                 if (!hasRole) return false;
             }
-
             return true;
         });
     }

@@ -51,15 +51,21 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'rapports',
-                loadComponent: () =>
-                    import('./app/pages/rapports/rapport-etat/rapport-etat.component')
-                    .then(m => m.RapportEtatComponent)
+                loadChildren: () =>
+                    import('./app/pages/rapports/rapports.routes')
+                    .then(m => m.default)
             },
             {
                 path: 'profil',
                 loadComponent: () =>
                     import('./app/pages/profil/profil')
                     .then(m => m.Profil)
+            },
+            {
+                path: 'notifications',
+                loadComponent: () =>
+                    import('./app/pages/notifications/notifications.component')
+                    .then(m => m.NotificationsComponent)
             }
         ]
     },

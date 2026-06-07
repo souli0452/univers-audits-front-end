@@ -114,7 +114,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             flex-shrink:0;
         }
 
-        /* ── Légende champs obligatoires ─────────────────────── */
         .required-legend {
             font-size:.75rem; color:#6b7280;
             margin-bottom:1.25rem; margin-top:-.25rem;
@@ -138,7 +137,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
         .field { display:flex; flex-direction:column; gap:.375rem; }
 
-        /* ── Label avec étoile obligatoire ───────────────────── */
         .field label {
             font-size:.875rem; font-weight:700; color:#374151;
             display:flex; align-items:center; gap:3px;
@@ -435,7 +433,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 1 — Les faits ═══ -->
         <div *ngIf="currentStep === 1" class="card">
 
             <div class="card-title">
@@ -445,19 +442,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Décrivez les faits
             </div>
 
-            <!-- Légende champs obligatoires -->
             <p class="required-legend">
                 <span class="req">*</span> Champs obligatoires
             </p>
 
             <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
-                <!-- Type de signalement — obligatoire -->
                 <div class="field">
-                    <label>
-                        Type de signalement
-                        <span class="req">*</span>
-                    </label>
+                    <label>Type de signalement <span class="req">*</span></label>
                     <div class="type-grid">
                         <div *ngFor="let type of typeOptions"
                             class="type-card"
@@ -477,12 +469,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Résumé — obligatoire -->
                 <div class="field">
-                    <label>
-                        Résumé du signalement
-                        <span class="req">*</span>
-                    </label>
+                    <label>Résumé du signalement <span class="req">*</span></label>
                     <input pInputText [formControl]="f['object']"
                         placeholder="Ex: Détournement de fonds à la mairie de..."
                         class="w-full"
@@ -495,12 +483,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </small>
                 </div>
 
-                <!-- Description — obligatoire -->
                 <div class="field">
-                    <label>
-                        Description détaillée
-                        <span class="req">*</span>
-                    </label>
+                    <label>Description détaillée <span class="req">*</span></label>
                     <textarea pTextarea [formControl]="f['description']"
                         placeholder="Décrivez les faits : qui, quoi, quand, où, comment..."
                         rows="5" class="w-full resize-none"
@@ -520,12 +504,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
 
                 <div class="grid2">
-                    <!-- Lieu — optionnel -->
                     <div class="field">
-                        <label>
-                            Lieu des faits
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Lieu des faits <span class="opt">— optionnel</span></label>
                         <div style="display:flex;align-items:center;gap:8px;
                             border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
                             <i class="pi pi-map-marker"
@@ -536,7 +516,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                        padding:.625rem 0;flex:1;font-size:.875rem;" />
                         </div>
                     </div>
-                    <!-- Période — optionnelle -->
                     <div class="field">
                         <label>
                             Période approximative
@@ -547,30 +526,23 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <i class="pi pi-calendar"
                                 style="color:#9ca3af;font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentPeriod']"
-                                placeholder="Ex: Janvier 2024"
+                                placeholder="Ex: Janvier 2024, ou De 2022 à 2023, ou Depuis 6 mois"
                                 style="border:none;outline:none;background:transparent;
                                        padding:.625rem 0;flex:1;font-size:.875rem;" />
                         </div>
                     </div>
                 </div>
 
-                <!-- Montant — optionnel -->
                 <div class="field">
-                    <label>
-                        Montant estimé (FCFA)
-                        <span class="opt">— optionnel</span>
-                    </label>
+                    <label>Montant estimé (FCFA) <span class="opt">— optionnel</span></label>
                     <p-inputnumber [formControl]="f['estimatedLoss']"
                         [useGrouping]="true" placeholder="0" styleClass="w-full" />
                     <span class="field-hint">Laissez vide si inconnu</span>
                 </div>
 
-                <!-- Audio — optionnel -->
+                <!-- Audio -->
                 <div class="field">
-                    <label>
-                        Témoignage audio
-                        <span class="opt">— optionnel</span>
-                    </label>
+                    <label>Témoignage audio <span class="opt">— optionnel</span></label>
                     <div *ngIf="!audioUrl && !isRecording" class="audio-idle">
                         <div class="audio-idle-icon">
                             <i class="pi pi-microphone"></i>
@@ -619,7 +591,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Pièces jointes — optionnel -->
+                <!-- Pièces jointes -->
                 <div class="field">
                     <label>
                         Pièces jointes
@@ -681,7 +653,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 2 — Coordonnées ═══ -->
         <div *ngIf="currentStep === 2" class="card">
 
             <div class="card-title">
@@ -691,7 +662,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Vos coordonnées
             </div>
 
-            <!-- Légende champs obligatoires -->
             <p class="required-legend">
                 <span class="req">*</span> Champs obligatoires
             </p>
@@ -700,7 +670,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Informations strictement confidentielles. Vous pouvez rester anonyme.
             </p>
 
-            <!-- Choix identité -->
             <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
                 <div class="anon-option"
                     [class.selected-id]="!fd['anonymous'].value"
@@ -751,75 +720,44 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
             </div>
 
-            <!-- Champs coordonnées — visibles seulement si non-anonyme -->
             <div *ngIf="!fd['anonymous'].value"
                 style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.25rem;">
                 <div class="grid2">
-
-                    <!-- Prénom — optionnel -->
                     <div class="field">
-                        <label>
-                            Prénom
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Prénom <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['firstName']"
                             placeholder="Votre prénom" class="w-full" />
                     </div>
-
-                    <!-- Nom — optionnel -->
                     <div class="field">
-                        <label>
-                            Nom
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Nom <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['lastName']"
                             placeholder="Votre nom" class="w-full" />
                     </div>
-
-                    <!-- Téléphone — optionnel mais recommandé -->
                     <div class="field">
-                        <label>
-                            Téléphone
-                            <span class="opt">— recommandé</span>
-                        </label>
+                        <label>Téléphone <span class="opt">— recommandé</span></label>
                         <input pInputText [formControl]="fd['phoneNumber']"
                             placeholder="+226 XX XX XX XX" class="w-full" />
                         <span class="field-hint">Pour recevoir votre code par SMS</span>
                     </div>
-
-                    <!-- Email — optionnel -->
                     <div class="field">
-                        <label>
-                            Email
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Email <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['email']"
                             placeholder="votre@email.com" type="email" class="w-full" />
                         <span class="field-hint">Pour recevoir votre code par email</span>
                     </div>
-
-                    <!-- Commune — optionnel -->
                     <div class="field">
-                        <label>
-                            Commune
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Commune <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['commune']"
                             placeholder="Votre commune" class="w-full" />
                     </div>
-
-                    <!-- Province — optionnel -->
                     <div class="field">
-                        <label>
-                            Province
-                            <span class="opt">— optionnel</span>
-                        </label>
+                        <label>Province <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['province']"
                             placeholder="Votre province" class="w-full" />
                     </div>
                 </div>
 
-                <!-- ══ PROTECTION LANCEUR D'ALERTE ════════════════════════ -->
+                <!-- Protection lanceur d'alerte -->
                 <div>
                     <div class="protection-trigger"
                         [class.selected]="fd['protectionRequested'].value"
@@ -878,12 +816,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 <i class="pi pi-exclamation-triangle"
                                     style="color:#ef4444;font-size:1rem;flex-shrink:0;
                                            margin-top:1px;"></i>
-                                <p style="font-size:.8rem;color:#dc2626;margin:0;
-                                          line-height:1.6;">
+                                <p style="font-size:.8rem;color:#dc2626;margin:0;line-height:1.6;">
                                     <strong>Attention :</strong> invoquer cette protection
-                                    de manière abusive ou pour masquer une fausse déclaration
-                                    est passible de <strong>sanctions pénales</strong>
-                                    en vertu de la Loi N°010-2004/AN.
+                                    de manière abusive est passible de
+                                    <strong>sanctions pénales</strong> (Loi N°010-2004/AN).
                                 </p>
                             </div>
                         </div>
@@ -926,8 +862,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                             <p-button
                                 label="Je confirme sur l'honneur"
-                                icon="pi pi-shield"
-                                severity="info"
+                                icon="pi pi-shield" severity="info"
                                 styleClass="w-full justify-center mt-2"
                                 [disabled]="!cond1 || !cond2 || !cond3"
                                 (onClick)="confirmProtection()" />
@@ -955,11 +890,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             pTooltip="Annuler la demande" (onClick)="cancelProtection()" />
                     </div>
                 </div>
-                <!-- ══ FIN PROTECTION ══════════════════════════════════════ -->
-
             </div>
 
-            <!-- Consentement — OBLIGATOIRE -->
+            <!-- Consentement -->
             <div [class.consent-box-error]="consentTouched && !fd['dataProcessingConsent'].value"
                 style="display:flex;align-items:flex-start;gap:.875rem;
                 padding:.875rem;border-radius:12px;background:#f9fafb;
@@ -988,7 +921,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
 
-        <!-- ═══ Étape 3 — Confirmation ═══ -->
         <div *ngIf="currentStep === 3" class="card">
 
             <div class="card-title">
@@ -1000,7 +932,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
 
-                <!-- Résumé dossier -->
                 <div class="recap-section">
                     <div style="font-size:.75rem;font-weight:800;color:#6b7280;
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
@@ -1013,8 +944,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div class="recap-row">
                         <span class="recap-key">Objet</span>
                         <span class="recap-val"
-                            style="overflow:hidden;text-overflow:ellipsis;
-                                   white-space:nowrap;">
+                            style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             {{ f['object'].value }}
                         </span>
                     </div>
@@ -1034,7 +964,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Récap déclarant -->
                 <div class="recap-section">
                     <div style="font-size:.75rem;font-weight:800;color:#6b7280;
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
@@ -1074,7 +1003,6 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Notifications prévues -->
                 <div *ngIf="!fd['anonymous'].value
                             && (fd['phoneNumber'].value || fd['email'].value)"
                     style="background:#f0fdf4;border:1.5px solid #86efac;
@@ -1098,12 +1026,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                 </div>
 
-                <!-- Avertissement légal -->
                 <div style="display:flex;align-items:flex-start;gap:.875rem;
                     padding:.875rem;border-radius:12px;background:#fffbeb;
                     border:1.5px solid #fde68a;">
-                    <i class="pi pi-exclamation-triangle"
-                        style="color:#d97706;margin-top:1px;"></i>
+                    <i class="pi pi-exclamation-triangle" style="color:#d97706;margin-top:1px;"></i>
                     <p style="font-size:.8rem;color:#92400e;line-height:1.6;">
                         En soumettant, vous certifiez l'exactitude des informations.
                         Toute fausse déclaration est passible de poursuites.
@@ -1199,8 +1125,6 @@ export class DepotPlainte {
         { label: 'Dénonciation', value: 'DENUNCIATION',
           description: 'Je signale des faits',      icon: 'pi pi-megaphone'          }
     ];
-
-
     toggleProtectionRequested(): void {
         if (this.fd['protectionRequested'].value) {
             this.cancelProtection();
@@ -1217,9 +1141,7 @@ export class DepotPlainte {
         this.confirmationService.confirm({
             header:      "Confirmation sur l'honneur",
             message:     "En confirmant, vous attestez sur l'honneur que votre demande "
-                       + "de protection lanceur d'alerte est justifiée et que vous "
-                       + "avez bien pris connaissance de ses conditions légales "
-                       + "(Loi N°010-2004/AN).",
+                       + "de protection lanceur d'alerte est justifiée (Loi N°010-2004/AN).",
             acceptLabel: "Je confirme sur l'honneur",
             rejectLabel: 'Annuler',
             acceptIcon:  'pi pi-shield',
@@ -1240,8 +1162,6 @@ export class DepotPlainte {
         this.fd['anonymous'].setValue(true);
         this.cancelProtection();
     }
-
-
     goToStep2(): void {
         this.dossierForm.markAllAsTouched();
         if (this.f['object'].invalid || this.f['description'].invalid) {
@@ -1268,8 +1188,7 @@ export class DepotPlainte {
             this.messageService.add({
                 severity: 'warn',
                 summary:  "Protection lanceur d'alerte",
-                detail:   "Vous devez confirmer les 3 conditions et valider sur l'honneur "
-                        + "avant de continuer."
+                detail:   "Vous devez confirmer les 3 conditions avant de continuer."
             });
             return;
         }
@@ -1285,8 +1204,6 @@ export class DepotPlainte {
         this.showSuccess = false;
         setTimeout(() => this.router.navigate(['/portail']), 150);
     }
-
-
     async startRecording(): Promise<void> {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1332,9 +1249,6 @@ export class DepotPlainte {
         const s = seconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
-
-
-
     onFileSelect(event: any): void {
         this.addFiles(Array.from(event.target.files));
     }
@@ -1367,7 +1281,6 @@ export class DepotPlainte {
         if (file.type.includes('audio')) return 'pi pi-volume-up';
         return 'pi pi-file';
     }
-
     getFileBg(file: File): string {
         if (file.type.includes('image')) return '#dbeafe';
         if (file.type.includes('pdf'))   return '#fee2e2';
@@ -1375,7 +1288,6 @@ export class DepotPlainte {
         if (file.type.includes('audio')) return '#fce7f3';
         return '#f3f4f6';
     }
-
     getFileColor(file: File): string {
         if (file.type.includes('image')) return '#2563eb';
         if (file.type.includes('pdf'))   return '#dc2626';
@@ -1383,7 +1295,6 @@ export class DepotPlainte {
         if (file.type.includes('audio')) return '#db2777';
         return '#6b7280';
     }
-
     formatFileSize(bytes: number): string {
         if (bytes < 1024)        return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -1394,7 +1305,6 @@ export class DepotPlainte {
         if (!type) return '';
         return this.typeOptions.find(o => o.value === type)?.label || type;
     }
-
 
     submit(): void {
         this.submitting = true;
@@ -1408,18 +1318,18 @@ export class DepotPlainte {
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {
-                typeDeclarant:         this.fd['anonymous'].value
-                                           ? 'ANONYMOUS' as any : 'CITIZEN' as any,
-                firstName:             this.fd['firstName'].value   || undefined,
-                lastName:              this.fd['lastName'].value    || undefined,
-                email:                 this.fd['email'].value       || undefined,
-                phoneNumber:           this.fd['phoneNumber'].value || undefined,
-                commune:               this.fd['commune'].value     || undefined,
-                province:              this.fd['province'].value    || undefined,
-                anonymous:             this.fd['anonymous'].value             || false,
-                dataProcessingConsent: this.fd['dataProcessingConsent'].value || true,
-                notificationsAccepted: this.fd['notificationsAccepted'].value || true,
-                protectionRequested:   this.fd['protectionRequested'].value   || false,
+                typeDeclarant:          this.fd['anonymous'].value
+                                            ? 'ANONYMOUS' as any : 'CITIZEN' as any,
+                firstName:              this.fd['firstName'].value   || undefined,
+                lastName:               this.fd['lastName'].value    || undefined,
+                email:                  this.fd['email'].value       || undefined,
+                phoneNumber:            this.fd['phoneNumber'].value || undefined,
+                commune:                this.fd['commune'].value     || undefined,
+                province:               this.fd['province'].value    || undefined,
+                anonymous:              this.fd['anonymous'].value             || false,
+                dataProcessingConsent:  this.fd['dataProcessingConsent'].value || true,
+                notificationsAccepted:  this.fd['notificationsAccepted'].value || true,
+                protectionRequested:    this.fd['protectionRequested'].value   || false,
                 protectionAcknowledged: this.protectionAcknowledged
             }
         };
@@ -1427,6 +1337,8 @@ export class DepotPlainte {
         this.dossierService.submit(request).subscribe({
             next: dossier => {
                 this.createdAccessCode = dossier.accessCode;
+                sessionStorage.setItem('lastSubmittedDossierId', dossier.id);
+
                 const allFiles = [...this.attachments];
                 if (this.audioBlob) {
                     allFiles.push(new File(
@@ -1435,6 +1347,7 @@ export class DepotPlainte {
                         { type: 'audio/webm' }
                     ));
                 }
+
                 if (allFiles.length > 0) {
                     this.attachmentService.upload(dossier.id, allFiles).subscribe({
                         next:  () => { this.submitting = false; this.showSuccess = true; },

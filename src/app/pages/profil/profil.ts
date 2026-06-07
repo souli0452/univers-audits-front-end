@@ -26,7 +26,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
     template: `
 <p-toast />
 
-<!-- ── Modale modifier profil ─────────────────────────────── -->
 <p-dialog
     header="Modifier mon profil"
     [(visible)]="showEditProfile"
@@ -64,7 +63,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
     </ng-template>
 </p-dialog>
 
-<!-- ── Modale changer mot de passe ────────────────────────── -->
 <p-dialog
     header="Changer mon mot de passe"
     [(visible)]="showChangePassword"
@@ -105,7 +103,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 [feedback]="false" />
         </div>
 
-        <!-- Erreur confirmation -->
         <div *ngIf="passwordMismatch"
             class="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
             <i class="pi pi-times-circle text-red-500"></i>
@@ -122,7 +119,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
     </ng-template>
 </p-dialog>
 
-<!-- ── Page principale ────────────────────────────────────── -->
 <div class="flex flex-col gap-6">
 
     <div class="flex items-center justify-between">
@@ -140,7 +136,6 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- ── Carte profil ────────────────────────────────── -->
         <div class="lg:col-span-1">
             <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden">
 
@@ -205,10 +200,8 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
             </div>
         </div>
 
-        <!-- ── Colonne droite ──────────────────────────────── -->
         <div class="lg:col-span-2 flex flex-col gap-4">
 
-            <!-- Informations du compte -->
             <div class="bg-white dark:bg-surface-800 rounded-2xl p-6 border border-surface-100 dark:border-surface-700">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-semibold flex items-center gap-2 text-surface-900 dark:text-surface-0">
