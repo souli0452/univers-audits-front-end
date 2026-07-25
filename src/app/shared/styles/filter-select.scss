@@ -1,0 +1,15 @@
+:host ::ng-deep .filter-select .p-select {
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+:host ::ng-deep .filter-select .p-select .p-select-label {
+    padding: 0 !important;
+    font-size: 0.875rem !important;
+}
+:host ::ng-deep .filter-select .p-select .p-select-dropdown {
+    width: 1.5rem !important;
+}

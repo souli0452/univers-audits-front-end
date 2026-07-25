@@ -16,6 +16,7 @@ import {
     InvestigationResponse,
     InvestigationMemberResponse
 } from '../../../core/services/investigation.service';
+import { isToday as isTodayUtil } from '../../../core/utils/date';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
@@ -29,20 +30,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         ProgressSpinnerModule, TooltipModule
     ],
     providers: [MessageService],
-    styles: [`
-        :host ::ng-deep .filter-select .p-select {
-            height: 40px !important;
-            display: flex !important;
-            align-items: center !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-        }
-        :host ::ng-deep .filter-select .p-select .p-select-label {
-            padding: 0 !important;
-            font-size: 0.875rem !important;
-        }
-    `],
+    styleUrls: ['../../../shared/styles/filter-select.scss'],
     template: `
 <p-toast />
 
@@ -521,14 +509,7 @@ export class InvestigationsList implements OnInit {
         return inv.startDate || inv.createdAt;
     }
 
-    isToday(dateStr?: string): boolean {
-        if (!dateStr) return false;
-        const d   = new Date(dateStr);
-        const now = new Date();
-        return d.getFullYear() === now.getFullYear()
-            && d.getMonth()    === now.getMonth()
-            && d.getDate()     === now.getDate();
-    }
+    isToday(dateStr?: string): boolean { return isTodayUtil(dateStr); }
 
     applyFilters(): void {
         const q = this.searchText.trim().toLowerCase();

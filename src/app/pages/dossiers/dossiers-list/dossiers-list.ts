@@ -14,6 +14,7 @@ import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DossierResponse, DossierStatus } from '../../../core/models/dossier.model';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
+import { isToday as isTodayUtil } from '../../../core/utils/date';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
@@ -28,19 +29,7 @@ type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
         ProgressSpinnerModule, TooltipModule
     ],
     providers: [MessageService],
-    styles: [`
-        :host ::ng-deep .filter-select .p-select {
-            height: 40px !important; display: flex !important;
-            align-items: center !important; border: none !important;
-            box-shadow: none !important; background: transparent !important;
-        }
-        :host ::ng-deep .filter-select .p-select .p-select-label {
-            padding: 0 !important; font-size: 0.875rem !important;
-        }
-        :host ::ng-deep .filter-select .p-select .p-select-dropdown {
-            width: 1.5rem !important;
-        }
-    `],
+    styleUrls: ['../../../shared/styles/filter-select.scss'],
     template: `
 <p-toast />
 
@@ -619,14 +608,7 @@ export class DossiersList implements OnInit {
                || this.selectedType || this.selectedMode || this.filterPriority);
     }
 
-    isToday(dateStr?: string): boolean {
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        const now = new Date();
-        return d.getFullYear() === now.getFullYear()
-            && d.getMonth()    === now.getMonth()
-            && d.getDate()     === now.getDate();
-    }
+    isToday(dateStr?: string): boolean { return isTodayUtil(dateStr); }
 
     clearSearch(): void { this.searchText     = '';   this.applyFilters(); }
     clearStatus(): void { this.selectedStatus = null; this.applyFilters(); }
