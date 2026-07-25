@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { AppLayout } from './app/layout/component/app.layout';
 import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Notfound } from './app/pages/notfound/notfound';
-import { authGuard } from './app/core/guards/auth.guard';
+import { authGuard, roleGuard } from './app/core/guards/auth.guard';
 
 export const appRoutes: Routes = [
 
@@ -46,6 +46,7 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'administration',
+                canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA'])],
                 loadChildren: () =>
                     import('./app/pages/administration/administration.routes')
             },

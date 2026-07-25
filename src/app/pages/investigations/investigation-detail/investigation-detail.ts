@@ -5,7 +5,6 @@ import {
 import { CommonModule }                        from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule }                         from '@angular/forms';
-import { DomSanitizer, SafeHtml }              from '@angular/platform-browser';
 import { Subject }                             from 'rxjs';
 import { takeUntil }                           from 'rxjs/operators';
 import { ButtonModule }     from 'primeng/button';
@@ -19,6 +18,7 @@ import { AvatarModule }     from 'primeng/avatar';
 import { TooltipModule }    from 'primeng/tooltip';
 import { EditorModule }     from 'primeng/editor';
 import { MessageService }   from 'primeng/api';
+import { environment }      from '../../../../environments/environment';
 import {
     InvestigationService,
     InvestigationResponse,
@@ -952,8 +952,10 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     get isPanel(): boolean { return !!this.dossierId; }
     get activeMembers(): InvestigationMemberResponse[] {
     const result = this.inv?.members ?? [];
-    console.log('[activeMembers] inv:', this.inv?.id?.substring(0,8), 
-                '| length:', result.length);
+    if (!environment.production) {
+        console.log('[activeMembers] inv:', this.inv?.id?.substring(0,8),
+                    '| length:', result.length);
+    }
     return result;
 }
 
@@ -964,7 +966,6 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly keycloakService      = inject(KeycloakService);
     private readonly messageService       = inject(MessageService);
     private readonly attachmentService    = inject(AttachmentService);
-    private readonly sanitizer            = inject(DomSanitizer);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -972,9 +973,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     actioning = false;
     generatingPreview = false;
 
-    safeReport:          SafeHtml | null = null;
-    safeConclusions:     SafeHtml | null = null;
-    safeRecommendations: SafeHtml | null = null;
+    safeReport:          string | null = null;
+    safeConclusions:     string | null = null;
+    safeRecommendations: string | null = null;
 
     showSuspendDialog   = false;
     showExtendDialog    = false;
@@ -1096,17 +1097,16 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     private setInv(inv: InvestigationResponse | null): void {
-        console.log('[setInv] appelé :', inv?.id?.substring(0,8), 
-                '| members:', inv?.members?.length ?? 'NULL');
+        if (!environment.production) {
+            console.log('[setInv] appelé :', inv?.id?.substring(0,8),
+                    '| members:', inv?.members?.length ?? 'NULL');
+        }
         this.inv = inv;
         if (inv) {
             this.buildApprovalSteps(inv);
-            this.safeReport = inv.finalReport
-                ? this.sanitizer.bypassSecurityTrustHtml(inv.finalReport) : null;
-            this.safeConclusions = inv.conclusions
-                ? this.sanitizer.bypassSecurityTrustHtml(inv.conclusions) : null;
-            this.safeRecommendations = inv.recommendations
-                ? this.sanitizer.bypassSecurityTrustHtml(inv.recommendations) : null;
+            this.safeReport = inv.finalReport ?? null;
+            this.safeConclusions = inv.conclusions ?? null;
+            this.safeRecommendations = inv.recommendations ?? null;
             this.computeNewDeadline();
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;

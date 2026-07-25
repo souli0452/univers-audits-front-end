@@ -15,6 +15,8 @@ import { MessageService } from 'primeng/api';
 import { StatistiqueService, StatistiqueResponse } from '../../../core/services/statistique.service';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DossierResponse } from '../../../core/models/dossier.model';
+import { xlsxSafe } from '../../../core/utils/xlsx-safe';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-rapport-etat',
@@ -909,7 +911,7 @@ export class RapportEtatComponent implements OnInit {
             doc.save(fn);
             this.msgService.add({severity:'success',summary:'PDF exporté',detail:fn});
         } catch(err){
-            console.error(err);
+            if (!environment.production) console.error(err);
             this.msgService.add({severity:'error',summary:'Erreur PDF',
                 detail:'Vérifiez que jspdf et jspdf-autotable sont installés.'});
         } finally { this.exportingPdf=false; }
@@ -948,13 +950,13 @@ export class RapportEtatComponent implements OnInit {
                 ['Numéro','Objet','Type','Statut','Canal',
                  'Reçu le','Montant (FCFA)','Priorité','Déclarant','Code accès'],
                 ...this.dossiersFiltered.map(d=>[
-                    d.number||'',d.object||'',
+                    d.number||'',xlsxSafe(d.object),
                     this.getTypeLabel(d.type),this.getStatusLabel(d.status),
                     this.getModeLabel(d.submissionMode),
                     d.receptionDate?new Date(d.receptionDate).toLocaleDateString('fr-FR'):'',
                     d.estimatedLoss||0,
                     this.getPriorityLabel(d.priority||'NORMAL'),
-                    d.declarant?.displayName||'Anonyme',d.accessCode||''
+                    xlsxSafe(d.declarant?.displayName)||'Anonyme',d.accessCode||''
                 ])
             ]);
             wsD['!cols']=[{wch:14},{wch:45},{wch:14},{wch:20},{wch:14},
@@ -975,7 +977,7 @@ export class RapportEtatComponent implements OnInit {
             XLSX.writeFile(wb,fn);
             this.msgService.add({severity:'success',summary:'Excel exporté',detail:fn});
         } catch(err){
-            console.error(err);
+            if (!environment.production) console.error(err);
             this.msgService.add({severity:'error',summary:'Erreur Excel',
                 detail:'Vérifiez que xlsx est installé.'});
         } finally { this.exportingExcel=false; }

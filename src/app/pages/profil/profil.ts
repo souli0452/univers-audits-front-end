@@ -11,6 +11,7 @@ import { PasswordModule } from 'primeng/password';
 import { MessageService } from 'primeng/api';
 import { KeycloakService } from '../../core/auth/keycloak.service';
 import { ProfileService } from '../../core/services/profile.service';
+import { environment } from '../../../environments/environment';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
@@ -498,7 +499,8 @@ export class Profil implements OnInit {
     }
 
     openKeycloakAccount(): void {
-        window.open('http://localhost:8080/realms/asce-lc/account', '_blank');
+        const { url, realm } = environment.keycloak;
+        window.open(`${url}/realms/${realm}/account`, '_blank');
     }
 
     logout(): void { this.keycloakService.logout(); }

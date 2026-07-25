@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { timer } from 'rxjs';
 import { DossierService } from '../../../core/services/dossier.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-dossier-form',
@@ -858,8 +859,6 @@ export class DossierForm {
         if (per)  request.incidentPeriod   = per;
         if (loss) request.estimatedLoss    = loss;
 
-        console.log('📤 Requête envoyée :', JSON.stringify(request, null, 2));
-
         this.dossierService.submit(request).subscribe({
             next: dossier => {
                 this.submitting    = false;
@@ -878,7 +877,9 @@ export class DossierForm {
             error: err => {
                 this.submitting = false;
 
-                console.error('❌ Erreur backend :', err.error);
+                if (!environment.production) {
+                    console.error('❌ Erreur backend :', err.error);
+                }
 
                 const validationErrors = err.error?.validationErrors;
                 let detail = err.error?.message || 'Impossible de créer le dossier';
@@ -887,7 +888,9 @@ export class DossierForm {
                     detail = Object.entries(validationErrors)
                         .map(([field, msg]) => `• ${field} : ${msg}`)
                         .join('\n');
-                    console.error('❌ Champs invalides :', validationErrors);
+                    if (!environment.production) {
+                        console.error('❌ Champs invalides :', validationErrors);
+                    }
                 }
 
                 this.messageService.add({

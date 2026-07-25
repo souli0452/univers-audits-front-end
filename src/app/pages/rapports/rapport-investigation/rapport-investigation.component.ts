@@ -13,6 +13,8 @@ import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
 
 import { InvestigationService } from '../../../core/services/investigation.service';
+import { xlsxSafe } from '../../../core/utils/xlsx-safe';
+import { environment } from '../../../../environments/environment';
 
 export interface InvestigationRow {
     id:              string;
@@ -905,7 +907,7 @@ export class RapportInvestigationComponent implements OnInit {
             this.msgService.add({severity:'success', summary:'PDF exporté', detail:fn});
 
         } catch(err) {
-            console.error(err);
+            if (!environment.production) console.error(err);
             this.msgService.add({severity:'error', summary:'Erreur PDF',
                 detail:'Vérifiez que jspdf est installé.'});
         } finally { this.exportingPdf = false; }
@@ -940,7 +942,7 @@ export class RapportInvestigationComponent implements OnInit {
                 ['N° Dossier','Objet','Statut','Outcome','Début','Fin prévue',
                  'Fin réelle','Durée (j)','Délai restant (j)','En retard'],
                 ...this.rowsFiltered.map(r => [
-                    r.dossierNumber, r.dossierObject,
+                    r.dossierNumber, xlsxSafe(r.dossierObject),
                     this.getStatusLabel(r.status),
                     r.outcome ? this.getOutcomeLabel(r.outcome) : '',
                     r.startDate ? new Date(r.startDate).toLocaleDateString('fr-FR') : '',
@@ -963,7 +965,7 @@ export class RapportInvestigationComponent implements OnInit {
             this.msgService.add({severity:'success', summary:'Excel exporté', detail:fn});
 
         } catch(err) {
-            console.error(err);
+            if (!environment.production) console.error(err);
             this.msgService.add({severity:'error', summary:'Erreur Excel',
                 detail:'Vérifiez que xlsx est installé.'});
         } finally { this.exportingExcel = false; }

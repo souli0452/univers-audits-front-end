@@ -9,6 +9,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { appRoutes } from './app.routes';
 import { KeycloakService } from './app/core/auth/keycloak.service';
 import { authInterceptor } from './app/core/interceptors/auth.interceptor';
+import { errorInterceptor } from './app/core/interceptors/error.interceptor';
 
 function initKeycloak(kc: KeycloakService) {
     return () => kc.init();
@@ -30,7 +31,7 @@ export const appConfig: ApplicationConfig = {
 
         provideHttpClient(
             withFetch(),
-            withInterceptors([authInterceptor])
+            withInterceptors([authInterceptor, errorInterceptor])
         ),
 
         provideAnimationsAsync(),

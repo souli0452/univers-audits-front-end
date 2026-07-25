@@ -1193,7 +1193,7 @@ export class DossierDetail implements OnInit {
             });
 
         } catch (err) {
-            console.error(err);
+            if (!environment.production) console.error(err);
             this.messageService.add({
                 severity: 'error', summary: 'Erreur export PDF',
                 detail: 'Vérifiez que jspdf et jspdf-autotable sont installés.'

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import Keycloak from 'keycloak-js';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class KeycloakService {
@@ -8,17 +9,19 @@ export class KeycloakService {
 
     constructor() {
         this.keycloak = new Keycloak({
-            url:      'http://localhost:8080',
-            realm:    'asce-lc',
-            clientId: 'asce-lc-frontend'
+            url:      environment.keycloak.url,
+            realm:    environment.keycloak.realm,
+            clientId: environment.keycloak.clientId
         });
     }
 
     async init(): Promise<void> {
+        // Pas de "check-sso" silencieux (iframe) : le CSP par défaut de
+        // Keycloak (frame-ancestors 'self') bloque son propre contenu
+        // d'être chargé dans une iframe d'une autre origine (localhost:4210).
+        // La connexion se fait explicitement via authGuard -> login()
+        // (redirection pleine page, pas d'iframe).
         await this.keycloak.init({
-            onLoad:   'check-sso',        
-            silentCheckSsoRedirectUri:
-                window.location.origin + '/silent-check-sso.html',
             pkceMethod:       'S256',
             checkLoginIframe: false
         });
