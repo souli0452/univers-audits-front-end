@@ -1,58 +1,26 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SKIP_AUTH } from '../interceptors/skip-auth.context';
 import {
     DossierResponse,
     DossierCreateRequest,
     StatusTransitionRequest,
     PageResponse,
-    DossierStatus
+    DossierStatus,
+    TransferExternalRequest,
+    ReassignAgentRequest,
+    DossierSearchParams,
+    DossierStatsResponse
 } from '../models/dossier.model';
 
-export interface TransferExternalRequest {
-    version:     number;
-    institution: string;
-    reason:      string;
-}
-
-export interface ReassignAgentRequest {
-    version: number;
-    agentId: string;
-    note?:   string;
-}
-
-export interface DossierSearchParams {
-    page?:         number;
-    size?:         number;
-    status?:       DossierStatus;
-    search?:       string;
-    type?:         string;
-    mode?:         string;
-    dateFrom?:     string;
-    dateTo?:       string;
-    confidential?: boolean;
-}
-
-export interface DossierStatsResponse {
-    total:              number;
-    nouveaux:           number;
-    enEtude:            number;
-    enAttente:          number;
-    recevables:         number;
-    irrecevables:       number;
-    enInvestigation:    number;
-    clos:               number;
-    classes:            number;
-    transferes:         number;
-    totalMontantEstime: number;
-    delaiMoyenEnreg:    number;
-    delaiMoyenEtude:    number;
-    delaiMoyenInvest:   number;
-    tauxRecevabilite:   number;
-    parCanal:           Record<string, number>;
-    parMois:            { mois: string; total: number }[];
-}
+export type {
+    TransferExternalRequest,
+    ReassignAgentRequest,
+    DossierSearchParams,
+    DossierStatsResponse
+} from '../models/dossier.model';
 
 @Injectable({ providedIn: 'root' })
 export class DossierService {
@@ -132,7 +100,8 @@ export class DossierService {
 
     trackByAccessCode(accessCode: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(
-            `${this.baseUrl}/public/track/${accessCode}`);
+            `${this.baseUrl}/public/track/${accessCode}`,
+            { context: new HttpContext().set(SKIP_AUTH, true) });
     }
 
     getStats(): Observable<DossierStatsResponse> {
@@ -152,7 +121,8 @@ export class DossierService {
 
     submit(request: DossierCreateRequest): Observable<DossierResponse> {
         return this.http.post<DossierResponse>(
-            `${this.baseUrl}/public/submit`, request);
+            `${this.baseUrl}/public/submit`, request,
+            { context: new HttpContext().set(SKIP_AUTH, true) });
     }
 
     create(request: DossierCreateRequest): Observable<DossierResponse> {

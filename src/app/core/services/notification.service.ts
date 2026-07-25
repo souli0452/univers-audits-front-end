@@ -2,26 +2,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { NotificationItem, NotificationPage } from '../models/notification.model';
 
-export interface NotificationItem {
-    id:             string;
-    type:           string;
-    subject:        string;
-    content?:       string;
-    createdAt:      string;
-    readAt?:        string;
-    status:         string;
-    dossierId?:     string;
-    dossierNumber?: string;
-}
-
-export interface NotificationPage {
-    content:       NotificationItem[];
-    totalElements: number;
-    totalPages:    number;
-    size:          number;
-    number:        number;
-}
+export type { NotificationItem, NotificationPage } from '../models/notification.model';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {

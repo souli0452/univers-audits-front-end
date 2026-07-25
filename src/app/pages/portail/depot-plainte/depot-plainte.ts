@@ -1349,7 +1349,7 @@ export class DepotPlainte {
                 }
 
                 if (allFiles.length > 0) {
-                    this.attachmentService.upload(dossier.id, allFiles).subscribe({
+                    this.attachmentService.upload(dossier.id, allFiles, true).subscribe({
                         next:  () => { this.submitting = false; this.showSuccess = true; },
                         error: () => { this.submitting = false; this.showSuccess = true; }
                     });

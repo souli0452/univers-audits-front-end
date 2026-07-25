@@ -2,36 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { WitnessResponse, WitnessRequest } from '../models/witness.model';
 
-export interface WitnessResponse {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    profession?: string;
-    phoneNumber?: string;
-    email?: string;
-    address?: string;
-    testimonyNature?: string;
-    relationWithParties?: string;
-    interrogationDate?: string;
-    consentToContact: boolean;
-    anonymous: boolean;
-    createdAt?: string;
-}
-
-export interface WitnessRequest {
-    firstName?: string;
-    lastName?: string;
-    profession?: string;
-    phoneNumber?: string;
-    email?: string;
-    address?: string;
-    testimonyNature?: string;
-    relationWithParties?: string;
-    interrogationDate?: string;
-    consentToContact?: boolean;
-    anonymous?: boolean;
-}
+export type { WitnessResponse, WitnessRequest } from '../models/witness.model';
 
 @Injectable({ providedIn: 'root' })
 export class WitnessService {

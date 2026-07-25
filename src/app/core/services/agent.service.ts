@@ -2,49 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PageResponse } from '../models/common.model';
+import { AgentResponse, CreateAgentRequest, UpdateAgentRequest } from '../models/agent.model';
 
-export interface AgentResponse {
-    id: string;
-    matricule: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber?: string;
-    grade?: string;
-    actif: boolean;
-    keycloakId?: string;
-    createdAt?: string;
-    departementLabel?: string;
-}
-
-export interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-    first: boolean;
-    last: boolean;
-}
-
-export interface CreateAgentRequest {
-    matricule: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber?: string;
-    grade?: string;
-    keycloakRoles?: string[];
-}
-
-export interface UpdateAgentRequest {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber?: string;
-    grade?: string;
-    keycloakRoles?: string[];
-}
+export type { PageResponse } from '../models/common.model';
+export type { AgentResponse, CreateAgentRequest, UpdateAgentRequest } from '../models/agent.model';
 
 @Injectable({ providedIn: 'root' })
 export class AgentService {

@@ -1,3 +1,5 @@
+export type { PageResponse } from './common.model';
+
 export type DossierStatus =
     | 'SOUMIS'
     | 'RECU'
@@ -170,14 +172,48 @@ export interface StatusTransitionRequest {
     transferInstitution?: string;
 }
 
-export interface PageResponse<T> {
-    content: T[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-    first: boolean;
-    last: boolean;
+export interface TransferExternalRequest {
+    version:     number;
+    institution: string;
+    reason:      string;
+}
+
+export interface ReassignAgentRequest {
+    version: number;
+    agentId: string;
+    note?:   string;
+}
+
+export interface DossierSearchParams {
+    page?:         number;
+    size?:         number;
+    status?:       DossierStatus;
+    search?:       string;
+    type?:         string;
+    mode?:         string;
+    dateFrom?:     string;
+    dateTo?:       string;
+    confidential?: boolean;
+}
+
+export interface DossierStatsResponse {
+    total:              number;
+    nouveaux:           number;
+    enEtude:            number;
+    enAttente:          number;
+    recevables:         number;
+    irrecevables:       number;
+    enInvestigation:    number;
+    clos:               number;
+    classes:            number;
+    transferes:         number;
+    totalMontantEstime: number;
+    delaiMoyenEnreg:    number;
+    delaiMoyenEtude:    number;
+    delaiMoyenInvest:   number;
+    tauxRecevabilite:   number;
+    parCanal:           Record<string, number>;
+    parMois:            { mois: string; total: number }[];
 }
 
 export interface StatistiqueResponse {

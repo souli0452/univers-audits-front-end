@@ -1,18 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { SKIP_AUTH } from '../interceptors/skip-auth.context';
+import { AttachmentResponse } from '../models/attachment.model';
 
-
-export interface AttachmentResponse {
-    id: string;
-    originalName: string;
-    mimeType: string;        
-    fileSizeBytes: number;   
-    uploadedAt: string;
-    isAudio: boolean;
-    status: string;
-}
+export type { AttachmentResponse } from '../models/attachment.model';
 
 @Injectable({ providedIn: 'root' })
 export class AttachmentService {
@@ -20,13 +13,19 @@ export class AttachmentService {
     private http    = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/attachments`;
 
-    upload(dossierId: string, files: File[]): Observable<any> {
+    /**
+     * @param anonymous à passer à true uniquement lors du dépôt public d'un
+     * dossier (avant toute authentification) ; sinon le token de l'agent
+     * connecté est joint à la requête, comme pour tout autre appel API.
+     */
+    upload(dossierId: string, files: File[], anonymous = false): Observable<any> {
         const formData = new FormData();
         files.forEach(f => formData.append('files', f, f.name));
-        return this.http.post(`${this.baseUrl}/dossier/${dossierId}`, formData);
+        return this.http.post(`${this.baseUrl}/dossier/${dossierId}`, formData,
+            anonymous ? { context: new HttpContext().set(SKIP_AUTH, true) } : {});
     }
 
-    uploadAudio(dossierId: string, audioBlob: Blob): Observable<any> {
+    uploadAudio(dossierId: string, audioBlob: Blob, anonymous = false): Observable<any> {
         const formData = new FormData();
         const audioFile = new File(
             [audioBlob],
@@ -34,7 +33,8 @@ export class AttachmentService {
             { type: 'audio/webm' }
         );
         formData.append('files', audioFile, audioFile.name);
-        return this.http.post(`${this.baseUrl}/dossier/${dossierId}`, formData);
+        return this.http.post(`${this.baseUrl}/dossier/${dossierId}`, formData,
+            anonymous ? { context: new HttpContext().set(SKIP_AUTH, true) } : {});
     }
 
     listByDossier(dossierId: string): Observable<AttachmentResponse[]> {

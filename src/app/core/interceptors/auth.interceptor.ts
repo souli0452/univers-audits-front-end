@@ -3,12 +3,7 @@ import { inject } from '@angular/core';
 import { from, switchMap } from 'rxjs';
 import { KeycloakService } from '../auth/keycloak.service';
 import { environment } from '../../../environments/environment';
-
-const PUBLIC_URLS = [
-    '/api/v1/dossiers/public/',
-    '/api/v1/stats/public',
-    '/api/v1/attachments/dossier/',
-];
+import { SKIP_AUTH } from './skip-auth.context';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
@@ -18,8 +13,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req);
     }
 
-    const isPublic = PUBLIC_URLS.some(url => req.url.includes(url));
-    if (isPublic) {
+    // Opt-out explicite déclaré au niveau de l'appel HttpClient (endpoints
+    // réellement publics), plutôt qu'un pattern-matching d'URL qui traiterait
+    // à tort des appels authentifiés vers la même route comme publics.
+    if (req.context.get(SKIP_AUTH)) {
         return next(req);
     }
 

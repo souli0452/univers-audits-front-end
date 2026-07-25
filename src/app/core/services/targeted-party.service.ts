@@ -2,36 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { TargetedPartyResponse, TargetedPartyRequest } from '../models/targeted-party.model';
 
-export interface TargetedPartyResponse {
-    id: string;
-    partyType: string;
-    firstName?: string;
-    name?: string;
-    position?: string;
-    institution?: string;
-    organization?: string;
-    address?: string;
-    phoneNumber?: string;
-    email?: string;
-    relationWithDeclarant?: string;
-    allegedRole?: string;
-    createdAt?: string;
-}
-
-export interface TargetedPartyRequest {
-    partyType: string;
-    firstName?: string;
-    name?: string;
-    position?: string;
-    institution?: string;
-    organization?: string;
-    address?: string;
-    phoneNumber?: string;
-    email?: string;
-    relationWithDeclarant?: string;
-    allegedRole?: string;
-}
+export type { TargetedPartyResponse, TargetedPartyRequest } from '../models/targeted-party.model';
 
 @Injectable({ providedIn: 'root' })
 export class TargetedPartyService {

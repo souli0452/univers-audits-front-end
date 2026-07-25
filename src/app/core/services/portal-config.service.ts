@@ -3,18 +3,9 @@ import { HttpClient, HttpBackend } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PortalConfigItem } from '../models/portal-config.model';
 
-export interface PortalConfigItem {
-  id:          string;
-  configKey:   string;
-  configValue: string;
-  label:       string;
-  description: string;
-  valueType:   'TEXT' | 'IMAGE_URL' | 'COLOR' | 'PHONE' | 'URL' | 'HTML';
-  groupName:   string;
-  updatedAt:   string;
-  updatedBy:   string;
-}
+export type { PortalConfigItem } from '../models/portal-config.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortalConfigService {
