@@ -27,6 +27,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
             --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
             --hair:#E4E9E6;
             --font: 'Lato', system-ui, sans-serif;
+            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
             display:block; font-family:var(--font); color:var(--ink); background:var(--paper);
         }
@@ -50,10 +51,35 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .hero-rings{position:absolute;inset:0;pointer-events:none;overflow:hidden}
         .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
         .ring1{width:640px;height:640px;top:-260px;right:-140px}
-        .ring2{width:320px;height:320px;bottom:-160px;left:-80px}
+
+        /* Signature : radar de vigilance — l'ASCE-LC en veille permanente,
+           un sweep lent + un point qui pulse, plutôt qu'une simple icône posée. */
+        .radar{position:absolute;bottom:-6px;left:-30px;width:260px;height:260px;border-radius:50%}
+        .radar-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.13)}
+        .radar-ring.r2{inset:34px;border-color:rgba(255,255,255,.11)}
+        .radar-ring.r3{inset:68px;border-color:rgba(255,255,255,.09)}
+        .radar-sweep{
+            position:absolute;inset:0;border-radius:50%;
+            background:conic-gradient(from 0deg, rgba(255,216,0,.24), transparent 32%);
+            animation:radar-spin 9s linear infinite;
+        }
+        .radar-dot{
+            position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+            border-radius:50%;background:var(--yellow);
+            animation:radar-pulse 2.6s ease-out infinite;
+        }
+        @keyframes radar-spin{to{transform:rotate(360deg)}}
+        @keyframes radar-pulse{
+            0%{box-shadow:0 0 0 0 rgba(255,216,0,.45)}
+            70%{box-shadow:0 0 0 20px rgba(255,216,0,0)}
+            100%{box-shadow:0 0 0 0 rgba(255,216,0,0)}
+        }
+        @media (prefers-reduced-motion:reduce){
+            .radar-sweep,.radar-dot{animation:none}
+        }
         .hero-grid{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:3rem 2rem 4.5rem;display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
 
-        .hero-title{font-size:2.3rem;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-.5px;margin-bottom:1rem;text-transform:uppercase}
+        .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
         .letter-icon{font-size:.8em;color:var(--yellow);vertical-align:middle;margin:0 .02em}
         .hero-subtitle{font-size:1rem;color:rgba(255,255,255,.88);max-width:460px;margin:0 0 .85rem;line-height:1.7}
         .hero-legal{font-size:.72rem;font-weight:700;letter-spacing:.5px;color:var(--yellow);text-transform:uppercase;margin-bottom:2rem}
@@ -66,7 +92,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
 
         /* ── Carte de suivi (hero, colonne droite) ──────────── */
         .track-card{background:#fff;border-radius:14px;padding:2rem;box-shadow:0 24px 55px rgba(0,0,0,.22)}
-        .track-card h3{font-size:1.05rem;font-weight:800;color:var(--ink);margin-bottom:.4rem}
+        .track-card h3{font-family:var(--font-display);font-size:1.15rem;font-weight:800;color:var(--ink);margin-bottom:.4rem}
         .track-card p{font-size:.82rem;color:var(--ink-60);margin-bottom:1.4rem;line-height:1.6}
         .track-input-row{display:flex;gap:.5rem}
         .track-input{flex:1;min-width:0;height:46px;border:1.5px solid var(--hair);border-radius:8px;padding:0 1rem;font-size:.85rem;font-family:var(--mono);text-transform:uppercase;outline:none;transition:border-color .15s;color:var(--ink)}
@@ -80,7 +106,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .vocal-card{background:#fff;border:1px solid var(--hair);box-shadow:0 10px 30px rgba(0,0,0,.06);border-radius:14px;padding:2.25rem 2rem;max-width:720px;width:100%;text-align:center}
         .vocal-card-icons{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:.5rem}
         .vocal-card-icons i{font-size:1.3rem;color:var(--green)}
-        .vocal-card h2{font-size:1.3rem;font-weight:900;color:var(--ink)}
+        .vocal-card h2{font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:var(--ink)}
         .vocal-card p{font-size:.9rem;color:var(--ink-60);margin-top:.5rem;line-height:1.6}
         .vocal-card .btn-hero-primary{margin:1.5rem auto 0}
 
@@ -95,7 +121,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
 
         /* ── Section shell ──────────────────────────────────── */
         .section-eyebrow{font-size:.7rem;font-weight:800;color:var(--green);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:.6rem}
-        .section-title{font-size:1.85rem;font-weight:900;color:var(--ink);margin-bottom:.65rem}
+        .section-title{font-family:var(--font-display);font-size:1.95rem;font-weight:800;color:var(--ink);margin-bottom:.65rem}
         .section-sub{font-size:.95rem;color:var(--ink-60);max-width:480px;margin:0 auto 3rem;line-height:1.6}
 
         /* ── Processus ──────────────────────────────────────── */
@@ -127,10 +153,10 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .garanties .section-title{color:#fff}
         .garanties .section-sub{color:rgba(255,255,255,.82)}
         .garanties-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:960px;margin:2.5rem auto 0}
-        .garantie-card{background:#fff;border-radius:14px;padding:1.75rem 1.5rem;text-align:left}
-        .garantie-icon{width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
-        .garantie-icon.tone-green{background:var(--green)} .garantie-icon.tone-ink{background:var(--ink)}
-        .garantie-icon i{font-size:1.1rem;color:#fff}
+        .garantie-card{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:1.75rem 1.5rem 1.5rem;text-align:left;position:relative}
+        .garantie-tag{display:block;font-family:var(--mono);font-size:.68rem;font-weight:700;color:var(--green);letter-spacing:1px;margin-bottom:1.1rem}
+        .garantie-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;background:var(--mist);border:1px solid var(--hair)}
+        .garantie-icon i{font-size:1rem;color:var(--green)}
         .garantie-card h3{font-weight:800;font-size:.95rem;color:var(--ink);margin-bottom:.4rem}
         .garantie-card p{font-size:.8rem;color:var(--ink-60);line-height:1.6}
 
@@ -138,8 +164,9 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .channels{background:#fff;padding:4rem 2rem;text-align:center}
         .channels-list{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem 3rem;max-width:820px;margin:2.5rem auto 0;text-align:left}
         .channel-row{display:flex;gap:1rem;align-items:flex-start}
-        .channel-icon{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--mist)}
+        .channel-icon{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--mist);position:relative}
         .channel-icon i{font-size:1rem;color:var(--ink)}
+        .channel-code{position:absolute;top:-8px;left:-8px;width:19px;height:19px;border-radius:50%;background:var(--green);color:#fff;border:2px solid #fff;font-family:var(--mono);font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center}
         .channel-row h4{font-weight:800;font-size:.88rem;color:var(--ink);margin-bottom:.25rem}
         .channel-row p{font-size:.78rem;color:var(--ink-60);line-height:1.55}
 
@@ -182,7 +209,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         @keyframes dialog-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .dialog-close{position:absolute;top:1rem;right:1.1rem;width:30px;height:30px;border-radius:50%;background:var(--mist);border:none;font-size:.9rem;cursor:pointer;color:var(--ink-60);display:flex;align-items:center;justify-content:center;transition:background .15s}
         .dialog-close:hover{background:var(--hair)}
-        .dialog h2{font-size:1.25rem;font-weight:900;color:var(--ink);margin-bottom:.35rem}
+        .dialog h2{font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--ink);margin-bottom:.35rem}
         .dialog-sub{font-size:.85rem;color:var(--ink-60);margin-bottom:2rem}
         .dialog-choices{display:flex;gap:1rem;justify-content:center}
         .d-choice{flex:1;min-width:150px;max-width:200px;border:1.5px solid var(--hair);border-radius:12px;padding:1.75rem 1.1rem;cursor:pointer;transition:all .2s;background:#fff;display:flex;flex-direction:column;align-items:center;gap:.75rem}
@@ -210,7 +237,16 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
     template: `
 <div>
     <section class="hero">
-        <div class="hero-rings"><div class="ring ring1"></div><div class="ring ring2"></div></div>
+        <div class="hero-rings">
+            <div class="ring ring1"></div>
+            <div class="radar" aria-hidden="true">
+                <div class="radar-ring r1"></div>
+                <div class="radar-ring r2"></div>
+                <div class="radar-ring r3"></div>
+                <div class="radar-sweep"></div>
+                <div class="radar-dot"></div>
+            </div>
+        </div>
 
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
@@ -220,7 +256,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
             </div>
             <div class="nav-actions">
                 <button class="btn-ghost" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre mon dossier</button>
-                <button class="btn-primary" (click)="showDialog=true"><i class="pi pi-flag"></i> Faire un signalement</button>
+                <button class="btn-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
             </div>
         </div>
 
@@ -233,7 +269,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <p class="hero-subtitle" @fadeIn>{{ heroSubtitle }}</p>
                 <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°010-2004/AN</p>
                 <div class="hero-actions" @fadeIn>
-                    <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-flag"></i> Faire un signalement</button>
+                    <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
                     <button class="btn-hero-secondary" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre ma dénonciation</button>
                 </div>
             </div>
@@ -299,8 +335,9 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         <h2 class="section-title">Vos garanties en tant que dénonciateur</h2>
         <p class="section-sub">L'ASCE-LC veille à ce que ces garanties soient respectées à chaque étape</p>
         <div class="garanties-grid">
-            <div class="garantie-card" *ngFor="let t of trustItems">
-                <div class="garantie-icon" [class.tone-green]="t.tone==='green'" [class.tone-ink]="t.tone==='ink'"><i [class]="t.icon"></i></div>
+            <div class="garantie-card" *ngFor="let t of trustItems; let i = index">
+                <span class="garantie-tag">GARANTIE — {{ i + 1 }}/{{ trustItems.length }}</span>
+                <div class="garantie-icon"><i [class]="t.icon"></i></div>
                 <h3>{{ t.title }}</h3><p>{{ t.desc }}</p>
             </div>
         </div>
@@ -311,8 +348,11 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         <h2 class="section-title">Comment nous contacter ?</h2>
         <p class="section-sub">Plusieurs façons de soumettre votre signalement</p>
         <div class="channels-list">
-            <div class="channel-row" *ngFor="let ch of channels">
-                <div class="channel-icon"><i [class]="ch.icon"></i></div>
+            <div class="channel-row" *ngFor="let ch of channels; let i = index">
+                <div class="channel-icon">
+                    <span class="channel-code">{{ i + 1 < 10 ? '0' + (i+1) : (i+1) }}</span>
+                    <i [class]="ch.icon"></i>
+                </div>
                 <div><h4>{{ ch.name }}</h4><p>{{ ch.desc }}</p></div>
             </div>
         </div>
@@ -324,7 +364,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         <p class="section-sub">Chaque signalement compte. Votre témoignage peut changer les choses.</p>
         <div class="quick-grid">
             <button class="quick-item" (click)="showDialog=true">
-                <div class="quick-circle is-red"><i class="pi pi-flag"></i></div>
+                <div class="quick-circle is-red"><i class="pi pi-megaphone"></i></div>
                 <span>Faire un signalement</span>
             </button>
             <button class="quick-item" routerLink="/portail/suivi">
@@ -468,11 +508,11 @@ export class PortailAccueil implements OnInit, OnDestroy {
     }
 
     readonly trustItems = [
-        { icon:'pi pi-lock',         tone:'green', title:'Anonymat garanti',
+        { icon:'pi pi-lock',         title:'Anonymat garanti',
           desc:"Votre identité est strictement protégée. Vous pouvez déposer sans révéler qui vous êtes." },
-        { icon:'pi pi-shield',       tone:'green', title:'Plateforme sécurisée',
+        { icon:'pi pi-shield',       title:'Plateforme sécurisée',
           desc:'Toutes les données sont chiffrées. Aucune information ne peut être interceptée.' },
-        { icon:'pi pi-check-circle', tone:'green', title:'Institution officielle',
+        { icon:'pi pi-check-circle', title:'Institution officielle',
           desc:"Organe d'État habilité par la loi à recevoir et traiter les plaintes anticorruption." }
     ];
 
