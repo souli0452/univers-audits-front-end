@@ -35,39 +35,46 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             100% { transform:scale(1.6);  opacity:0;  }
         }
 
-        :host { display:block; font-family:var(--font-family); }
+        :host {
+            --green:#009640; --red:#E30613; --yellow:#FFD800;
+            --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
+            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
+            --hair:#E4E9E6;
+            --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
+            display:block; font-family:var(--font-family);
+        }
 
-        .page { min-height:100vh; background:linear-gradient(160deg,#f0fdf4 0%,#f8fafc 70%); }
+        .page { min-height:100vh; background:var(--paper); }
 
         .navbar {
-            background:#16a34a; padding:0 1.5rem; height:60px;
+            background:var(--green); padding:0 1.5rem; height:60px;
             display:flex; align-items:center; justify-content:space-between;
             position:sticky; top:0; z-index:100;
             box-shadow:0 2px 12px rgba(0,0,0,.15);
         }
         .nav-left { display:flex; align-items:center; gap:.875rem; }
         .nav-logo  {
-            width:38px; height:38px; border-radius:50%;
-            overflow:hidden; background:#fff; flex-shrink:0;
+            flex-shrink:0;
             display:flex; align-items:center; justify-content:center;
+            background:rgba(255,255,255,.94); border-radius:9px;
+            padding:6px 11px; box-shadow:0 2px 10px rgba(0,0,0,.15);
         }
-        .nav-logo img { width:100%; height:100%; object-fit:contain; }
-        .nav-title { color:#fff; font-weight:900; font-size:1rem; letter-spacing:1px; }
-        .nav-sub   { color:#bbf7d0; font-size:.72rem; }
+        .nav-logo img { height:28px; width:auto; object-fit:contain; display:block; }
+        .nav-sub   { color:var(--yellow); font-size:.72rem; }
 
         .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
 
         .hero { text-align:center; margin-bottom:2.5rem; animation:slide-up .4s ease; }
         .hero-icon {
             width:80px; height:80px; border-radius:50%;
-            background:linear-gradient(135deg,#16a34a,#22c55e);
+            background:var(--green);
             display:flex; align-items:center; justify-content:center;
             margin:0 auto 1.25rem;
-            box-shadow:0 8px 24px rgba(22,163,74,.3);
+            box-shadow:0 8px 24px rgba(0,150,64,.3);
         }
         .hero-icon i { font-size:2.25rem; color:#fff; }
-        .hero h1 { font-size:1.75rem; font-weight:900; color:#111827; margin-bottom:.5rem; }
-        .hero p  { color:#6b7280; font-size:.875rem; }
+        .hero h1 { font-size:1.75rem; font-weight:900; color:var(--ink); margin-bottom:.5rem; }
+        .hero p  { color:var(--ink-60); font-size:.875rem; }
 
         .steps-bar {
             display:flex; align-items:center;
@@ -78,34 +85,34 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             width:44px; height:44px; border-radius:50%;
             display:flex; align-items:center; justify-content:center;
             font-weight:800; font-size:.875rem;
-            border:2.5px solid #e5e7eb; background:#fff; color:#9ca3af;
+            border:2.5px solid var(--hair); background:#fff; color:var(--ink-40);
             transition:all .3s; flex-shrink:0;
         }
         .step-circle.active {
-            background:#16a34a; border-color:#16a34a; color:#fff;
-            box-shadow:0 0 0 5px rgba(22,163,74,.15);
+            background:var(--green); border-color:var(--green); color:#fff;
+            box-shadow:0 0 0 5px rgba(0,150,64,.15);
         }
-        .step-circle.done { background:#22c55e; border-color:#22c55e; color:#fff; }
+        .step-circle.done { background:var(--green); border-color:var(--green); color:#fff; }
         .step-label {
-            font-size:.78rem; font-weight:600; color:#9ca3af;
+            font-size:.78rem; font-weight:600; color:var(--ink-40);
             margin:0 .5rem; white-space:nowrap;
         }
-        .step-label.active { color:#16a34a; }
-        .step-label.done   { color:#22c55e; }
+        .step-label.active { color:var(--green); }
+        .step-label.done   { color:var(--green); }
         .step-line {
-            width:48px; height:3px; background:#e5e7eb;
+            width:48px; height:3px; background:var(--hair);
             border-radius:2px; transition:background .3s; flex-shrink:0;
         }
-        .step-line.done { background:#22c55e; }
+        .step-line.done { background:var(--green); }
 
         .card {
-            background:#fff; border-radius:20px; padding:2rem;
-            border:1px solid #f0fdf4;
-            box-shadow:0 4px 24px rgba(0,0,0,.06);
+            background:#fff; border-radius:14px; padding:2rem;
+            border:1px solid var(--hair);
+            box-shadow:0 4px 24px rgba(0,0,0,.05);
             animation:slide-up .3s ease;
         }
         .card-title {
-            font-size:1.1rem; font-weight:800; color:#111827;
+            font-size:1.1rem; font-weight:800; color:var(--ink);
             margin-bottom:.5rem; display:flex; align-items:center; gap:.75rem;
         }
         .card-title-icon {
@@ -115,174 +122,174 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
 
         .required-legend {
-            font-size:.75rem; color:#6b7280;
+            font-size:.75rem; color:var(--ink-60);
             margin-bottom:1.25rem; margin-top:-.25rem;
             display:flex; align-items:center; gap:4px;
         }
 
         .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
         .type-card {
-            border:2.5px solid #e5e7eb; border-radius:14px; padding:1rem;
+            border:2.5px solid var(--hair); border-radius:12px; padding:1rem;
             cursor:pointer; transition:all .2s; background:#fff;
         }
-        .type-card:hover   { border-color:#86efac; background:#f9fffe; }
-        .type-card.selected { border-color:#16a34a; background:#f0fdf4; }
+        .type-card:hover   { border-color:var(--green); background:var(--mist); }
+        .type-card.selected { border-color:var(--green); background:var(--mist); }
         .type-icon {
-            width:36px; height:36px; border-radius:10px;
+            width:36px; height:36px; border-radius:9px;
             display:flex; align-items:center; justify-content:center;
             margin-bottom:.625rem;
         }
-        .type-name { font-weight:700; font-size:.875rem; color:#111827; }
-        .type-desc { font-size:.75rem; color:#9ca3af; margin-top:2px; }
+        .type-name { font-weight:700; font-size:.875rem; color:var(--ink); }
+        .type-desc { font-size:.75rem; color:var(--ink-40); margin-top:2px; }
 
         .field { display:flex; flex-direction:column; gap:.375rem; }
 
         .field label {
-            font-size:.875rem; font-weight:700; color:#374151;
+            font-size:.875rem; font-weight:700; color:var(--ink);
             display:flex; align-items:center; gap:3px;
         }
         .req {
-            color:#ef4444;
+            color:var(--red);
             font-size:.9rem;
             font-weight:900;
             line-height:1;
         }
         .opt {
-            color:#9ca3af;
+            color:var(--ink-40);
             font-weight:400;
             font-size:.8rem;
             margin-left:2px;
         }
 
-        .field-hint { font-size:.75rem; color:#9ca3af; }
-        .char-count { text-align:right; font-size:.75rem; color:#9ca3af; }
-        .error-msg { color:#ef4444; font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:2px; }
+        .field-hint { font-size:.75rem; color:var(--ink-40); }
+        .char-count { text-align:right; font-size:.75rem; color:var(--ink-40); }
+        .error-msg { color:var(--red); font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:2px; }
 
         .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
         .audio-idle {
-            text-align:center; padding:2rem 1.5rem; border-radius:14px;
-            border:2px dashed #86efac; background:#f0fdf4;
+            text-align:center; padding:2rem 1.5rem; border-radius:12px;
+            border:2px dashed var(--green); background:var(--mist);
         }
         .audio-idle-icon {
             width:64px; height:64px; border-radius:50%;
-            background:#dcfce7; display:flex; align-items:center;
+            background:#fff; display:flex; align-items:center;
             justify-content:center; margin:0 auto .875rem;
         }
-        .audio-idle-icon i { font-size:1.75rem; color:#16a34a; }
+        .audio-idle-icon i { font-size:1.75rem; color:var(--green); }
 
         .audio-recording {
             text-align:center; padding:1.5rem;
-            border-radius:14px; border:2px solid #ef4444; background:#fff5f5;
+            border-radius:12px; border:2px solid var(--red); background:#FDEBEC;
         }
         .rec-pulse-wrap { position:relative; display:inline-block; margin-bottom:.875rem; }
         .rec-ring {
             position:absolute; inset:-10px; border-radius:50%;
-            border:3px solid #ef4444; animation:pulse-ring 1.4s ease-out infinite;
+            border:3px solid var(--red); animation:pulse-ring 1.4s ease-out infinite;
         }
         .rec-icon {
-            width:72px; height:72px; border-radius:50%; background:#ef4444;
+            width:72px; height:72px; border-radius:50%; background:var(--red);
             display:flex; align-items:center; justify-content:center;
             position:relative; z-index:1;
         }
         .rec-icon i { font-size:2rem; color:#fff; }
         .rec-timer {
-            font-family:monospace; font-size:2.5rem;
-            font-weight:900; color:#dc2626; line-height:1;
+            font-family:var(--mono); font-size:2.5rem;
+            font-weight:900; color:var(--red); line-height:1;
         }
         .rec-label-badge {
             display:inline-flex; align-items:center; gap:6px;
-            background:#fee2e2; border-radius:20px;
+            background:#fff; border:1px solid var(--red); border-radius:20px;
             padding:4px 14px; margin:.625rem 0 1rem;
         }
         .rec-dot {
             width:8px; height:8px; border-radius:50%;
-            background:#ef4444; animation:blink 1s infinite;
+            background:var(--red); animation:blink 1s infinite;
         }
-        .rec-text { color:#b91c1c; font-weight:900; font-size:.75rem; letter-spacing:2px; }
+        .rec-text { color:var(--red); font-weight:900; font-size:.75rem; letter-spacing:2px; }
 
         .audio-done {
             display:flex; align-items:center; gap:.875rem; padding:.875rem;
-            border-radius:12px; background:#f0fdf4; border:1.5px solid #86efac;
+            border-radius:12px; background:var(--mist); border:1.5px solid var(--green);
             margin-bottom:.75rem;
         }
         .done-icon {
-            width:44px; height:44px; border-radius:12px; background:#22c55e;
+            width:44px; height:44px; border-radius:10px; background:var(--green);
             display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
         .done-icon i { color:#fff; font-size:1.1rem; }
 
         .upload-zone {
-            border:2.5px dashed #d1d5db; border-radius:14px;
+            border:2.5px dashed var(--hair); border-radius:12px;
             padding:1.5rem; text-align:center; cursor:pointer;
-            transition:all .2s; background:#fafafa;
+            transition:all .2s; background:var(--mist);
         }
-        .upload-zone:hover { border-color:#86efac; background:#f0fdf4; }
+        .upload-zone:hover { border-color:var(--green); background:var(--mist); }
         .file-item {
             display:flex; align-items:center; gap:.75rem; padding:.75rem;
-            border-radius:12px; background:#f9fafb; border:1.5px solid #e5e7eb;
+            border-radius:10px; background:var(--mist); border:1.5px solid var(--hair);
         }
         .file-icon {
-            width:40px; height:40px; border-radius:10px;
+            width:40px; height:40px; border-radius:9px;
             display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
 
         .anon-option {
-            border:2.5px solid #e5e7eb; border-radius:14px;
+            border:2.5px solid var(--hair); border-radius:12px;
             padding:1rem 1.25rem; cursor:pointer; transition:all .2s;
         }
-        .anon-option.selected-id   { border-color:#16a34a; background:#f0fdf4; }
-        .anon-option.selected-anon { border-color:#f59e0b; background:#fffbeb; }
+        .anon-option.selected-id   { border-color:var(--green); background:var(--mist); }
+        .anon-option.selected-anon { border-color:var(--yellow); background:rgba(255,216,0,.08); }
         .radio-dot {
-            width:20px; height:20px; border-radius:50%; border:2px solid #d1d5db;
+            width:20px; height:20px; border-radius:50%; border:2px solid var(--hair);
             display:flex; align-items:center; justify-content:center;
             flex-shrink:0; transition:all .2s;
         }
-        .radio-dot.active-id   { border-color:#16a34a; background:#16a34a; }
-        .radio-dot.active-anon { border-color:#f59e0b; background:#f59e0b; }
+        .radio-dot.active-id   { border-color:var(--green); background:var(--green); }
+        .radio-dot.active-anon { border-color:var(--yellow); background:var(--yellow); }
         .radio-inner { width:8px; height:8px; border-radius:50%; background:#fff; }
 
         .protection-trigger {
-            border:2.5px solid #e5e7eb; border-radius:14px;
+            border:2.5px solid var(--hair); border-radius:12px;
             padding:1rem 1.25rem; cursor:pointer; transition:all .2s; background:#fff;
         }
-        .protection-trigger.selected { border-color:#1d4ed8; background:#eff6ff; }
+        .protection-trigger.selected { border-color:var(--ink); background:var(--mist); }
 
         .protection-info-box {
-            border-radius:14px; padding:1rem 1.25rem;
-            background:#eff6ff; border:1.5px solid #93c5fd; margin-top:.75rem;
+            border-radius:12px; padding:1rem 1.25rem;
+            background:var(--mist); border:1.5px solid var(--hair); margin-top:.75rem;
         }
         .protection-warning {
-            background:#fff5f5; border:1.5px solid #fca5a5;
-            border-radius:12px; padding:.875rem 1rem; margin-top:.625rem;
+            background:#FDEBEC; border:1.5px solid var(--red);
+            border-radius:10px; padding:.875rem 1rem; margin-top:.625rem;
         }
         .protection-conditions {
-            background:#f8faff; border:1.5px solid #bfdbfe;
-            border-radius:12px; padding:1rem; margin-top:.75rem;
+            background:#fff; border:1.5px solid var(--hair);
+            border-radius:10px; padding:1rem; margin-top:.75rem;
             display:flex; flex-direction:column; gap:.625rem;
         }
         .condition-row {
             display:flex; align-items:flex-start; gap:.75rem; cursor:pointer;
         }
         .condition-check {
-            width:20px; height:20px; border-radius:6px; border:2px solid #93c5fd;
+            width:20px; height:20px; border-radius:6px; border:2px solid var(--ink-40);
             display:flex; align-items:center; justify-content:center;
             flex-shrink:0; transition:all .2s; margin-top:1px;
         }
-        .condition-check.checked { background:#2563eb; border-color:#2563eb; }
+        .condition-check.checked { background:var(--green); border-color:var(--green); }
         .protection-acknowledged {
-            background:#f0fdf4; border:2px solid #22c55e;
-            border-radius:12px; padding:.875rem 1rem; margin-top:.75rem;
+            background:var(--mist); border:2px solid var(--green);
+            border-radius:10px; padding:.875rem 1rem; margin-top:.75rem;
             display:flex; align-items:center; gap:.75rem;
         }
 
         .recap-section {
-            background:#f9fafb; border-radius:14px; padding:1rem 1.25rem;
-            border:1.5px solid #e5e7eb;
+            background:var(--mist); border-radius:12px; padding:1rem 1.25rem;
+            border:1.5px solid var(--hair);
         }
         .recap-row { display:flex; gap:.5rem; font-size:.875rem; padding:.25rem 0; }
-        .recap-key { color:#9ca3af; width:100px; flex-shrink:0; }
-        .recap-val { font-weight:600; color:#111827; }
+        .recap-key { color:var(--ink-40); width:100px; flex-shrink:0; }
+        .recap-val { font-weight:600; color:var(--ink); }
 
         .step-footer {
             display:flex; justify-content:space-between;
@@ -292,42 +299,42 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         .success-body { padding:.5rem .25rem; text-align:center; }
         .success-icon {
             width:88px; height:88px; border-radius:50%;
-            background:linear-gradient(135deg,#16a34a,#22c55e);
+            background:var(--green);
             display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; box-shadow:0 8px 24px rgba(22,163,74,.3);
+            margin:0 auto 1.25rem; box-shadow:0 8px 24px rgba(0,150,64,.3);
         }
         .success-icon i { font-size:2.75rem; color:#fff; }
         .code-box {
-            background:linear-gradient(135deg,#f0fdf4,#dcfce7);
-            border:2px solid #86efac; border-radius:16px;
+            background:var(--mist);
+            border:2px solid var(--green); border-radius:14px;
             padding:1.25rem; margin:1.25rem 0;
         }
         .code-label {
-            font-size:.65rem; font-weight:900; color:#16a34a;
+            font-size:.65rem; font-weight:900; color:var(--green);
             letter-spacing:2px; text-transform:uppercase;
         }
         .code-value {
-            font-family:monospace; font-size:2.5rem;
-            font-weight:900; color:#166534; letter-spacing:6px;
+            font-family:var(--mono); font-size:2.5rem;
+            font-weight:900; color:var(--ink); letter-spacing:6px;
         }
-        .code-hint  { font-size:.75rem; color:#15803d; margin-top:.375rem; }
+        .code-hint  { font-size:.75rem; color:var(--ink-60); margin-top:.375rem; }
 
         .notif-row { display:flex; flex-direction:column; gap:.5rem; margin-top:.75rem; }
         .notif-badge {
             display:inline-flex; align-items:center; gap:.5rem;
             font-size:.8rem; padding:6px 14px; border-radius:20px; font-weight:600;
         }
-        .notif-badge.sms   { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
-        .notif-badge.email { background:#fef9c3; color:#854d0e; border:1px solid #fde68a; }
+        .notif-badge.sms   { background:var(--mist); color:var(--green); border:1px solid var(--green); }
+        .notif-badge.email { background:#fff; color:var(--ink); border:1px solid var(--hair); }
 
         .page-foot {
             text-align:center; margin-top:2rem;
-            color:#9ca3af; font-size:.75rem; padding-bottom:1rem;
+            color:var(--ink-40); font-size:.75rem; padding-bottom:1rem;
         }
 
         .consent-box-error {
-            border:1.5px solid #ef4444 !important;
-            background:#fff5f5 !important;
+            border:1.5px solid var(--red) !important;
+            background:#FDEBEC !important;
         }
 
         @media (max-width:520px) {
@@ -344,10 +351,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     [closable]="false" [style]="{width:'400px'}">
     <div class="success-body">
         <div class="success-icon"><i class="pi pi-check-circle"></i></div>
-        <h3 style="font-size:1.35rem;font-weight:900;color:#111827;margin-bottom:.5rem;">
+        <h3 style="font-size:1.35rem;font-weight:900;color:var(--ink);margin-bottom:.5rem;">
             Merci pour votre signalement !
         </h3>
-        <p style="font-size:.875rem;color:#6b7280;line-height:1.7;margin-bottom:0;">
+        <p style="font-size:.875rem;color:var(--ink-60);line-height:1.7;margin-bottom:0;">
             Votre dossier a été enregistré.<br>
             Conservez précieusement votre code d'accès.
         </p>
@@ -369,9 +376,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 Email envoyé à {{ fd['email'].value }}
             </div>
         </div>
-        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;
-                    padding:.875rem;font-size:.8rem;color:#92400e;text-align:left;margin-top:.75rem;">
-            <i class="pi pi-info-circle" style="color:#d97706;margin-right:6px;"></i>
+        <div style="background:rgba(255,216,0,.1);border:1px solid var(--yellow);border-radius:12px;
+                    padding:.875rem;font-size:.8rem;color:var(--ink);text-align:left;margin-top:.75rem;">
+            <i class="pi pi-info-circle" style="color:var(--ink);margin-right:6px;"></i>
             Vous recevrez un accusé de réception officiel dans les 7 jours ouvrables.
         </div>
     </div>
@@ -392,12 +399,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <p-button icon="pi pi-arrow-left" severity="contrast"
                 text (onClick)="router.navigate(['/portail'])" />
             <div class="nav-logo">
-                <img src="assets/logo-integrite.png" alt="Intégrité+" />
+                <img src="assets/logo-asce.png" alt="ASCE-LC" />
             </div>
-            <div>
-                <div class="nav-title">INTÉGRITÉ+</div>
-                <div class="nav-sub">Dépôt de plainte sécurisé</div>
-            </div>
+            <div class="nav-sub">Dépôt de plainte sécurisé</div>
         </div>
         <p-button label="Suivre" icon="pi pi-search" severity="contrast"
             outlined size="small"
@@ -436,8 +440,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         <div *ngIf="currentStep === 1" class="card">
 
             <div class="card-title">
-                <div class="card-title-icon" style="background:#dcfce7;">
-                    <i class="pi pi-file-edit" style="color:#16a34a;"></i>
+                <div class="card-title-icon" style="background:var(--mist);">
+                    <i class="pi pi-file-edit" style="color:var(--green);"></i>
                 </div>
                 Décrivez les faits
             </div>
@@ -457,10 +461,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             (click)="f['type'].setValue(type.value)">
                             <div class="type-icon"
                                 [style.background]="f['type'].value === type.value
-                                    ? '#dcfce7' : '#f3f4f6'">
+                                    ? 'var(--mist)' : 'var(--mist)'">
                                 <i [class]="type.icon"
                                     [style.color]="f['type'].value === type.value
-                                        ? '#16a34a' : '#9ca3af'"
+                                        ? 'var(--green)' : 'var(--ink-40)'"
                                     style="font-size:1.1rem;"></i>
                             </div>
                             <div class="type-name">{{ type.label }}</div>
@@ -507,9 +511,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div class="field">
                         <label>Lieu des faits <span class="opt">— optionnel</span></label>
                         <div style="display:flex;align-items:center;gap:8px;
-                            border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            border:1.5px solid var(--hair);border-radius:8px;padding:0 12px;">
                             <i class="pi pi-map-marker"
-                                style="color:#9ca3af;font-size:.875rem;"></i>
+                                style="color:var(--ink-40);font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentLocation']"
                                 placeholder="Service, ville..."
                                 style="border:none;outline:none;background:transparent;
@@ -522,9 +526,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <span class="opt">— optionnel</span>
                         </label>
                         <div style="display:flex;align-items:center;gap:8px;
-                            border:1.5px solid #e5e7eb;border-radius:8px;padding:0 12px;">
+                            border:1.5px solid var(--hair);border-radius:8px;padding:0 12px;">
                             <i class="pi pi-calendar"
-                                style="color:#9ca3af;font-size:.875rem;"></i>
+                                style="color:var(--ink-40);font-size:.875rem;"></i>
                             <input pInputText [formControl]="f['incidentPeriod']"
                                 placeholder="Ex: Janvier 2024, ou De 2022 à 2023, ou Depuis 6 mois"
                                 style="border:none;outline:none;background:transparent;
@@ -547,11 +551,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div class="audio-idle-icon">
                             <i class="pi pi-microphone"></i>
                         </div>
-                        <p style="font-size:.875rem;color:#374151;font-weight:600;
+                        <p style="font-size:.875rem;color:var(--ink);font-weight:600;
                                   margin-bottom:.375rem;">
                             Enregistrez votre témoignage vocal
                         </p>
-                        <p style="font-size:.8rem;color:#9ca3af;margin-bottom:1rem;">
+                        <p style="font-size:.8rem;color:var(--ink-40);margin-bottom:1rem;">
                             Complément utile à votre déclaration écrite
                         </p>
                         <p-button label="Démarrer l'enregistrement"
@@ -575,10 +579,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div class="audio-done">
                             <div class="done-icon"><i class="pi pi-check"></i></div>
                             <div style="flex:1;">
-                                <div style="font-weight:700;color:#166534;font-size:.875rem;">
+                                <div style="font-weight:700;color:var(--green);font-size:.875rem;">
                                     Audio enregistré ✓
                                 </div>
-                                <div style="font-size:.8rem;color:#16a34a;margin-top:2px;">
+                                <div style="font-size:.8rem;color:var(--green);margin-top:2px;">
                                     Durée : {{ formatDuration(recordingDuration) }}
                                 </div>
                             </div>
@@ -604,13 +608,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
                             (change)="onFileSelect($event)" />
                         <i class="pi pi-cloud-upload"
-                            style="font-size:2rem;color:#9ca3af;margin-bottom:.5rem;
+                            style="font-size:2rem;color:var(--ink-40);margin-bottom:.5rem;
                                    display:block;"></i>
-                        <p style="font-size:.875rem;font-weight:600;color:#374151;
+                        <p style="font-size:.875rem;font-weight:600;color:var(--ink);
                                   margin-bottom:.25rem;">
                             Cliquez ou glissez vos fichiers ici
                         </p>
-                        <p style="font-size:.75rem;color:#9ca3af;">
+                        <p style="font-size:.75rem;color:var(--ink-40);">
                             PDF, Word, Images, Audio, Vidéo
                         </p>
                     </div>
@@ -624,19 +628,19 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                     style="font-size:1rem;"></i>
                             </div>
                             <div style="flex:1;min-width:0;">
-                                <div style="font-size:.875rem;font-weight:600;color:#111827;
+                                <div style="font-size:.875rem;font-weight:600;color:var(--ink);
                                             overflow:hidden;text-overflow:ellipsis;
                                             white-space:nowrap;">
                                     {{ file.name }}
                                 </div>
-                                <div style="font-size:.75rem;color:#9ca3af;">
+                                <div style="font-size:.75rem;color:var(--ink-40);">
                                     {{ formatFileSize(file.size) }}
                                 </div>
                             </div>
                             <p-button icon="pi pi-times" severity="danger"
                                 text size="small" (onClick)="removeAttachment(i)" />
                         </div>
-                        <div style="text-align:right;font-size:.75rem;color:#9ca3af;">
+                        <div style="text-align:right;font-size:.75rem;color:var(--ink-40);">
                             {{ attachments.length }}/{{ maxFiles }} fichiers
                         </div>
                     </div>
@@ -645,7 +649,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
 
             <div class="step-footer">
-                <span style="font-size:.78rem;color:#9ca3af;">
+                <span style="font-size:.78rem;color:var(--ink-40);">
                     <i class="pi pi-lock"></i> Données chiffrées
                 </span>
                 <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
@@ -656,8 +660,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         <div *ngIf="currentStep === 2" class="card">
 
             <div class="card-title">
-                <div class="card-title-icon" style="background:#dbeafe;">
-                    <i class="pi pi-user" style="color:#2563eb;"></i>
+                <div class="card-title-icon" style="background:rgba(0,54,23,.08);">
+                    <i class="pi pi-user" style="color:var(--ink);"></i>
                 </div>
                 Vos coordonnées
             </div>
@@ -666,7 +670,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <span class="req">*</span> Champs obligatoires
             </p>
 
-            <p style="font-size:.875rem;color:#6b7280;margin-bottom:1.5rem;margin-top:-.5rem;">
+            <p style="font-size:.875rem;color:var(--ink-60);margin-bottom:1.5rem;margin-top:-.5rem;">
                 Informations strictement confidentielles. Vous pouvez rester anonyme.
             </p>
 
@@ -679,18 +683,18 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <div *ngIf="!fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
-                            <div style="font-weight:700;font-size:.875rem;color:#111827;">
+                            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
                                 Je fournis mes coordonnées
                             </div>
-                            <div style="font-size:.75rem;color:#6b7280;margin-top:2px;">
+                            <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
                                 Recommandé pour un meilleur suivi de votre dossier
                             </div>
                         </div>
                         <div style="width:32px;height:32px;border-radius:8px;
-                            background:#dcfce7;display:flex;align-items:center;
+                            background:var(--mist);display:flex;align-items:center;
                             justify-content:center;">
                             <i class="pi pi-id-card"
-                                style="color:#16a34a;font-size:.875rem;"></i>
+                                style="color:var(--green);font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -703,18 +707,18 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <div *ngIf="fd['anonymous'].value" class="radio-inner"></div>
                         </div>
                         <div style="flex:1;">
-                            <div style="font-weight:700;font-size:.875rem;color:#111827;">
+                            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
                                 Je reste anonyme
                             </div>
-                            <div style="font-size:.75rem;color:#6b7280;margin-top:2px;">
+                            <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
                                 Votre identité ne sera pas enregistrée
                             </div>
                         </div>
                         <div style="width:32px;height:32px;border-radius:8px;
-                            background:#fef9c3;display:flex;align-items:center;
+                            background:rgba(255,216,0,.15);display:flex;align-items:center;
                             justify-content:center;">
                             <i class="pi pi-eye-slash"
-                                style="color:#ca8a04;font-size:.875rem;"></i>
+                                style="color:var(--ink);font-size:.875rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -764,48 +768,48 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         (click)="toggleProtectionRequested()">
                         <div style="display:flex;align-items:center;gap:.875rem;">
                             <div style="width:22px;height:22px;border-radius:6px;
-                                border:2.5px solid #93c5fd;display:flex;align-items:center;
+                                border:2.5px solid var(--ink-40);display:flex;align-items:center;
                                 justify-content:center;flex-shrink:0;transition:all .2s;"
                                 [style.background]="fd['protectionRequested'].value
-                                    ? '#2563eb' : 'transparent'"
+                                    ? 'var(--ink)' : 'transparent'"
                                 [style.border-color]="fd['protectionRequested'].value
-                                    ? '#2563eb' : '#93c5fd'">
+                                    ? 'var(--ink)' : 'var(--ink-40)'">
                                 <i *ngIf="fd['protectionRequested'].value"
                                     class="pi pi-check"
                                     style="font-size:.65rem;color:#fff;"></i>
                             </div>
                             <div style="flex:1;">
-                                <div style="font-weight:700;font-size:.875rem;color:#1e40af;">
+                                <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
                                     Je demande une protection lanceur d'alerte
                                 </div>
-                                <div style="font-size:.75rem;color:#3b82f6;margin-top:2px;">
+                                <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
                                     Loi N°010-2004/AN — Protection garantie par l'État
                                 </div>
                             </div>
                             <div style="width:32px;height:32px;border-radius:8px;
-                                background:#eff6ff;display:flex;align-items:center;
+                                background:rgba(0,54,23,.06);display:flex;align-items:center;
                                 justify-content:center;">
                                 <i class="pi pi-shield"
-                                    style="color:#2563eb;font-size:.875rem;"></i>
+                                    style="color:var(--ink);font-size:.875rem;"></i>
                             </div>
                         </div>
                     </div>
 
                     <div *ngIf="fd['protectionRequested'].value && !protectionAcknowledged">
                         <div class="protection-info-box">
-                            <div style="font-weight:800;color:#1e40af;font-size:.875rem;
+                            <div style="font-weight:800;color:var(--ink);font-size:.875rem;
                                 display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem;">
                                 <i class="pi pi-info-circle"></i>
                                 À qui s'adresse cette protection ?
                             </div>
-                            <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;
+                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;
                                       margin:0 0 .625rem 0;">
                                 Cette protection est réservée aux personnes qui signalent des
                                 faits de <strong>corruption, détournement de fonds publics ou
                                 abus de pouvoir</strong> dont elles ont eu connaissance
                                 <strong>dans le cadre de leurs fonctions ou activités</strong>.
                             </p>
-                            <p style="font-size:.8rem;color:#1d4ed8;line-height:1.7;margin:0;">
+                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0;">
                                 Elle garantit la <strong>confidentialité totale de votre
                                 identité</strong> et vous protège contre toute représaille,
                                 licenciement ou sanction liée à votre signalement.
@@ -814,9 +818,9 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div class="protection-warning">
                             <div style="display:flex;align-items:flex-start;gap:.75rem;">
                                 <i class="pi pi-exclamation-triangle"
-                                    style="color:#ef4444;font-size:1rem;flex-shrink:0;
+                                    style="color:var(--red);font-size:1rem;flex-shrink:0;
                                            margin-top:1px;"></i>
-                                <p style="font-size:.8rem;color:#dc2626;margin:0;line-height:1.6;">
+                                <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
                                     <strong>Attention :</strong> invoquer cette protection
                                     de manière abusive est passible de
                                     <strong>sanctions pénales</strong> (Loi N°010-2004/AN).
@@ -824,7 +828,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                         </div>
                         <div class="protection-conditions">
-                            <div style="font-size:.78rem;font-weight:800;color:#1e40af;
+                            <div style="font-size:.78rem;font-weight:800;color:var(--ink);
                                 text-transform:uppercase;letter-spacing:1px;
                                 margin-bottom:.25rem;">
                                 Je confirme les 3 conditions suivantes :
@@ -834,7 +838,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                     <i *ngIf="cond1" class="pi pi-check"
                                         style="font-size:.6rem;color:#fff;"></i>
                                 </div>
-                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
                                     J'ai eu connaissance de ces faits dans le cadre de mes
                                     fonctions, de mon travail ou de mes activités
                                     professionnelles.
@@ -845,7 +849,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                     <i *ngIf="cond2" class="pi pi-check"
                                         style="font-size:.6rem;color:#fff;"></i>
                                 </div>
-                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
                                     Je crains des représailles directes si mon identité est
                                     révélée (licenciement, menaces, sanctions...).
                                 </span>
@@ -855,14 +859,14 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                     <i *ngIf="cond3" class="pi pi-check"
                                         style="font-size:.6rem;color:#fff;"></i>
                                 </div>
-                                <span style="font-size:.8rem;color:#1e40af;line-height:1.5;">
+                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
                                     Je comprends qu'invoquer cette protection de manière
                                     abusive constitue une infraction pénale.
                                 </span>
                             </div>
                             <p-button
                                 label="Je confirme sur l'honneur"
-                                icon="pi pi-shield" severity="info"
+                                icon="pi pi-shield" severity="secondary"
                                 styleClass="w-full justify-center mt-2"
                                 [disabled]="!cond1 || !cond2 || !cond3"
                                 (onClick)="confirmProtection()" />
@@ -877,12 +881,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <div *ngIf="fd['protectionRequested'].value && protectionAcknowledged"
                         class="protection-acknowledged">
                         <i class="pi pi-shield"
-                            style="color:#16a34a;font-size:1.25rem;flex-shrink:0;"></i>
+                            style="color:var(--green);font-size:1.25rem;flex-shrink:0;"></i>
                         <div style="flex:1;">
-                            <div style="font-weight:800;color:#166534;font-size:.875rem;">
+                            <div style="font-weight:800;color:var(--green);font-size:.875rem;">
                                 Protection lanceur d'alerte confirmée
                             </div>
-                            <div style="font-size:.75rem;color:#16a34a;margin-top:2px;">
+                            <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
                                 Votre identité sera strictement protégée — Loi N°010-2004/AN
                             </div>
                         </div>
@@ -895,12 +899,12 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <!-- Consentement -->
             <div [class.consent-box-error]="consentTouched && !fd['dataProcessingConsent'].value"
                 style="display:flex;align-items:flex-start;gap:.875rem;
-                padding:.875rem;border-radius:12px;background:#f9fafb;
-                border:1.5px solid #e5e7eb;">
+                padding:.875rem;border-radius:12px;background:var(--mist);
+                border:1.5px solid var(--hair);">
                 <p-checkbox [formControl]="fd['dataProcessingConsent']"
                     [binary]="true" inputId="consent" />
                 <label for="consent"
-                    style="font-size:.875rem;color:#374151;cursor:pointer;
+                    style="font-size:.875rem;color:var(--ink);cursor:pointer;
                            display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
                     J'accepte le traitement de mes données personnelles par l'ASCE-LC.
                     <span class="req">*</span>
@@ -924,8 +928,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         <div *ngIf="currentStep === 3" class="card">
 
             <div class="card-title">
-                <div class="card-title-icon" style="background:#fef9c3;">
-                    <i class="pi pi-check-circle" style="color:#ca8a04;"></i>
+                <div class="card-title-icon" style="background:rgba(255,216,0,.15);">
+                    <i class="pi pi-check-circle" style="color:var(--ink);"></i>
                 </div>
                 Confirmer votre signalement
             </div>
@@ -933,7 +937,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
 
                 <div class="recap-section">
-                    <div style="font-size:.75rem;font-weight:800;color:#6b7280;
+                    <div style="font-size:.75rem;font-weight:800;color:var(--ink-60);
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
                         Votre signalement
                     </div>
@@ -954,7 +958,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     </div>
                     <div *ngIf="audioUrl" class="recap-row">
                         <span class="recap-key">Audio</span>
-                        <span class="recap-val" style="color:#16a34a;">
+                        <span class="recap-val" style="color:var(--green);">
                             ✓ {{ formatDuration(recordingDuration) }}
                         </span>
                     </div>
@@ -965,13 +969,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
 
                 <div class="recap-section">
-                    <div style="font-size:.75rem;font-weight:800;color:#6b7280;
+                    <div style="font-size:.75rem;font-weight:800;color:var(--ink-60);
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
                         Déclarant
                     </div>
                     <div *ngIf="fd['anonymous'].value"
                         style="display:inline-flex;align-items:center;gap:.5rem;
-                            background:#fef9c3;color:#92400e;padding:.375rem .875rem;
+                            background:rgba(255,216,0,.15);color:var(--ink);padding:.375rem .875rem;
                             border-radius:20px;font-size:.8rem;font-weight:700;">
                         <i class="pi pi-eye-slash" style="font-size:.75rem;"></i>
                         Anonyme
@@ -994,7 +998,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div *ngIf="protectionAcknowledged" class="recap-row">
                             <span class="recap-key">Protection</span>
                             <span class="recap-val"
-                                style="color:#1d4ed8;display:flex;align-items:center;
+                                style="color:var(--ink-60);display:flex;align-items:center;
                                        gap:.375rem;">
                                 <i class="pi pi-shield" style="font-size:.75rem;"></i>
                                 Lanceur d'alerte confirmée
@@ -1005,21 +1009,21 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
                 <div *ngIf="!fd['anonymous'].value
                             && (fd['phoneNumber'].value || fd['email'].value)"
-                    style="background:#f0fdf4;border:1.5px solid #86efac;
+                    style="background:var(--mist);border:1.5px solid var(--green);
                            border-radius:12px;padding:.875rem;">
-                    <div style="font-size:.75rem;font-weight:800;color:#16a34a;
+                    <div style="font-size:.75rem;font-weight:800;color:var(--green);
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;">
                         <i class="pi pi-send" style="margin-right:4px;"></i>
                         Notifications prévues
                     </div>
                     <div *ngIf="fd['phoneNumber'].value"
-                        style="font-size:.8rem;color:#166534;display:flex;
+                        style="font-size:.8rem;color:var(--green);display:flex;
                                align-items:center;gap:.5rem;">
                         <i class="pi pi-mobile" style="font-size:.8rem;"></i>
                         SMS → {{ fd['phoneNumber'].value }}
                     </div>
                     <div *ngIf="fd['email'].value"
-                        style="font-size:.8rem;color:#166534;display:flex;
+                        style="font-size:.8rem;color:var(--green);display:flex;
                                align-items:center;gap:.5rem;margin-top:4px;">
                         <i class="pi pi-envelope" style="font-size:.8rem;"></i>
                         Email → {{ fd['email'].value }}
@@ -1027,10 +1031,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 </div>
 
                 <div style="display:flex;align-items:flex-start;gap:.875rem;
-                    padding:.875rem;border-radius:12px;background:#fffbeb;
-                    border:1.5px solid #fde68a;">
-                    <i class="pi pi-exclamation-triangle" style="color:#d97706;margin-top:1px;"></i>
-                    <p style="font-size:.8rem;color:#92400e;line-height:1.6;">
+                    padding:.875rem;border-radius:12px;background:rgba(255,216,0,.1);
+                    border:1.5px solid var(--yellow);">
+                    <i class="pi pi-exclamation-triangle" style="color:var(--ink);margin-top:1px;"></i>
+                    <p style="font-size:.8rem;color:var(--ink);line-height:1.6;">
                         En soumettant, vous certifiez l'exactitude des informations.
                         Toute fausse déclaration est passible de poursuites.
                     </p>
@@ -1282,18 +1286,18 @@ export class DepotPlainte {
         return 'pi pi-file';
     }
     getFileBg(file: File): string {
-        if (file.type.includes('image')) return '#dbeafe';
-        if (file.type.includes('pdf'))   return '#fee2e2';
-        if (file.type.includes('video')) return '#ede9fe';
-        if (file.type.includes('audio')) return '#fce7f3';
-        return '#f3f4f6';
+        if (file.type.includes('image')) return 'rgba(0,54,23,.08)';
+        if (file.type.includes('pdf'))   return 'rgba(227,6,19,.1)';
+        if (file.type.includes('video')) return 'rgba(0,54,23,.06)';
+        if (file.type.includes('audio')) return 'rgba(227,6,19,.08)';
+        return 'var(--mist)';
     }
     getFileColor(file: File): string {
-        if (file.type.includes('image')) return '#2563eb';
-        if (file.type.includes('pdf'))   return '#dc2626';
-        if (file.type.includes('video')) return '#7c3aed';
-        if (file.type.includes('audio')) return '#db2777';
-        return '#6b7280';
+        if (file.type.includes('image')) return 'var(--ink)';
+        if (file.type.includes('pdf'))   return 'var(--red)';
+        if (file.type.includes('video')) return 'var(--ink)';
+        if (file.type.includes('audio')) return 'var(--red)';
+        return 'var(--ink-60)';
     }
     formatFileSize(bytes: number): string {
         if (bytes < 1024)        return bytes + ' B';

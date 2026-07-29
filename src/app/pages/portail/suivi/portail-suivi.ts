@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -31,14 +31,18 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             to   { opacity:1; transform:scale(1); }
         }
 
-        :host { display:block; }
+        :host {
+            --green:#009640; --red:#E30613; --yellow:#FFD800;
+            --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
+            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
+            --hair:#E4E9E6;
+            --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
+            display:block;
+        }
 
         .page {
             min-height:100vh;
-            background:
-                radial-gradient(ellipse 800px 600px at 20% 0%, #dcfce7 0%, transparent 55%),
-                radial-gradient(ellipse 600px 400px at 80% 100%, #dbeafe 0%, transparent 55%),
-                #f8fafc;
+            background: var(--paper);
             display:flex;
             align-items:center;
             justify-content:center;
@@ -50,42 +54,42 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         /* ── Carte recherche ──────── */
         .search-card {
             background:#fff;
-            border-radius:24px;
+            border-radius:16px;
             padding:1.75rem;
-            border:1.5px solid rgba(22,163,74,.15);
-            box-shadow:0 4px 24px rgba(22,163,74,.08);
+            border:1.5px solid var(--hair);
+            box-shadow:0 4px 24px rgba(0,0,0,.05);
             animation:slide-up .35s ease;
         }
 
         .code-input {
-            font-family:'Courier New',monospace;
+            font-family:var(--mono);
             font-size:1.6rem;
             font-weight:900;
             letter-spacing:.45em;
             text-align:center;
             text-transform:uppercase;
-            border:2.5px solid #e5e7eb;
-            border-radius:16px;
+            border:2.5px solid var(--hair);
+            border-radius:12px;
             padding:1rem;
             width:100%;
             outline:none;
             transition:all .2s;
-            color:#111827;
-            background:#fafafa;
+            color:var(--ink);
+            background:var(--mist);
             box-sizing:border-box;
         }
         .code-input:focus {
-            border-color:#16a34a;
+            border-color:var(--green);
             background:#fff;
-            box-shadow:0 0 0 4px rgba(22,163,74,.1);
+            box-shadow:0 0 0 4px rgba(0,150,64,.1);
         }
 
         .search-btn {
             width:100%;
             padding:.9rem;
-            border-radius:14px;
+            border-radius:10px;
             border:none;
-            background:linear-gradient(135deg,#16a34a,#22c55e);
+            background:var(--green);
             color:#fff;
             font-weight:800;
             font-size:.95rem;
@@ -95,11 +99,11 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             align-items:center;
             justify-content:center;
             gap:.625rem;
-            box-shadow:0 4px 14px rgba(22,163,74,.3);
+            box-shadow:0 4px 14px rgba(0,150,64,.3);
         }
         .search-btn:hover:not(:disabled) {
             transform:translateY(-2px);
-            box-shadow:0 8px 20px rgba(22,163,74,.4);
+            box-shadow:0 8px 20px rgba(0,150,64,.4);
         }
         .search-btn:disabled { opacity:.45; cursor:not-allowed; }
 
@@ -191,8 +195,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             justify-content:center;
             gap:.5rem;
             padding:.8rem 1.5rem;
-            border-radius:12px;
-            background:linear-gradient(135deg,#f59e0b,#d97706);
+            border-radius:10px;
+            background:var(--red);
             color:#fff;
             font-weight:700;
             font-size:.875rem;
@@ -201,21 +205,22 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             border:none;
             width:100%;
             margin-top:1.25rem;
-            box-shadow:0 4px 12px rgba(245,158,11,.3);
+            box-shadow:0 4px 12px rgba(227,6,19,.3);
             transition:all .2s;
         }
         .complement-btn:hover {
             transform:translateY(-1px);
-            box-shadow:0 6px 18px rgba(245,158,11,.4);
+            background:#c00511;
+            box-shadow:0 6px 18px rgba(227,6,19,.4);
         }
 
         /* Boutons bas */
         .btn-reset {
             padding:.7rem 1.5rem;
-            border-radius:12px;
-            border:1.5px solid #e5e7eb;
+            border-radius:10px;
+            border:1.5px solid var(--hair);
             background:#fff;
-            color:#374151;
+            color:var(--ink);
             font-weight:600;
             font-size:.875rem;
             cursor:pointer;
@@ -224,7 +229,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             gap:.5rem;
             transition:all .2s;
         }
-        .btn-reset:hover { border-color:#d1d5db; background:#f9fafb; }
+        .btn-reset:hover { border-color:var(--ink-40); background:var(--mist); }
 
         @media (max-width:440px) {
             .code-input { font-size:1.3rem; letter-spacing:.3em; }
@@ -238,26 +243,23 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:1.75rem;animation:slide-up .3s ease;">
-        <div style="width:80px;height:80px;border-radius:50%;
-            border:3px solid #16a34a;overflow:hidden;
-            margin:0 auto .875rem;background:#fff;
-            box-shadow:0 6px 24px rgba(22,163,74,.18);">
-            <img src="assets/logo-integrite.png" alt="ASCE-LC"
-                style="width:100%;height:100%;object-fit:contain;" />
+        <div style="height:96px;margin:0 auto .875rem;display:flex;align-items:center;justify-content:center;">
+            <img src="assets/logo-asce.png" alt="ASCE-LC"
+                style="height:100%;width:auto;object-fit:contain;" />
         </div>
-        <h1 style="font-size:1.4rem;font-weight:900;color:#111827;
+        <h1 style="font-size:1.4rem;font-weight:900;color:var(--ink);
                    margin:0 0 .25rem;letter-spacing:-.4px;">
             Suivi de dossier
         </h1>
-        <p style="color:#9ca3af;font-size:.8rem;margin:0;">ASCE-LC — Intégrité+</p>
+        <p style="color:var(--ink-40);font-size:.8rem;margin:0;">BURKINA FASO</p>
     </div>
 
     <div *ngIf="!dossier" class="search-card">
 
-        <p style="text-align:center;font-size:.85rem;color:#6b7280;
+        <p style="text-align:center;font-size:.85rem;color:var(--ink-60);
                   margin:0 0 1.25rem;line-height:1.6;">
             Entrez le code de suivi reçu lors de votre dépôt
-            <strong style="color:#374151;">(formulaire B4)</strong>
+            <strong style="color:var(--ink);">(formulaire B4)</strong>
         </p>
 
         <input class="code-input"
@@ -273,7 +275,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             <div *ngFor="let i of codeSlots"
                 style="width:30px;height:5px;border-radius:3px;transition:all .2s;"
                 [style.background]="accessCode.length > i
-                    ? 'linear-gradient(90deg,#16a34a,#22c55e)' : '#e5e7eb'">
+                    ? 'var(--green)' : 'var(--hair)'">
             </div>
         </div>
 
@@ -287,15 +289,15 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         <!-- Erreur -->
         <div *ngIf="notFound"
             style="margin-top:.875rem;padding:.875rem;
-                   background:#fff5f5;border-radius:12px;
-                   border:1.5px solid #fca5a5;
+                   background:#FDEBEC;border-radius:10px;
+                   border:1.5px solid var(--red);
                    display:flex;align-items:center;gap:.75rem;">
-            <i class="pi pi-times-circle" style="color:#ef4444;font-size:1.1rem;flex-shrink:0;"></i>
+            <i class="pi pi-times-circle" style="color:var(--red);font-size:1.1rem;flex-shrink:0;"></i>
             <div>
-                <div style="font-weight:700;color:#b91c1c;font-size:.875rem;">
+                <div style="font-weight:700;color:var(--red);font-size:.875rem;">
                     Code introuvable
                 </div>
-                <div style="font-size:.775rem;color:#ef4444;margin-top:2px;">
+                <div style="font-size:.775rem;color:var(--red);margin-top:2px;">
                     Vérifiez le code sur votre reçu B4.
                 </div>
             </div>
@@ -365,8 +367,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 
         <!-- Code de suivi discret -->
         <div style="text-align:center;margin-bottom:1.25rem;">
-            <span style="font-family:monospace;font-size:.8rem;font-weight:700;
-                         color:#9ca3af;letter-spacing:.2em;">
+            <span style="font-family:var(--mono);font-size:.8rem;font-weight:700;
+                         color:var(--ink-40);letter-spacing:.2em;">
                 CODE : {{ dossier.accessCode }}
             </span>
         </div>
@@ -383,10 +385,10 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 
     <!-- Footer -->
     <div style="text-align:center;margin-top:2rem;
-                color:#9ca3af;font-size:.75rem;">
+                color:var(--ink-40);font-size:.75rem;">
         <p style="margin:0 0 3px;">ASCE-LC — Numéro vert</p>
         <a href="tel:80001157"
-            style="color:#16a34a;text-decoration:none;font-weight:700;font-size:.875rem;">
+            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;">
             <i class="pi pi-phone" style="font-size:.7rem;margin-right:4px;"></i>
             80 00 11 57
         </a>
@@ -396,15 +398,24 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 </div>
     `
 })
-export class PortailSuivi {
+export class PortailSuivi implements OnInit {
 
     private dossierService = inject(DossierService);
     private messageService = inject(MessageService);
+    private route          = inject(ActivatedRoute);
 
     accessCode = '';
     loading    = false;
     notFound   = false;
     dossier: DossierResponse | null = null;
+
+    ngOnInit(): void {
+        const code = this.route.snapshot.queryParamMap.get('code');
+        if (code) {
+            this.accessCode = code.toUpperCase();
+            this.search();
+        }
+    }
 
     readonly codeSlots   = [0,1,2,3,4,5,6,7];
     readonly totalSteps  = 10;
@@ -448,71 +459,67 @@ export class PortailSuivi {
         return !['CLOS', 'CLASSE', 'IRRECEVABLE', 'TRANSFERE'].includes(status);
     }
 
+    /**
+     * Chaque statut est rattaché à l'une des 4 teintes de la charte :
+     * noir (neutre/informatif), jaune (attention requise), vert (progression
+     * positive), rouge (rejeté) — pas de couleur hors charte.
+     */
+    private readonly statusTone: Record<string, 'ink' | 'yellow' | 'green' | 'red'> = {
+        SOUMIS: 'ink', RECU: 'ink', RAPPORT_PRODUIT: 'ink',
+        TRANSFERE: 'ink', CLASSE: 'ink',
+        EN_ETUDE_OPPORTUNITE: 'yellow', EN_ATTENTE_COMPLEMENT: 'yellow', EN_REVUE_CTADP: 'yellow',
+        RECEVABLE: 'green', EN_INVESTIGATION: 'green', DECISION_RENDUE: 'green', CLOS: 'green',
+        IRRECEVABLE: 'red'
+    };
+
+    private tone(s: string): 'ink' | 'yellow' | 'green' | 'red' {
+        return this.statusTone[s] || 'ink';
+    }
+
     getCardBg(s: string): string {
-        const m: Record<string, string> = {
-            SOUMIS:'linear-gradient(135deg,#eff6ff,#dbeafe)',
-            RECU:'linear-gradient(135deg,#eff6ff,#dbeafe)',
-            EN_ETUDE_OPPORTUNITE:'linear-gradient(135deg,#fffbeb,#fef3c7)',
-            EN_ATTENTE_COMPLEMENT:'linear-gradient(135deg,#fff7ed,#fef3c7)',
-            EN_REVUE_CTADP:'linear-gradient(135deg,#fffbeb,#fef3c7)',
-            RECEVABLE:'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-            IRRECEVABLE:'linear-gradient(135deg,#fff5f5,#fee2e2)',
-            TRANSFERE:'linear-gradient(135deg,#f9fafb,#f3f4f6)',
-            EN_INVESTIGATION:'linear-gradient(135deg,#faf5ff,#ede9fe)',
-            RAPPORT_PRODUIT:'linear-gradient(135deg,#eff6ff,#dbeafe)',
-            DECISION_RENDUE:'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-            CLOS:'linear-gradient(135deg,#f0fdf4,#dcfce7)',
-            CLASSE:'linear-gradient(135deg,#f9fafb,#f3f4f6)'
+        const m = {
+            ink:    'rgba(0,54,23,.05)',
+            yellow: 'rgba(255,216,0,.14)',
+            green:  'var(--mist)',
+            red:    '#FDEBEC'
         };
-        return m[s] || 'linear-gradient(135deg,#eff6ff,#dbeafe)';
+        return m[this.tone(s)];
     }
 
     getCardBorder(s: string): string {
-        const m: Record<string,string> = {
-            SOUMIS:'#93c5fd', RECU:'#93c5fd',
-            EN_ETUDE_OPPORTUNITE:'#fcd34d', EN_ATTENTE_COMPLEMENT:'#fbbf24',
-            EN_REVUE_CTADP:'#fcd34d', RECEVABLE:'#86efac',
-            IRRECEVABLE:'#fca5a5', TRANSFERE:'#e5e7eb',
-            EN_INVESTIGATION:'#c4b5fd', RAPPORT_PRODUIT:'#93c5fd',
-            DECISION_RENDUE:'#86efac', CLOS:'#86efac', CLASSE:'#e5e7eb'
+        const m = {
+            ink:    'rgba(0,54,23,.18)',
+            yellow: 'rgba(255,216,0,.5)',
+            green:  'rgba(0,150,64,.35)',
+            red:    'rgba(227,6,19,.35)'
         };
-        return m[s] || '#93c5fd';
+        return m[this.tone(s)];
     }
 
     getCardColor(s: string): string {
-        const m: Record<string,string> = {
-            SOUMIS:'#1e40af', RECU:'#1e40af',
-            EN_ETUDE_OPPORTUNITE:'#92400e', EN_ATTENTE_COMPLEMENT:'#9a3412',
-            EN_REVUE_CTADP:'#92400e', RECEVABLE:'#166534',
-            IRRECEVABLE:'#991b1b', TRANSFERE:'#374151',
-            EN_INVESTIGATION:'#5b21b6', RAPPORT_PRODUIT:'#1e40af',
-            DECISION_RENDUE:'#166534', CLOS:'#166534', CLASSE:'#374151'
+        const m = {
+            ink: 'var(--ink)', yellow: 'var(--ink)',
+            green: 'var(--green)', red: 'var(--red)'
         };
-        return m[s] || '#1e40af';
+        return m[this.tone(s)];
     }
 
     getIconBg(s: string): string {
-        const m: Record<string,string> = {
-            SOUMIS:'#dbeafe', RECU:'#dbeafe',
-            EN_ETUDE_OPPORTUNITE:'#fde68a', EN_ATTENTE_COMPLEMENT:'#fef3c7',
-            EN_REVUE_CTADP:'#fde68a', RECEVABLE:'#bbf7d0',
-            IRRECEVABLE:'#fee2e2', TRANSFERE:'#e5e7eb',
-            EN_INVESTIGATION:'#ddd6fe', RAPPORT_PRODUIT:'#dbeafe',
-            DECISION_RENDUE:'#bbf7d0', CLOS:'#bbf7d0', CLASSE:'#e5e7eb'
+        const m = {
+            ink:    'rgba(0,54,23,.09)',
+            yellow: 'rgba(255,216,0,.28)',
+            green:  'rgba(0,150,64,.16)',
+            red:    'rgba(227,6,19,.16)'
         };
-        return m[s] || '#dbeafe';
+        return m[this.tone(s)];
     }
 
     getProgressColor(s: string): string {
-        const m: Record<string,string> = {
-            SOUMIS:'#3b82f6', RECU:'#3b82f6',
-            EN_ETUDE_OPPORTUNITE:'#f59e0b', EN_ATTENTE_COMPLEMENT:'#f59e0b',
-            EN_REVUE_CTADP:'#f59e0b', RECEVABLE:'#22c55e',
-            IRRECEVABLE:'#ef4444', TRANSFERE:'#6b7280',
-            EN_INVESTIGATION:'#8b5cf6', RAPPORT_PRODUIT:'#3b82f6',
-            DECISION_RENDUE:'#16a34a', CLOS:'#16a34a', CLASSE:'#6b7280'
+        const m = {
+            ink: 'var(--ink)', yellow: 'var(--yellow)',
+            green: 'var(--green)', red: 'var(--red)'
         };
-        return m[s] || '#3b82f6';
+        return m[this.tone(s)];
     }
 
     getStatusLabel(s: string): string {
