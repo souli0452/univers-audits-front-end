@@ -13,21 +13,23 @@ import { PortalConfigService, PortalConfigItem } from '../../../core/services/po
 import { environment } from '../../../../environments/environment';
 
 const GROUP_LABELS: Record<string, string> = {
-    IDENTITE: 'Identité & Logos',
-    CONTACT:  'Contact',
-    HERO:     "Section Héro (page d'accueil)",
-    ETAPES:   'Étapes "Comment ça marche"',
-    FOOTER:   'Footer & Réseaux sociaux',
-    TOPBAR:   'Barre supérieure',
+    IDENTITE:      'Identité & Logos',
+    CONTACT:       'Contact',
+    HERO:          "Section Héro (page d'accueil)",
+    ETAPES:        'Étapes "Comment ça marche"',
+    FOOTER:        'Footer & Réseaux sociaux',
+    TOPBAR:        'Barre supérieure',
+    NOTIFICATIONS: 'Modèles de notifications',
 };
 
 const GROUP_ICONS: Record<string, string> = {
-    IDENTITE: 'pi pi-id-card',
-    CONTACT:  'pi pi-phone',
-    HERO:     'pi pi-image',
-    ETAPES:   'pi pi-list-check',
-    FOOTER:   'pi pi-globe',
-    TOPBAR:   'pi pi-window-maximize',
+    IDENTITE:      'pi pi-id-card',
+    CONTACT:       'pi pi-phone',
+    HERO:          'pi pi-image',
+    ETAPES:        'pi pi-list-check',
+    FOOTER:        'pi pi-globe',
+    TOPBAR:        'pi pi-window-maximize',
+    NOTIFICATIONS: 'pi pi-bell',
 };
 
 @Component({
@@ -256,7 +258,12 @@ export class PortalSettings implements OnInit {
 
     private readonly LONG_TEXT_KEYS = new Set([
         'hero_title', 'hero_subtitle', 'footer_about', 'topbar_message',
-        'step1_desc', 'step2_desc', 'step3_desc', 'step4_desc'
+        'step1_desc', 'step2_desc', 'step3_desc', 'step4_desc',
+        'notif_content_audio_alert', 'notif_content_protection_submitted',
+        'notif_content_protection_registered', 'notif_content_receipt_b4',
+        'notif_content_acknowledgment_b5', 'notif_content_complement_request',
+        'notif_content_investigation_assignment', 'notif_content_deadline_ar',
+        'notif_content_deadline_complement', 'notif_content_deadline_investigation'
     ]);
 
     ngOnInit(): void {
