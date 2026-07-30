@@ -40,8 +40,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
             --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
             --hair:#E4E9E6;
+            --font: 'Lato', system-ui, sans-serif;
+            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
-            display:block; font-family:var(--font-family);
+            display:block; font-family:var(--font);
         }
 
         .page { min-height:100vh; background:var(--paper); }
@@ -73,7 +75,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             box-shadow:0 8px 24px rgba(0,150,64,.3);
         }
         .hero-icon i { font-size:2.25rem; color:#fff; }
-        .hero h1 { font-size:1.75rem; font-weight:900; color:var(--ink); margin-bottom:.5rem; }
+        .hero h1 { font-family:var(--font-display); font-size:1.85rem; font-weight:800; color:var(--ink); margin-bottom:.5rem; }
         .hero p  { color:var(--ink-60); font-size:.875rem; }
 
         .steps-bar {
@@ -351,7 +353,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     [closable]="false" [style]="{width:'400px'}">
     <div class="success-body">
         <div class="success-icon"><i class="pi pi-check-circle"></i></div>
-        <h3 style="font-size:1.35rem;font-weight:900;color:var(--ink);margin-bottom:.5rem;">
+        <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:var(--ink);margin-bottom:.5rem;">
             Merci pour votre signalement !
         </h3>
         <p style="font-size:.875rem;color:var(--ink-60);line-height:1.7;margin-bottom:0;">

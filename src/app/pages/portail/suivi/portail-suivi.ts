@@ -36,8 +36,10 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
             --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
             --hair:#E4E9E6;
+            --font: 'Lato', system-ui, sans-serif;
+            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
-            display:block;
+            display:block; font-family:var(--font);
         }
 
         .page {
@@ -247,8 +249,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             <img src="assets/logo-asce.png" alt="ASCE-LC"
                 style="height:100%;width:auto;object-fit:contain;" />
         </div>
-        <h1 style="font-size:1.4rem;font-weight:900;color:var(--ink);
-                   margin:0 0 .25rem;letter-spacing:-.4px;">
+        <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;color:var(--ink);
+                   margin:0 0 .25rem;letter-spacing:-.2px;">
             Suivi de dossier
         </h1>
         <p style="color:var(--ink-40);font-size:.8rem;margin:0;">BURKINA FASO</p>

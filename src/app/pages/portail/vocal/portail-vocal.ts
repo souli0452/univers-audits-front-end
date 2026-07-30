@@ -40,8 +40,10 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
             --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
             --hair:#E4E9E6;
+            --font: 'Lato', system-ui, sans-serif;
+            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
-            display:block; font-family: var(--font-family);
+            display:block; font-family: var(--font);
         }
 
         .page-wrapper {
@@ -73,7 +75,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             margin:0 auto 1rem; box-shadow:0 8px 24px rgba(0,150,64,.3);
         }
         .header-icon i { font-size:3rem; color:#fff; }
-        .page-title { font-size:1.75rem; font-weight:900; color:var(--ink); margin-bottom:.5rem; }
+        .page-title { font-family:var(--font-display); font-size:1.85rem; font-weight:800; color:var(--ink); margin-bottom:.5rem; }
         .page-subtitle { color:var(--ink-60); font-size:.9rem; line-height:1.7; }
 
         .steps-bar {
@@ -302,7 +304,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
     [modal]="true" [closable]="false" [style]="{width:'380px'}">
     <div class="success-wrap">
         <div class="success-icon-wrap"><i class="pi pi-check-circle"></i></div>
-        <h3 style="font-size:1.4rem;font-weight:900;color:var(--ink);margin-bottom:.5rem;">
+        <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:var(--ink);margin-bottom:.5rem;">
             Merci pour votre témoignage !
         </h3>
         <p style="font-size:.875rem;color:var(--ink-60);line-height:1.7;margin-bottom:0;">
