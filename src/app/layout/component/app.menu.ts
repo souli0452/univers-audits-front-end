@@ -103,6 +103,11 @@ export class AppMenu {
             ]),
             items: [
                 {
+                    label: 'Dépassements par acteur',
+                    icon: 'pi pi-fw pi-exclamation-triangle',
+                    routerLink: ['/app/statistiques/depassements-par-acteur']
+                },
+                {
                     label: 'Agents',
                     icon: 'pi pi-fw pi-users',
                     routerLink: ['/app/administration/agents']

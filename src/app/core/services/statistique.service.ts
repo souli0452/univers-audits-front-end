@@ -3,9 +3,9 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_AUTH } from '../interceptors/skip-auth.context';
-import { MonthlyCount, StatistiqueResponse, PublicStats } from '../models/statistique.model';
+import { MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement } from '../models/statistique.model';
 
-export type { MonthlyCount, StatistiqueResponse, PublicStats } from '../models/statistique.model';
+export type { MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, DepassementItem } from '../models/statistique.model';
 
 
 @Injectable({ providedIn: 'root' })
@@ -43,5 +43,9 @@ export class StatistiqueService {
         return this.http.get<StatistiqueResponse>(
             `${this.baseUrl}/annual`, { params }
         );
+    }
+
+    getDepassementsParActeur(): Observable<ActeurDepassement[]> {
+        return this.http.get<ActeurDepassement[]>(`${this.baseUrl}/depassements-par-acteur`);
     }
 }
