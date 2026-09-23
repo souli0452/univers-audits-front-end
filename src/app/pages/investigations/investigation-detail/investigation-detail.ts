@@ -17,6 +17,7 @@ import { SkeletonModule }   from 'primeng/skeleton';
 import { AvatarModule }     from 'primeng/avatar';
 import { TooltipModule }    from 'primeng/tooltip';
 import { EditorModule }     from 'primeng/editor';
+import { InputTextModule }  from 'primeng/inputtext';
 import { MessageService }   from 'primeng/api';
 import { environment }      from '../../../../environments/environment';
 import {
@@ -30,6 +31,10 @@ import {
 import { AgentService }      from '../../../core/services/agent.service';
 import { KeycloakService }   from '../../../core/auth/keycloak.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
+import {
+    TransmissionAutoriteService,
+    TransmissionAutoriteResponse
+} from '../../../core/services/transmission-autorite.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -59,7 +64,8 @@ interface ApiError { error?: { message?: string }; }
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
         TextareaModule, SelectModule, ToastModule,
-        SkeletonModule, AvatarModule, TooltipModule, EditorModule
+        SkeletonModule, AvatarModule, TooltipModule, EditorModule,
+        InputTextModule
     ],
     providers: [MessageService],
     template: `
@@ -518,6 +524,49 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog transmission autorité ───────────────────────── -->
+<p-dialog [(visible)]="showTransmissionDialog"
+    header="Transmettre à l'autorité"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Autorité destinataire <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="transmissionForm.autoriteDestinataire"
+                placeholder="Ex : Procureur du Faso près le tribunal de..."
+                class="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showTransmissionDialog=false"/>
+        <p-button label="Transmettre" icon="pi pi-send"
+            [loading]="creatingTransmission" [disabled]="!transmissionForm.autoriteDestinataire.trim()"
+            (onClick)="executeCreerTransmission()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog relance transmission ────────────────────────── -->
+<p-dialog [(visible)]="showRelanceDialog"
+    header="Ajouter une relance"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu de la relance
+            </label>
+            <textarea pTextarea [(ngModel)]="relanceContenu"
+                placeholder="Détails de la relance auprès de l'autorité..."
+                rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRelanceDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingRelance" (onClick)="executeAjouterRelance()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -798,6 +847,73 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Transmission à l'autorité (saisine judiciaire) -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                                <i class="pi pi-send text-red-600 text-xs"></i>
+                            </div>
+                            Transmission à l'autorité
+                        </h3>
+                        <p-button *ngIf="!transmission && !loadingTransmission && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Transmettre" icon="pi pi-send" size="small"
+                            (onClick)="openTransmissionDialog()"/>
+                    </div>
+
+                    <div *ngIf="loadingTransmission" class="text-xs text-surface-400">Chargement...</div>
+
+                    <div *ngIf="!loadingTransmission && !transmission" class="text-sm text-surface-400">
+                        Aucune transmission enregistrée pour cette saisine judiciaire.
+                    </div>
+
+                    <div *ngIf="transmission" class="flex flex-col gap-3">
+                        <div class="p-3 rounded-xl border"
+                            [class.bg-red-50]="transmission.relanceOverdue"
+                            [class.border-red-200]="transmission.relanceOverdue"
+                            [class.bg-surface-50]="!transmission.relanceOverdue"
+                            [class.border-surface-200]="!transmission.relanceOverdue">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                Autorité destinataire
+                            </div>
+                            <div class="text-sm font-bold text-surface-800">
+                                {{ transmission.autoriteDestinataire }}
+                            </div>
+                            <div class="text-xs text-surface-500 mt-1">
+                                Transmis le {{ transmission.transmittedAt | date:'dd/MM/yyyy HH:mm' }}
+                                <span *ngIf="transmission.transmittedByNom"> — {{ transmission.transmittedByNom }}</span>
+                            </div>
+                            <div *ngIf="transmission.relanceDueAt" class="text-xs mt-1"
+                                [class.text-red-600]="transmission.relanceOverdue"
+                                [class.text-surface-500]="!transmission.relanceOverdue">
+                                <i class="pi" [class.pi-exclamation-triangle]="transmission.relanceOverdue"
+                                    [class.pi-clock]="!transmission.relanceOverdue"></i>
+                                Relance {{ transmission.relanceOverdue ? 'en retard depuis le' : 'prévue le' }}
+                                {{ transmission.relanceDueAt | date:'dd/MM/yyyy' }}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                Relances ({{ transmission.relances.length }})
+                            </span>
+                            <p-button *ngIf="hasRole(['CGE','ADMIN_DDIC'])"
+                                label="Ajouter une relance" icon="pi pi-plus" text size="small"
+                                (onClick)="openRelanceDialog()"/>
+                        </div>
+                        <div *ngFor="let r of transmission.relances"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-500 flex items-center justify-between mb-1">
+                                <span>{{ r.agentNom || '—' }}</span>
+                                <span>{{ r.relanceAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                            <div *ngIf="r.contenu" class="text-sm text-surface-700">{{ r.contenu }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div *ngIf="safeReport">
                     <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">Rapport</div>
                     <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4 leading-relaxed
@@ -966,6 +1082,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly keycloakService      = inject(KeycloakService);
     private readonly messageService       = inject(MessageService);
     private readonly attachmentService    = inject(AttachmentService);
+    private readonly transmissionAutoriteService = inject(TransmissionAutoriteService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -982,6 +1099,15 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     showReportDialog    = false;
     showCgeDialog       = false;
     showAddMemberDialog = false;
+
+    transmission:        TransmissionAutoriteResponse | null = null;
+    loadingTransmission  = false;
+    showTransmissionDialog = false;
+    creatingTransmission = false;
+    transmissionForm: { autoriteDestinataire: string } = { autoriteDestinataire: '' };
+    showRelanceDialog = false;
+    addingRelance     = false;
+    relanceContenu    = '';
 
     suspendReason = '';
 
@@ -1108,9 +1234,70 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.safeConclusions = inv.conclusions ?? null;
             this.safeRecommendations = inv.recommendations ?? null;
             this.computeNewDeadline();
+            if (inv.outcome === 'JUDICIAL_REFERRAL' && inv.cgeApprovedAt) {
+                this.loadTransmission(inv.id);
+            } else {
+                this.transmission = null;
+            }
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
+            this.transmission = null;
         }
+    }
+
+    // ── Transmission autorité ─────────────────────────────────
+    private loadTransmission(investigationId: string): void {
+        this.loadingTransmission = true;
+        this.transmissionAutoriteService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(t => {
+                this.transmission = t;
+                this.loadingTransmission = false;
+            });
+    }
+
+    openTransmissionDialog(): void {
+        this.transmissionForm = { autoriteDestinataire: '' };
+        this.showTransmissionDialog = true;
+    }
+
+    executeCreerTransmission(): void {
+        if (!this.inv || !this.transmissionForm.autoriteDestinataire.trim()) return;
+        this.creatingTransmission = true;
+        this.transmissionAutoriteService
+            .creer(this.inv.id, { autoriteDestinataire: this.transmissionForm.autoriteDestinataire.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: t => {
+                    this.transmission = t;
+                    this.creatingTransmission = false;
+                    this.showTransmissionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Transmission enregistrée' });
+                },
+                error: (err: ApiError) => { this.creatingTransmission = false; this.showError(err); }
+            });
+    }
+
+    openRelanceDialog(): void {
+        this.relanceContenu = '';
+        this.showRelanceDialog = true;
+    }
+
+    executeAjouterRelance(): void {
+        if (!this.inv) return;
+        this.addingRelance = true;
+        this.transmissionAutoriteService
+            .ajouterRelance(this.inv.id, { contenu: this.relanceContenu.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: t => {
+                    this.transmission = t;
+                    this.addingRelance = false;
+                    this.showRelanceDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Relance ajoutée' });
+                },
+                error: (err: ApiError) => { this.addingRelance = false; this.showError(err); }
+            });
     }
 
     openReportDialog(): void {
