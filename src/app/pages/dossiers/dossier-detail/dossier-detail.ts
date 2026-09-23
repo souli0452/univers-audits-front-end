@@ -34,6 +34,11 @@ import {
 import { InvestigationService } from '../../../core/services/investigation.service';
 import { PdfService } from '../../../core/services/pdf.service';
 import {
+    EtudeOpportuniteService,
+    EtudeOpportuniteResponse,
+    TypeInfractionOption
+} from '../../../core/services/etude-opportunite.service';
+import {
     FicheAffectationService,
     FicheAffectationResponse,
     FicheAffectationCreateRequest,
@@ -110,6 +115,7 @@ export class DossierDetail implements OnInit {
     private observationService   = inject(ObservationService);
     private ficheAffectationService = inject(FicheAffectationService);
     private pdfService              = inject(PdfService);
+    private etudeOpportuniteService = inject(EtudeOpportuniteService);
     private sanitizer            = inject(DomSanitizer);
 
     dossier:              DossierResponse | null  = null;
@@ -165,7 +171,9 @@ export class DossierDetail implements OnInit {
         { key: 'attachments',  label: 'Pièces jointes', icon: 'pi pi-paperclip',
           count: () => this.attachments.length  },
         { key: 'affectation',  label: 'Affectation',    icon: 'pi pi-send',
-          count: () => this.ficheAffectation ? 1 : 0    }
+          count: () => this.ficheAffectation ? 1 : 0    },
+        { key: 'etude',        label: "Analyse première", icon: 'pi pi-verified',
+          count: () => this.etudeOpportunite ? 1 : 0    }
     ];
 
     showCreateFicheDialog   = false;
@@ -197,6 +205,44 @@ export class DossierDetail implements OnInit {
         { label: 'En cours', value: 'EN_COURS' },
         { label: 'Clôturé',  value: 'CLOTURE'   },
         { label: 'Autre',    value: 'AUTRE'     }
+    ];
+
+    readonly etudeCreateLabel = "Créer l'étude d'opportunité";
+    etudeOpportunite: EtudeOpportuniteResponse | null = null;
+    typesInfraction:  TypeInfractionOption[]           = [];
+    showEtudeDialog   = false;
+    savingEtude       = false;
+    etudeForm: any = this.emptyEtudeForm();
+
+    readonly ouiNonOptions = [
+        { label: 'Oui', value: true  },
+        { label: 'Non', value: false }
+    ];
+    readonly natureQualificationOptions = [
+        { label: 'Pénale',        value: 'PENALE'        },
+        { label: 'Administrative', value: 'ADMINISTRATIVE' }
+    ];
+    readonly qualificationNonPenaleOptions = [
+        { label: 'Irrégularité',        value: 'IRREGULARITE'   },
+        { label: 'Fraude',              value: 'FRAUDE'         },
+        { label: 'Acte de collusion',   value: 'ACTE_COLLUSION' },
+        { label: 'Actes illicites',     value: 'ACTES_ILLICITES' }
+    ];
+    readonly etudeBoolQuestions: { key: string; commentKey: string; label: string }[] = [
+        { key: 'preoccupationReelle', commentKey: 'preoccupationReelleCommentaire',
+          label: "S'agit-il d'une préoccupation réelle ?" },
+        { key: 'competenceAsceLc', commentKey: 'competenceAsceLcCommentaire',
+          label: "Les faits relèvent-ils de la compétence de l'ASCE-LC ?" },
+        { key: 'preuvesSuffisantes', commentKey: 'preuvesSuffisantesCommentaire',
+          label: 'Les preuves apportées sont-elles suffisantes ?' },
+        { key: 'enqueteComplementaireNecessaire', commentKey: 'enqueteComplementaireNecessaireCommentaire',
+          label: 'Une enquête complémentaire est-elle nécessaire ?' },
+        { key: 'urgenceSecurisationPreuves', commentKey: 'urgenceSecurisationPreuvesCommentaire',
+          label: "Y a-t-il urgence à sécuriser des preuves ?" },
+        { key: 'opportuniteSaisirProcureur', commentKey: 'opportuniteSaisirProcureurCommentaire',
+          label: 'Y a-t-il opportunité de saisir le procureur ?' },
+        { key: 'soliditeAllegation', commentKey: 'soliditeAllegationCommentaire',
+          label: "L'allégation est-elle solide ?" }
     ];
 
     showTransitionDialog  = false;
@@ -287,6 +333,9 @@ export class DossierDetail implements OnInit {
         });
         this.ficheAffectationService.get(id).subscribe({
             next: f => { this.ficheAffectation = f; }
+        });
+        this.etudeOpportuniteService.get(id).subscribe({
+            next: e => { this.etudeOpportunite = e; }
         });
     }
 
@@ -1584,6 +1633,98 @@ export class DossierDetail implements OnInit {
                 });
             }
         });
+    }
+
+    private emptyEtudeForm(): any {
+        return {
+            preoccupationReelle: null, preoccupationReelleCommentaire: '',
+            competenceAsceLc: null, competenceAsceLcCommentaire: '',
+            natureQualification: null, typeInfractionId: null, qualificationNonPenale: null,
+            preuvesSuffisantes: null, preuvesSuffisantesCommentaire: '',
+            enqueteComplementaireNecessaire: null, enqueteComplementaireNecessaireCommentaire: '',
+            urgenceSecurisationPreuves: null, urgenceSecurisationPreuvesCommentaire: '',
+            opportuniteSaisirProcureur: null, opportuniteSaisirProcureurCommentaire: '',
+            secteurSensible: null, secteurPrecision: '',
+            soliditeAllegation: null, soliditeAllegationCommentaire: '',
+            avisGeneral: ''
+        };
+    }
+
+    canEditEtude(): boolean {
+        return this.dossier?.status === 'EN_ETUDE_OPPORTUNITE'
+            && this.hasRole(['CONSEILLER_JURIDIQUE', 'ADMIN_DDIC']);
+    }
+
+    openEtudeDialog(): void {
+        const e = this.etudeOpportunite;
+        this.etudeForm = e ? {
+            preoccupationReelle: e.preoccupationReelle ?? null,
+            preoccupationReelleCommentaire: e.preoccupationReelleCommentaire || '',
+            competenceAsceLc: e.competenceAsceLc ?? null,
+            competenceAsceLcCommentaire: e.competenceAsceLcCommentaire || '',
+            natureQualification: e.natureQualification || null,
+            typeInfractionId: e.typeInfractionId || null,
+            qualificationNonPenale: e.qualificationNonPenale || null,
+            preuvesSuffisantes: e.preuvesSuffisantes ?? null,
+            preuvesSuffisantesCommentaire: e.preuvesSuffisantesCommentaire || '',
+            enqueteComplementaireNecessaire: e.enqueteComplementaireNecessaire ?? null,
+            enqueteComplementaireNecessaireCommentaire: e.enqueteComplementaireNecessaireCommentaire || '',
+            urgenceSecurisationPreuves: e.urgenceSecurisationPreuves ?? null,
+            urgenceSecurisationPreuvesCommentaire: e.urgenceSecurisationPreuvesCommentaire || '',
+            opportuniteSaisirProcureur: e.opportuniteSaisirProcureur ?? null,
+            opportuniteSaisirProcureurCommentaire: e.opportuniteSaisirProcureurCommentaire || '',
+            secteurSensible: e.secteurSensible ?? null,
+            secteurPrecision: e.secteurPrecision || '',
+            soliditeAllegation: e.soliditeAllegation ?? null,
+            soliditeAllegationCommentaire: e.soliditeAllegationCommentaire || '',
+            avisGeneral: e.avisGeneral || ''
+        } : this.emptyEtudeForm();
+
+        this.showEtudeDialog = true;
+        if (this.typesInfraction.length === 0) {
+            this.etudeOpportuniteService.getTypesInfraction().subscribe({
+                next: t => { this.typesInfraction = t; }, error: () => {}
+            });
+        }
+    }
+
+    saveEtude(): void {
+        if (!this.dossier) return;
+        this.savingEtude = true;
+        this.etudeOpportuniteService.upsert(this.dossier.id, this.etudeForm).subscribe({
+            next: e => {
+                this.etudeOpportunite = e;
+                this.savingEtude       = false;
+                this.showEtudeDialog   = false;
+                this.messageService.add({ severity: 'success', summary: "Étude d'opportunité enregistrée" });
+            },
+            error: err => {
+                this.savingEtude = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Enregistrement impossible'
+                });
+            }
+        });
+    }
+
+    getEtudeVal(key: string): any {
+        return this.etudeOpportunite ? (this.etudeOpportunite as any)[key] : undefined;
+    }
+
+    getOuiNonLabel(v?: boolean | null): string {
+        return v === true ? 'Oui' : v === false ? 'Non' : '—';
+    }
+
+    getNatureQualificationLabel(v?: string): string {
+        return { PENALE: 'Pénale', ADMINISTRATIVE: 'Administrative' }[v || ''] || '—';
+    }
+
+    getQualificationNonPenaleLabel(v?: string): string {
+        return {
+            IRREGULARITE: 'Irrégularité', FRAUDE: 'Fraude',
+            ACTE_COLLUSION: 'Acte de collusion', ACTES_ILLICITES: 'Actes illicites'
+        }[v || ''] || '—';
     }
 
     downloadResumeCloture(): void {

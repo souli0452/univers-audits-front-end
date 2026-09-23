@@ -338,6 +338,67 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showEtudeDialog" header="Étude d'opportunité — Fiche d'analyse première"
+    [modal]="true" [style]="{width:'640px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2" style="max-height:65vh;overflow-y:auto;">
+
+        <div *ngFor="let q of etudeBoolQuestions" class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold text-surface-700">{{ q.label }}</label>
+            <div class="flex items-center gap-2">
+                <p-select [(ngModel)]="etudeForm[q.key]" [options]="ouiNonOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="—" [showClear]="true" styleClass="w-40" appendTo="body"/>
+                <input pInputText [(ngModel)]="etudeForm[q.commentKey]"
+                    class="flex-1 border border-surface-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Commentaire (optionnel)..."/>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold text-surface-700">Secteur sensible ?</label>
+            <div class="flex items-center gap-2">
+                <p-select [(ngModel)]="etudeForm.secteurSensible" [options]="ouiNonOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="—" [showClear]="true" styleClass="w-40" appendTo="body"/>
+                <input pInputText [(ngModel)]="etudeForm.secteurPrecision"
+                    class="flex-1 border border-surface-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Précision (optionnel)..."/>
+            </div>
+        </div>
+
+        <div class="p-3 rounded-xl border border-primary-100 bg-primary-50 flex flex-col gap-3">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Nature de la qualification</label>
+                <p-select [(ngModel)]="etudeForm.natureQualification" [options]="natureQualificationOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+            <div *ngIf="etudeForm.natureQualification === 'PENALE'">
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Qualification pénale</label>
+                <p-select [(ngModel)]="etudeForm.typeInfractionId" [options]="typesInfraction"
+                    optionLabel="libelle" optionValue="id"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+            <div *ngIf="etudeForm.natureQualification === 'ADMINISTRATIVE'">
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Qualification non pénale</label>
+                <p-select [(ngModel)]="etudeForm.qualificationNonPenale" [options]="qualificationNonPenaleOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Avis général</label>
+            <textarea pTextarea [(ngModel)]="etudeForm.avisGeneral" rows="4"
+                class="w-full resize-none" placeholder="Avis général du conseiller juridique..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showEtudeDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" [loading]="savingEtude" (onClick)="saveEtude()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showConfidentialDialog"
     [header]="dossier?.isConfidential ? 'Retirer la confidentialité' : 'Marquer comme confidentiel'"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false">
@@ -1117,6 +1178,73 @@
                                 severity="contrast" outlined size="small" (onClick)="openAffecterFicheDialog()"/>
                             <p-button *ngIf="canSuivreFiche()" icon="pi pi-refresh" label="Mettre à jour le suivi"
                                 severity="secondary" outlined size="small" (onClick)="openSuiviFicheDialog()"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="activeTab === 'etude'" class="p-5">
+                    <div class="flex justify-end mb-4" *ngIf="canEditEtude()">
+                        <p-button [icon]="etudeOpportunite ? 'pi pi-pencil' : 'pi pi-plus'"
+                            [label]="etudeOpportunite ? 'Modifier' : etudeCreateLabel"
+                            severity="secondary" outlined size="small" (onClick)="openEtudeDialog()"/>
+                    </div>
+
+                    <div *ngIf="!etudeOpportunite" class="text-center py-10 text-surface-400">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
+                            <i class="pi pi-verified text-xl text-surface-300"></i>
+                        </div>
+                        <p class="text-sm">Aucune étude d'opportunité enregistrée</p>
+                    </div>
+
+                    <div *ngIf="etudeOpportunite" class="flex flex-col gap-3">
+                        <div *ngFor="let q of etudeBoolQuestions"
+                            class="p-3 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm text-surface-700 dark:text-surface-200">{{ q.label }}</span>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                    [class.bg-green-100]="getEtudeVal(q.key) === true"
+                                    [class.text-green-700]="getEtudeVal(q.key) === true"
+                                    [class.bg-red-100]="getEtudeVal(q.key) === false"
+                                    [class.text-red-700]="getEtudeVal(q.key) === false"
+                                    [class.bg-surface-100]="getEtudeVal(q.key) == null"
+                                    [class.text-surface-400]="getEtudeVal(q.key) == null">
+                                    {{ getOuiNonLabel(getEtudeVal(q.key)) }}
+                                </span>
+                            </div>
+                            <p *ngIf="getEtudeVal(q.commentKey)"
+                                class="text-xs text-surface-500 mt-1.5">{{ getEtudeVal(q.commentKey) }}</p>
+                        </div>
+
+                        <div class="p-3 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm text-surface-700 dark:text-surface-200">Secteur sensible ?</span>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                    [class.bg-green-100]="etudeOpportunite.secteurSensible === true"
+                                    [class.text-green-700]="etudeOpportunite.secteurSensible === true"
+                                    [class.bg-surface-100]="etudeOpportunite.secteurSensible !== true"
+                                    [class.text-surface-400]="etudeOpportunite.secteurSensible !== true">
+                                    {{ getOuiNonLabel(etudeOpportunite.secteurSensible) }}
+                                </span>
+                            </div>
+                            <p *ngIf="etudeOpportunite.secteurPrecision" class="text-xs text-surface-500 mt-1.5">
+                                {{ etudeOpportunite.secteurPrecision }}
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl border border-primary-100 bg-primary-50">
+                            <div class="text-xs font-bold uppercase tracking-wide text-primary-600 mb-2">Qualification</div>
+                            <div class="text-sm font-semibold">{{ getNatureQualificationLabel(etudeOpportunite.natureQualification) }}</div>
+                            <div *ngIf="etudeOpportunite.natureQualification === 'PENALE'" class="text-sm text-surface-600 mt-1">
+                                {{ etudeOpportunite.typeInfractionLibelle || '—' }}
+                            </div>
+                            <div *ngIf="etudeOpportunite.natureQualification === 'ADMINISTRATIVE'" class="text-sm text-surface-600 mt-1">
+                                {{ getQualificationNonPenaleLabel(etudeOpportunite.qualificationNonPenale) }}
+                            </div>
+                        </div>
+
+                        <div *ngIf="etudeOpportunite.avisGeneral" class="p-4 rounded-xl border border-surface-100 dark:border-surface-600">
+                            <div class="text-xs font-bold uppercase tracking-wide text-surface-500 mb-2">Avis général</div>
+                            <p class="text-sm text-surface-700 dark:text-surface-200 whitespace-pre-line">{{ etudeOpportunite.avisGeneral }}</p>
                         </div>
                     </div>
                 </div>
