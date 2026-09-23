@@ -40,6 +40,12 @@ export const appRoutes: Routes = [
                     import('./app/pages/investigations/investigations.routes')
             },
             {
+                path: 'seances-ctadp',
+                loadChildren: () =>
+                    import('./app/pages/seances-ctadp/seances-ctadp.routes')
+                    .then(m => m.default)
+            },
+            {
                 path: 'statistiques',
                 loadChildren: () =>
                     import('./app/pages/statistiques/statistiques.routes')

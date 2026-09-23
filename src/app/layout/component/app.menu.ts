@@ -79,6 +79,19 @@ export class AppMenu {
         { separator: true },
 
         {
+            label: 'Bureau des plaintes',
+            items: [
+                {
+                    label: 'Séances CTADP',
+                    icon: 'pi pi-fw pi-users',
+                    routerLink: ['/app/seances-ctadp']
+                }
+            ]
+        },
+
+        { separator: true },
+
+        {
             label: 'Investigations',
             items: [
                 {
