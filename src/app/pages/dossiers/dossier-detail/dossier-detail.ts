@@ -119,6 +119,8 @@ export class DossierDetail implements OnInit {
     exportingPdf          = false;
     downloadingRecepisse   = false;
     downloadingAccuse      = false;
+    downloadingReponse     = false;
+    downloadingResume      = false;
     openDays              = 90;
     attachments:          AttachmentResponse[]    = [];
     parties:              TargetedPartyResponse[] = [];
@@ -1561,6 +1563,42 @@ export class DossierDetail implements OnInit {
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
                     detail: err.error?.message || "Téléchargement de l'accusé de réception impossible"
+                });
+            }
+        });
+    }
+
+    downloadReponseMotivee(): void {
+        if (!this.dossier) return;
+        this.downloadingReponse = true;
+        this.pdfService.downloadReponseMotivee(this.dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `reponse-motivee-${this.dossier!.accessCode || this.dossier!.id}.pdf`);
+                this.downloadingReponse = false;
+            },
+            error: err => {
+                this.downloadingReponse = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Téléchargement de la réponse motivée impossible'
+                });
+            }
+        });
+    }
+
+    downloadResumeCloture(): void {
+        if (!this.dossier) return;
+        this.downloadingResume = true;
+        this.pdfService.downloadResumeCloture(this.dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `resume-cloture-${this.dossier!.number || this.dossier!.id}.pdf`);
+                this.downloadingResume = false;
+            },
+            error: err => {
+                this.downloadingResume = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Téléchargement du résumé de clôture impossible'
                 });
             }
         });

@@ -781,6 +781,18 @@
                     [loading]="downloadingAccuse"
                     pTooltip="Télécharger l'accusé de réception (suites à donner)" (onClick)="downloadAccuseReception()"/>
 
+                <p-button *ngIf="dossier.decisionCGE && dossier.decisionCGE.decision === 'CLASSEMENT'"
+                    label="Réponse motivée" icon="pi pi-envelope"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingReponse"
+                    pTooltip="Télécharger la réponse motivée (dossier classé)" (onClick)="downloadReponseMotivee()"/>
+
+                <p-button *ngIf="dossier.status === 'CLOS' || dossier.status === 'CLASSE'"
+                    label="Résumé de clôture" icon="pi pi-book"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingResume"
+                    pTooltip="Synthèse interne du dossier (archivage)" (onClick)="downloadResumeCloture()"/>
+
                 <p-button *ngIf="dossier.status !== 'CLASSE'
                                  && dossier.status !== 'TRANSFERE'
                                  && dossier.status !== 'CLOS'

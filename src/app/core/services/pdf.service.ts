@@ -21,6 +21,14 @@ export class PdfService {
         return this.http.get(`${this.baseUrl}/public/recepisse/${accessCode}`, { responseType: 'blob' });
     }
 
+    downloadReponseMotivee(dossierId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/reponse-motivee/${dossierId}`, { responseType: 'blob' });
+    }
+
+    downloadResumeCloture(dossierId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/resume-cloture/${dossierId}`, { responseType: 'blob' });
+    }
+
     /** Déclenche le téléchargement d'un blob PDF avec le nom de fichier donné. */
     triggerDownload(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
