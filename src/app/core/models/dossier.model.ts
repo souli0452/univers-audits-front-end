@@ -146,6 +146,8 @@ export interface DossierCreateRequest {
     incidentPeriod?: string;
     estimatedLoss?: number;
     isConfidential?: boolean;
+    anonymous?: boolean;
+    quality?: string;
     declarantId?: string;
     declarantData?: DeclarantCreateRequest;
 }

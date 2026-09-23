@@ -742,9 +742,9 @@ export class DossierForm {
     ];
 
     readonly qualityOptions = [
-        { label: 'Victime',      value: 'VICTIM'         },
-        { label: 'Témoin',       value: 'WITNESS'        },
-        { label: 'Représentant', value: 'REPRESENTATIVE' }
+        { label: 'Victime',      value: 'VICTIME'               },
+        { label: 'Témoin',       value: 'TEMOIN'                },
+        { label: 'Représentant', value: 'REPRESENTANT_VICTIME'  }
     ];
 
     nextStep(activateCallback: any, step: number): void {
@@ -828,7 +828,6 @@ export class DossierForm {
               }
             : {
                 typeDeclarant:          this.fd['typeDeclarant'].value   || 'CITIZEN',
-                quality:                cleanStr(this.fd['quality'].value),
                 firstName:              cleanStr(this.fd['firstName'].value),
                 lastName:               cleanStr(this.fd['lastName'].value),
                 email:                  cleanStr(this.fd['email'].value),
@@ -848,6 +847,8 @@ export class DossierForm {
             object:         this.f['object'].value,
             description:    this.f['description'].value,
             isConfidential: this.f['isConfidential'].value ?? false,
+            anonymous:      isAnon,
+            quality:        isAnon ? undefined : cleanStr(this.fd['quality'].value),
             declarantData
         };
 
