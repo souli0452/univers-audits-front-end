@@ -243,6 +243,101 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showCreateFicheDialog" header="Créer la fiche d'affectation"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Décision du Cabinet du CGE <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheCreateForm.decisionCge" [options]="decisionCgeOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Observations</label>
+            <textarea pTextarea [(ngModel)]="ficheCreateForm.observationsCge" rows="4"
+                class="w-full resize-none" placeholder="Observations du Cabinet du CGE (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showCreateFicheDialog=false"/>
+        <p-button label="Créer" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveCreateFiche()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showAffecterFicheDialog" header="Affecter le dossier"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Type de désignation <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.typeDesignation" [options]="typeDesignationOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheAffecterForm.typeDesignation === 'DEPARTEMENT'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Département (DEI ou DAC) <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.departementDesigneId" [options]="departements"
+                optionLabel="libelle" optionValue="id"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheAffecterForm.typeDesignation === 'AGENT_CJ'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Conseiller juridique <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.agentDesigneId" [options]="conseillers"
+                optionLabel="lastName" optionValue="id"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body">
+                <ng-template let-a pTemplate="item">{{ a.firstName }} {{ a.lastName }}</ng-template>
+                <ng-template let-a pTemplate="selectedItem">{{ a.firstName }} {{ a.lastName }}</ng-template>
+            </p-select>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Observations</label>
+            <textarea pTextarea [(ngModel)]="ficheAffecterForm.observationsCgea" rows="4"
+                class="w-full resize-none" placeholder="Observations du CGEA (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAffecterFicheDialog=false"/>
+        <p-button label="Affecter" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveAffecterFiche()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showSuiviFicheDialog" header="Mettre à jour le suivi"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                État d'avancement <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheSuiviForm.etatAvancement" [options]="etatAvancementOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheSuiviForm.etatAvancement === 'AUTRE'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Précision <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="ficheSuiviForm.etatAvancementPrecision"
+                class="w-full border border-surface-300 rounded-lg px-3 py-2" placeholder="Précisez l'état..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Commentaires</label>
+            <textarea pTextarea [(ngModel)]="ficheSuiviForm.commentairesSuivi" rows="4"
+                class="w-full resize-none" placeholder="Commentaires de suivi (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showSuiviFicheDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveSuiviFiche()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showConfidentialDialog"
     [header]="dossier?.isConfidential ? 'Retirer la confidentialité' : 'Marquer comme confidentiel'"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false">
@@ -675,6 +770,17 @@
     [loading]="exportingPdf"
     pTooltip="Seule action disponible" (onClick)="exportPdf()"/>
 
+                <p-button label="Récépissé" icon="pi pi-receipt"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingRecepisse"
+                    pTooltip="Télécharger le récépissé de dépôt" (onClick)="downloadRecepisse()"/>
+
+                <p-button *ngIf="dossier.decisionCGE && dossier.decisionCGE.decision !== 'CLASSEMENT'"
+                    label="Accusé de réception" icon="pi pi-envelope"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingAccuse"
+                    pTooltip="Télécharger l'accusé de réception (suites à donner)" (onClick)="downloadAccuseReception()"/>
+
                 <p-button *ngIf="dossier.status !== 'CLASSE'
                                  && dossier.status !== 'TRANSFERE'
                                  && dossier.status !== 'CLOS'
@@ -942,6 +1048,63 @@
                                 <span class="mx-1 text-surface-300">·</span>
                                 <span class="text-surface-300">{{ obs.statusSnapshot }}</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="activeTab === 'affectation'" class="p-5">
+                    <div *ngIf="!ficheAffectation" class="text-center py-10 text-surface-400">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
+                            <i class="pi pi-send text-xl text-surface-300"></i>
+                        </div>
+                        <p class="text-sm mb-4">Aucune fiche d'affectation créée pour ce dossier</p>
+                        <p-button *ngIf="canCreateFiche()" icon="pi pi-plus" label="Créer la fiche d'affectation"
+                            severity="contrast" outlined size="small" (onClick)="openCreateFicheDialog()"/>
+                    </div>
+
+                    <div *ngIf="ficheAffectation" class="flex flex-col gap-4">
+                        <div class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Décision du Cabinet du CGE</span>
+                                <span class="text-xs text-surface-400">{{ ficheAffectation.dateDecisionCge | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="text-sm font-semibold">{{ getDecisionCgeLabel(ficheAffectation.decisionCge) }}</div>
+                            <div *ngIf="ficheAffectation.observationsCge" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.observationsCge }}</div>
+                            <div *ngIf="ficheAffectation.agentCgeNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentCgeNom }}</div>
+                        </div>
+
+                        <div *ngIf="ficheAffectation.typeDesignation"
+                            class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Affectation CGEA</span>
+                                <span class="text-xs text-surface-400">{{ ficheAffectation.dateImputation | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="text-sm font-semibold">
+                                {{ getTypeDesignationLabel(ficheAffectation.typeDesignation) }}
+                                <span *ngIf="ficheAffectation.departementDesigneLibelle"> — {{ ficheAffectation.departementDesigneLibelle }}</span>
+                                <span *ngIf="ficheAffectation.agentDesigneNom"> — {{ ficheAffectation.agentDesigneNom }}</span>
+                            </div>
+                            <div *ngIf="ficheAffectation.observationsCgea" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.observationsCgea }}</div>
+                            <div *ngIf="ficheAffectation.agentCgeaNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentCgeaNom }}</div>
+                        </div>
+
+                        <div *ngIf="ficheAffectation.etatAvancement"
+                            class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Suivi</span>
+                                <p-tag [value]="getEtatAvancementLabel(ficheAffectation.etatAvancement)"
+                                    [severity]="getEtatAvancementSeverity(ficheAffectation.etatAvancement)"/>
+                            </div>
+                            <div *ngIf="ficheAffectation.etatAvancementPrecision" class="text-sm text-surface-600">{{ ficheAffectation.etatAvancementPrecision }}</div>
+                            <div *ngIf="ficheAffectation.commentairesSuivi" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.commentairesSuivi }}</div>
+                            <div *ngIf="ficheAffectation.agentSuiviNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentSuiviNom }}</div>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <p-button *ngIf="canAffecterFiche()" icon="pi pi-share-alt" label="Affecter"
+                                severity="contrast" outlined size="small" (onClick)="openAffecterFicheDialog()"/>
+                            <p-button *ngIf="canSuivreFiche()" icon="pi pi-refresh" label="Mettre à jour le suivi"
+                                severity="secondary" outlined size="small" (onClick)="openSuiviFicheDialog()"/>
                         </div>
                     </div>
                 </div>

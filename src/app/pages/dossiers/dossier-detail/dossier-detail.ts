@@ -32,6 +32,16 @@ import {
     ObservationRequest
 } from '../../../core/services/observation.service';
 import { InvestigationService } from '../../../core/services/investigation.service';
+import { PdfService } from '../../../core/services/pdf.service';
+import {
+    FicheAffectationService,
+    FicheAffectationResponse,
+    FicheAffectationCreateRequest,
+    FicheAffectationAffectationRequest,
+    FicheAffectationSuiviRequest,
+    DepartementOption,
+    AgentSummary
+} from '../../../core/services/fiche-affectation.service';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -98,18 +108,25 @@ export class DossierDetail implements OnInit {
     private targetedPartyService = inject(TargetedPartyService);
     private witnessService       = inject(WitnessService);
     private observationService   = inject(ObservationService);
+    private ficheAffectationService = inject(FicheAffectationService);
+    private pdfService              = inject(PdfService);
     private sanitizer            = inject(DomSanitizer);
 
     dossier:              DossierResponse | null  = null;
     loading               = true;
     transitioning         = false;
     openingInvestigation  = false;
-    exportingPdf          = false;   
+    exportingPdf          = false;
+    downloadingRecepisse   = false;
+    downloadingAccuse      = false;
     openDays              = 90;
     attachments:          AttachmentResponse[]    = [];
     parties:              TargetedPartyResponse[] = [];
     witnesses:            WitnessResponse[]       = [];
     observations:         ObservationResponse[]   = [];
+    ficheAffectation:     FicheAffectationResponse | null = null;
+    departements:         DepartementOption[]      = [];
+    conseillers:          AgentSummary[]           = [];
     attachmentBlobs:      { [id: string]: string } = {};
     previewId:            string | null = null;
     docxHtml:             { [id: string]: string } = {};
@@ -144,7 +161,40 @@ export class DossierDetail implements OnInit {
         { key: 'observations', label: 'Observations',   icon: 'pi pi-comments',
           count: () => this.observations.length },
         { key: 'attachments',  label: 'Pièces jointes', icon: 'pi pi-paperclip',
-          count: () => this.attachments.length  }
+          count: () => this.attachments.length  },
+        { key: 'affectation',  label: 'Affectation',    icon: 'pi pi-send',
+          count: () => this.ficheAffectation ? 1 : 0    }
+    ];
+
+    showCreateFicheDialog   = false;
+    showAffecterFicheDialog = false;
+    showSuiviFicheDialog    = false;
+    savingFiche              = false;
+
+    ficheCreateForm: FicheAffectationCreateRequest = {
+        decisionCge: 'AFFECTATION_DIRECTE_CGEA', observationsCge: ''
+    };
+    ficheAffecterForm: FicheAffectationAffectationRequest = {
+        typeDesignation: 'DEPARTEMENT', departementDesigneId: undefined,
+        agentDesigneId: undefined, observationsCgea: ''
+    };
+    ficheSuiviForm: FicheAffectationSuiviRequest = {
+        etatAvancement: 'EN_COURS', etatAvancementPrecision: '', commentairesSuivi: ''
+    };
+
+    readonly decisionCgeOptions = [
+        { label: 'Affectation directe CGEA', value: 'AFFECTATION_DIRECTE_CGEA' },
+        { label: 'Échange préalable',        value: 'ECHANGE_PREALABLE'       }
+    ];
+    readonly typeDesignationOptions = [
+        { label: 'Département (DEI ou DAC)',      value: 'DEPARTEMENT' },
+        { label: 'Agent — Conseiller juridique',  value: 'AGENT_CJ'    },
+        { label: 'BRPD',                          value: 'BRPD'        }
+    ];
+    readonly etatAvancementOptions = [
+        { label: 'En cours', value: 'EN_COURS' },
+        { label: 'Clôturé',  value: 'CLOTURE'   },
+        { label: 'Autre',    value: 'AUTRE'     }
     ];
 
     showTransitionDialog  = false;
@@ -232,6 +282,9 @@ export class DossierDetail implements OnInit {
         });
         this.observationService.findAll(id).subscribe({
             next: o => { this.observations = o; }, error: () => {}
+        });
+        this.ficheAffectationService.get(id).subscribe({
+            next: f => { this.ficheAffectation = f; }
         });
     }
 
@@ -1330,5 +1383,186 @@ export class DossierDetail implements OnInit {
             email: '', address: '', testimonyNature: '',
             relationWithParties: '', anonymous: false, consentToContact: false
         };
+    }
+
+    canCreateFiche(): boolean {
+        return this.hasRole(['CGE', 'ADMIN_DDIC']) && !this.ficheAffectation;
+    }
+
+    canAffecterFiche(): boolean {
+        return this.hasRole(['CGEA', 'ADMIN_DDIC'])
+            && !!this.ficheAffectation && !this.ficheAffectation.typeDesignation;
+    }
+
+    canSuivreFiche(): boolean {
+        return !!this.ficheAffectation && !!this.ficheAffectation.typeDesignation;
+    }
+
+    openCreateFicheDialog(): void {
+        this.ficheCreateForm = { decisionCge: 'AFFECTATION_DIRECTE_CGEA', observationsCge: '' };
+        this.showCreateFicheDialog = true;
+    }
+
+    saveCreateFiche(): void {
+        if (!this.dossier) return;
+        this.savingFiche = true;
+        this.ficheAffectationService.creer(this.dossier.id, this.ficheCreateForm).subscribe({
+            next: f => {
+                this.ficheAffectation      = f;
+                this.savingFiche           = false;
+                this.showCreateFicheDialog = false;
+                this.messageService.add({ severity: 'success', summary: "Fiche d'affectation créée" });
+            },
+            error: err => {
+                this.savingFiche = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Création impossible'
+                });
+            }
+        });
+    }
+
+    openAffecterFicheDialog(): void {
+        this.ficheAffecterForm = {
+            typeDesignation: 'DEPARTEMENT', departementDesigneId: undefined,
+            agentDesigneId: undefined, observationsCgea: ''
+        };
+        this.showAffecterFicheDialog = true;
+        if (this.departements.length === 0) {
+            this.ficheAffectationService.getDepartementsDeiDac().subscribe({
+                next: d => { this.departements = d; }, error: () => {}
+            });
+        }
+        if (this.conseillers.length === 0) {
+            this.ficheAffectationService.getConseillersJuridiques().subscribe({
+                next: a => { this.conseillers = a; }, error: () => {}
+            });
+        }
+    }
+
+    saveAffecterFiche(): void {
+        if (!this.dossier) return;
+        if (this.ficheAffecterForm.typeDesignation === 'DEPARTEMENT'
+            && !this.ficheAffecterForm.departementDesigneId) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champ obligatoire',
+                detail: 'Sélectionnez un département (DEI ou DAC).'
+            });
+            return;
+        }
+        if (this.ficheAffecterForm.typeDesignation === 'AGENT_CJ'
+            && !this.ficheAffecterForm.agentDesigneId) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champ obligatoire',
+                detail: 'Sélectionnez un conseiller juridique.'
+            });
+            return;
+        }
+        this.savingFiche = true;
+        this.ficheAffectationService.affecter(this.dossier.id, this.ficheAffecterForm).subscribe({
+            next: f => {
+                this.ficheAffectation        = f;
+                this.savingFiche             = false;
+                this.showAffecterFicheDialog = false;
+                this.messageService.add({ severity: 'success', summary: 'Affectation enregistrée' });
+            },
+            error: err => {
+                this.savingFiche = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Affectation impossible'
+                });
+            }
+        });
+    }
+
+    openSuiviFicheDialog(): void {
+        this.ficheSuiviForm = {
+            etatAvancement: this.ficheAffectation?.etatAvancement || 'EN_COURS',
+            etatAvancementPrecision: this.ficheAffectation?.etatAvancementPrecision || '',
+            commentairesSuivi: ''
+        };
+        this.showSuiviFicheDialog = true;
+    }
+
+    saveSuiviFiche(): void {
+        if (!this.dossier) return;
+        if (this.ficheSuiviForm.etatAvancement === 'AUTRE'
+            && !this.ficheSuiviForm.etatAvancementPrecision?.trim()) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Champ obligatoire',
+                detail: "Précisez l'état d'avancement."
+            });
+            return;
+        }
+        this.savingFiche = true;
+        this.ficheAffectationService.suivre(this.dossier.id, this.ficheSuiviForm).subscribe({
+            next: f => {
+                this.ficheAffectation     = f;
+                this.savingFiche          = false;
+                this.showSuiviFicheDialog = false;
+                this.messageService.add({ severity: 'success', summary: 'Suivi mis à jour' });
+            },
+            error: err => {
+                this.savingFiche = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Mise à jour impossible'
+                });
+            }
+        });
+    }
+
+    getDecisionCgeLabel(v?: string): string {
+        return { AFFECTATION_DIRECTE_CGEA: 'Affectation directe CGEA', ECHANGE_PREALABLE: 'Échange préalable' }[v || ''] || v || '—';
+    }
+
+    getTypeDesignationLabel(v?: string): string {
+        return { DEPARTEMENT: 'Département', AGENT_CJ: 'Agent — Conseiller juridique', BRPD: 'BRPD' }[v || ''] || v || '—';
+    }
+
+    getEtatAvancementLabel(v?: string): string {
+        return { EN_COURS: 'En cours', CLOTURE: 'Clôturé', AUTRE: 'Autre' }[v || ''] || v || '—';
+    }
+
+    getEtatAvancementSeverity(v?: string): TagSeverity {
+        return ({ EN_COURS: 'warn', CLOTURE: 'success', AUTRE: 'info' } as Record<string, TagSeverity>)[v || ''] ?? 'info';
+    }
+
+    downloadRecepisse(): void {
+        if (!this.dossier) return;
+        this.downloadingRecepisse = true;
+        this.pdfService.downloadRecepisse(this.dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `recepisse-${this.dossier!.accessCode || this.dossier!.id}.pdf`);
+                this.downloadingRecepisse = false;
+            },
+            error: err => {
+                this.downloadingRecepisse = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Téléchargement du récépissé impossible'
+                });
+            }
+        });
+    }
+
+    downloadAccuseReception(): void {
+        if (!this.dossier) return;
+        this.downloadingAccuse = true;
+        this.pdfService.downloadAccuseReception(this.dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `accuse-reception-${this.dossier!.accessCode || this.dossier!.id}.pdf`);
+                this.downloadingAccuse = false;
+            },
+            error: err => {
+                this.downloadingAccuse = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || "Téléchargement de l'accusé de réception impossible"
+                });
+            }
+        });
     }
 }

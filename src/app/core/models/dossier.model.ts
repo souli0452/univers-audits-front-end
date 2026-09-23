@@ -129,6 +129,7 @@ export interface DossierResponse {
     agentInCharge?: AgentSummaryResponse;
     notifications?: NotificationResponse[];
     investigation?: InvestigationSummaryResponse;
+    decisionCGE?: { decision?: string } | null;
     priority?:         'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
     priorityReason?:   string;
     priorityDeadline?: string;   
