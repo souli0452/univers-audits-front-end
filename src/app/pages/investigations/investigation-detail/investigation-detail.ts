@@ -18,6 +18,8 @@ import { AvatarModule }     from 'primeng/avatar';
 import { TooltipModule }    from 'primeng/tooltip';
 import { EditorModule }     from 'primeng/editor';
 import { InputTextModule }  from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DatePickerModule } from 'primeng/datepicker';
 import { MessageService }   from 'primeng/api';
 import { environment }      from '../../../../environments/environment';
 import {
@@ -35,6 +37,15 @@ import {
     TransmissionAutoriteService,
     TransmissionAutoriteResponse
 } from '../../../core/services/transmission-autorite.service';
+import {
+    RequeteParquetService, RequeteParquetResponse,
+    ConstitutionPartieCivileService, ConstitutionPartieCivileResponse,
+    SuiviProcedurePenaleService, SuiviProcedurePenaleResponse
+} from '../../../core/services/suites-judiciaires.service';
+import {
+    PlanActionsService, PlanActionsStatusResponse,
+    MissionSuiviService, MissionSuiviResponse
+} from '../../../core/services/suivi-sanctions.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -65,7 +76,7 @@ interface ApiError { error?: { message?: string }; }
         ButtonModule, TagModule, DialogModule,
         TextareaModule, SelectModule, ToastModule,
         SkeletonModule, AvatarModule, TooltipModule, EditorModule,
-        InputTextModule
+        InputTextModule, InputNumberModule, DatePickerModule
     ],
     providers: [MessageService],
     template: `
@@ -567,6 +578,175 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog requête Parquet ─────────────────────────────── -->
+<p-dialog [(visible)]="showRequeteParquetDialog"
+    header="Requête au Parquet"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu de la requête
+            </label>
+            <textarea pTextarea [(ngModel)]="requeteParquetContenu"
+                placeholder="Rédigez la requête à adresser au Parquet..."
+                rows="8" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRequeteParquetDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingRequeteParquet" (onClick)="executeEnregistrerRequeteParquet()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog constitution de partie civile ──────────────────── -->
+<p-dialog [(visible)]="showConstitutionDialog"
+    header="Constitution de partie civile"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Justification <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="constitutionForm.justification"
+                placeholder="Motivez la constitution de partie civile de l'ASCE-LC..."
+                rows="4" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Montant réclamé (FCFA)
+            </label>
+            <p-inputnumber [(ngModel)]="constitutionForm.montantReclame"
+                [min]="0" mode="decimal" styleClass="w-full" inputStyleClass="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConstitutionDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingConstitution" [disabled]="!constitutionForm.justification.trim()"
+            (onClick)="executeCreerConstitution()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog suivi de procédure pénale ───────────────────────── -->
+<p-dialog [(visible)]="showSuiviPenalDialog"
+    header="Ajouter une étape de procédure pénale"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date de la phase <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="suiviPenalForm.phaseAt" dateFormat="dd/mm/yy"
+                showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Phase <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="suiviPenalForm.phase"
+                placeholder="Ex : Instruction, Audience, Jugement..." class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Commentaire
+            </label>
+            <textarea pTextarea [(ngModel)]="suiviPenalForm.commentaire"
+                rows="3" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showSuiviPenalDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingSuiviPenal" [disabled]="!suiviPenalForm.phaseAt || !suiviPenalForm.phase.trim()"
+            (onClick)="executeAjouterSuiviPenal()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog plan d'actions ──────────────────────────────────── -->
+<p-dialog [(visible)]="showPlanActionsDialog"
+    header="Déposer le plan d'actions"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Entité contrôlée <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="planActionsForm.entiteControlee" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu du plan d'actions <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planActionsForm.contenu"
+                rows="6" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPlanActionsDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPlanActions"
+            [disabled]="!planActionsForm.entiteControlee.trim() || !planActionsForm.contenu.trim()"
+            (onClick)="executeCreerPlanActions()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog note d'avancement ────────────────────────────────── -->
+<p-dialog [(visible)]="showAvancementDialog"
+    header="Ajouter une note d'avancement"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="avancementContenu"
+            placeholder="Détails de l'avancement du plan d'actions..."
+            rows="4" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAvancementDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingAvancement" (onClick)="executeAjouterAvancement()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog mission de suivi ─────────────────────────────────── -->
+<p-dialog [(visible)]="showMissionDialog"
+    header="Ajouter une mission de suivi"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date de la mission <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="missionForm.missionDate" dateFormat="dd/mm/yy"
+                showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Objectifs <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.objectifs" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Synthèse des recommandations <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.syntheseRecommandations" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Nouvelles recommandations
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.nouvellesRecommandations" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showMissionDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="addingMission"
+            [disabled]="!missionForm.missionDate || !missionForm.objectifs.trim() || !missionForm.syntheseRecommandations.trim()"
+            (onClick)="executeAjouterMission()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -847,6 +1027,29 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Requête au Parquet (saisine judiciaire, rédigée avant décision CGE) -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL'"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                                <i class="pi pi-file-edit text-orange-600 text-xs"></i>
+                            </div>
+                            Requête au Parquet
+                        </h3>
+                        <p-button *ngIf="!inv.cgeApprovedAt && hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            [label]="requeteParquet?.complet ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openRequeteParquetDialog()"/>
+                    </div>
+                    <p *ngIf="!requeteParquet?.complet" class="text-sm text-surface-400">
+                        Aucune requête au Parquet rédigée pour l'instant.
+                    </p>
+                    <p *ngIf="requeteParquet?.complet" class="text-sm text-surface-700 whitespace-pre-line leading-relaxed">
+                        {{ requeteParquet?.contenu }}
+                    </p>
+                </div>
+
                 <!-- Transmission à l'autorité (saisine judiciaire) -->
                 <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
                     class="bg-white dark:bg-surface-800 rounded-2xl p-5
@@ -910,6 +1113,170 @@ interface ApiError { error?: { message?: string }; }
                                 <span>{{ r.relanceAt | date:'dd/MM/yyyy HH:mm' }}</span>
                             </div>
                             <div *ngIf="r.contenu" class="text-sm text-surface-700">{{ r.contenu }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Constitution de partie civile -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                <i class="pi pi-shield text-indigo-600 text-xs"></i>
+                            </div>
+                            Constitution de partie civile
+                        </h3>
+                        <p-button *ngIf="!constitutionPartieCivile && !loadingConstitution && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Se constituer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openConstitutionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingConstitution" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingConstitution && !constitutionPartieCivile" class="text-sm text-surface-400">
+                        L'ASCE-LC ne s'est pas constituée partie civile pour ce dossier.
+                    </div>
+                    <div *ngIf="constitutionPartieCivile" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                        <p class="text-sm text-surface-700 mb-2">{{ constitutionPartieCivile.justification }}</p>
+                        <div class="flex items-center gap-4 text-xs text-surface-500">
+                            <span *ngIf="constitutionPartieCivile.montantReclame">
+                                Montant réclamé : <strong>{{ constitutionPartieCivile.montantReclame | number }} FCFA</strong>
+                            </span>
+                            <span>{{ constitutionPartieCivile.constitueAt | date:'dd/MM/yyyy' }}
+                                <span *ngIf="constitutionPartieCivile.constitueeParNom"> — {{ constitutionPartieCivile.constitueeParNom }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suivi de procédure pénale -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                                <i class="pi pi-history text-purple-600 text-xs"></i>
+                            </div>
+                            Suivi de procédure pénale
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            label="Ajouter une étape" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openSuiviPenalDialog()"/>
+                    </div>
+                    <div *ngIf="loadingSuiviPenal" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingSuiviPenal && !suivisProcedurePenale.length" class="text-sm text-surface-400">
+                        Aucune étape de procédure pénale enregistrée.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let s of suivisProcedurePenale"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ s.phase }}</span>
+                                <span class="text-xs text-surface-500">{{ s.phaseAt | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <p *ngIf="s.commentaire" class="text-sm text-surface-600">{{ s.commentaire }}</p>
+                            <div *ngIf="s.agentNom" class="text-xs text-surface-400 mt-1">{{ s.agentNom }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plan d'actions (sanctions administratives) -->
+                <div *ngIf="inv.outcome==='ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-map text-teal-600 text-xs"></i>
+                            </div>
+                            Plan d'actions
+                        </h3>
+                        <p-button *ngIf="planActions && !planActions.exists && hasRole(['CGEA','ADMIN_DDIC'])"
+                            label="Déposer le plan" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openPlanActionsDialog()"/>
+                    </div>
+                    <div *ngIf="loadingPlanActions" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="planActions && !planActions.exists" class="text-sm"
+                        [class.text-red-600]="planActions.planActionsOverdue"
+                        [class.text-surface-400]="!planActions.planActionsOverdue">
+                        Aucun plan d'actions déposé par l'entité contrôlée.
+                        <span *ngIf="planActions.planActionsDueAt">
+                            {{ planActions.planActionsOverdue ? 'Échéance dépassée depuis le' : 'Attendu pour le' }}
+                            {{ planActions.planActionsDueAt | date:'dd/MM/yyyy' }}
+                        </span>
+                    </div>
+                    <div *ngIf="planActions?.exists" class="flex flex-col gap-3">
+                        <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                Entité contrôlée
+                            </div>
+                            <div class="text-sm font-bold text-surface-800 mb-2">{{ planActions?.entiteControlee }}</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ planActions?.contenu }}</p>
+                            <div class="text-xs text-surface-500 mt-2">
+                                Reçu le {{ planActions?.submittedAt | date:'dd/MM/yyyy' }}
+                                <span *ngIf="planActions?.receivedByNom"> — {{ planActions?.receivedByNom }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                Notes d'avancement ({{ planActions?.avancements?.length || 0 }})
+                            </span>
+                            <p-button *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
+                                label="Ajouter une note" icon="pi pi-plus" text size="small"
+                                (onClick)="openAvancementDialog()"/>
+                        </div>
+                        <div *ngFor="let a of planActions?.avancements"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-500 flex items-center justify-between mb-1">
+                                <span>{{ a.agentNom || '—' }}</span>
+                                <span>{{ a.noteAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                            <div *ngIf="a.contenu" class="text-sm text-surface-700">{{ a.contenu }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Missions de suivi (sanctions administratives) -->
+                <div *ngIf="inv.outcome==='ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center">
+                                <i class="pi pi-verified text-cyan-600 text-xs"></i>
+                            </div>
+                            Missions de suivi
+                        </h3>
+                        <p-button *ngIf="planActions?.exists && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            label="Ajouter une mission" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openMissionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingMissionsSuivi" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMissionsSuivi && !planActions?.exists" class="text-sm text-surface-400">
+                        Les missions de suivi ne peuvent être programmées qu'après le dépôt du plan d'actions.
+                    </div>
+                    <div *ngIf="!loadingMissionsSuivi && planActions?.exists && !missionsSuivi.length" class="text-sm"
+                        [class.text-red-600]="missionSuiviOverdue"
+                        [class.text-surface-400]="!missionSuiviOverdue">
+                        Aucune mission de suivi réalisée.
+                        <span *ngIf="missionSuiviDueAt">
+                            {{ missionSuiviOverdue ? 'Échéance dépassée depuis le' : 'Attendue pour le' }}
+                            {{ missionSuiviDueAt | date:'dd/MM/yyyy' }}
+                        </span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let m of missionsSuivi"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ m.objectifs }}</span>
+                                <span class="text-xs text-surface-500">{{ m.missionDate | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <p class="text-sm text-surface-600">{{ m.syntheseRecommandations }}</p>
+                            <p *ngIf="m.nouvellesRecommandations" class="text-sm text-surface-500 mt-1 italic">
+                                Nouvelles recommandations : {{ m.nouvellesRecommandations }}
+                            </p>
+                            <div *ngIf="m.conductedByNom" class="text-xs text-surface-400 mt-1">{{ m.conductedByNom }}</div>
                         </div>
                     </div>
                 </div>
@@ -1083,6 +1450,11 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly messageService       = inject(MessageService);
     private readonly attachmentService    = inject(AttachmentService);
     private readonly transmissionAutoriteService = inject(TransmissionAutoriteService);
+    private readonly requeteParquetService = inject(RequeteParquetService);
+    private readonly constitutionPartieCivileService = inject(ConstitutionPartieCivileService);
+    private readonly suiviProcedurePenaleService = inject(SuiviProcedurePenaleService);
+    private readonly planActionsService = inject(PlanActionsService);
+    private readonly missionSuiviService = inject(MissionSuiviService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -1108,6 +1480,49 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     showRelanceDialog = false;
     addingRelance     = false;
     relanceContenu    = '';
+
+    // ── Requête Parquet ──────────────────────────────────────
+    requeteParquet:        RequeteParquetResponse | null = null;
+    showRequeteParquetDialog = false;
+    savingRequeteParquet   = false;
+    requeteParquetContenu  = '';
+
+    // ── Constitution de partie civile ────────────────────────
+    constitutionPartieCivile: ConstitutionPartieCivileResponse | null = null;
+    loadingConstitution    = false;
+    showConstitutionDialog = false;
+    creatingConstitution   = false;
+    constitutionForm: { justification: string; montantReclame: number | null } =
+        { justification: '', montantReclame: null };
+
+    // ── Suivi de procédure pénale ─────────────────────────────
+    suivisProcedurePenale: SuiviProcedurePenaleResponse[] = [];
+    loadingSuiviPenal      = false;
+    showSuiviPenalDialog   = false;
+    addingSuiviPenal       = false;
+    suiviPenalForm: { phaseAt: Date | null; phase: string; commentaire: string } =
+        { phaseAt: new Date(), phase: '', commentaire: '' };
+
+    // ── Plan d'actions ─────────────────────────────────────────
+    planActions:           PlanActionsStatusResponse | null = null;
+    loadingPlanActions     = false;
+    showPlanActionsDialog  = false;
+    creatingPlanActions    = false;
+    planActionsForm: { entiteControlee: string; contenu: string } =
+        { entiteControlee: '', contenu: '' };
+    showAvancementDialog   = false;
+    addingAvancement       = false;
+    avancementContenu      = '';
+
+    // ── Missions de suivi ──────────────────────────────────────
+    missionsSuivi:         MissionSuiviResponse[] = [];
+    missionSuiviDueAt:     string | null = null;
+    missionSuiviOverdue    = false;
+    loadingMissionsSuivi   = false;
+    showMissionDialog      = false;
+    addingMission          = false;
+    missionForm: { missionDate: Date | null; objectifs: string; syntheseRecommandations: string; nouvellesRecommandations: string } =
+        { missionDate: new Date(), objectifs: '', syntheseRecommandations: '', nouvellesRecommandations: '' };
 
     suspendReason = '';
 
@@ -1234,14 +1649,38 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.safeConclusions = inv.conclusions ?? null;
             this.safeRecommendations = inv.recommendations ?? null;
             this.computeNewDeadline();
-            if (inv.outcome === 'JUDICIAL_REFERRAL' && inv.cgeApprovedAt) {
-                this.loadTransmission(inv.id);
+            if (inv.outcome === 'JUDICIAL_REFERRAL') {
+                this.loadRequeteParquet(inv.id);
+                if (inv.cgeApprovedAt) {
+                    this.loadTransmission(inv.id);
+                    this.loadConstitution(inv.id);
+                    this.loadSuivisPenal(inv.id);
+                } else {
+                    this.transmission = null;
+                    this.constitutionPartieCivile = null;
+                    this.suivisProcedurePenale = [];
+                }
             } else {
                 this.transmission = null;
+                this.requeteParquet = null;
+                this.constitutionPartieCivile = null;
+                this.suivisProcedurePenale = [];
+            }
+            if (inv.outcome === 'ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt) {
+                this.loadPlanActions(inv.id);
+                this.loadMissionsSuivi(inv.id);
+            } else {
+                this.planActions = null;
+                this.missionsSuivi = [];
             }
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
+            this.requeteParquet = null;
+            this.constitutionPartieCivile = null;
+            this.suivisProcedurePenale = [];
+            this.planActions = null;
+            this.missionsSuivi = [];
         }
     }
 
@@ -1297,6 +1736,190 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                     this.messageService.add({ severity: 'success', summary: 'Relance ajoutée' });
                 },
                 error: (err: ApiError) => { this.addingRelance = false; this.showError(err); }
+            });
+    }
+
+    // ── Requête Parquet ────────────────────────────────────────
+    private loadRequeteParquet(investigationId: string): void {
+        this.requeteParquetService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(r => { this.requeteParquet = r; });
+    }
+
+    openRequeteParquetDialog(): void {
+        this.requeteParquetContenu = this.requeteParquet?.contenu ?? '';
+        this.showRequeteParquetDialog = true;
+    }
+
+    executeEnregistrerRequeteParquet(): void {
+        if (!this.inv) return;
+        this.savingRequeteParquet = true;
+        this.requeteParquetService.enregistrer(this.inv.id, { contenu: this.requeteParquetContenu.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.requeteParquet = r;
+                    this.savingRequeteParquet = false;
+                    this.showRequeteParquetDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Requête Parquet enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingRequeteParquet = false; this.showError(err); }
+            });
+    }
+
+    // ── Constitution de partie civile ─────────────────────────
+    private loadConstitution(investigationId: string): void {
+        this.loadingConstitution = true;
+        this.constitutionPartieCivileService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(c => { this.constitutionPartieCivile = c; this.loadingConstitution = false; });
+    }
+
+    openConstitutionDialog(): void {
+        this.constitutionForm = { justification: '', montantReclame: null };
+        this.showConstitutionDialog = true;
+    }
+
+    executeCreerConstitution(): void {
+        if (!this.inv || !this.constitutionForm.justification.trim()) return;
+        this.creatingConstitution = true;
+        this.constitutionPartieCivileService.creer(this.inv.id, {
+            justification: this.constitutionForm.justification.trim(),
+            montantReclame: this.constitutionForm.montantReclame ?? undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: c => {
+                    this.constitutionPartieCivile = c;
+                    this.creatingConstitution = false;
+                    this.showConstitutionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Constitution de partie civile enregistrée' });
+                },
+                error: (err: ApiError) => { this.creatingConstitution = false; this.showError(err); }
+            });
+    }
+
+    // ── Suivi de procédure pénale ──────────────────────────────
+    private loadSuivisPenal(investigationId: string): void {
+        this.loadingSuiviPenal = true;
+        this.suiviProcedurePenaleService.lister(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(res => { this.suivisProcedurePenale = res.suivis; this.loadingSuiviPenal = false; });
+    }
+
+    openSuiviPenalDialog(): void {
+        this.suiviPenalForm = { phaseAt: new Date(), phase: '', commentaire: '' };
+        this.showSuiviPenalDialog = true;
+    }
+
+    executeAjouterSuiviPenal(): void {
+        if (!this.inv || !this.suiviPenalForm.phaseAt || !this.suiviPenalForm.phase.trim()) return;
+        this.addingSuiviPenal = true;
+        this.suiviProcedurePenaleService.ajouter(this.inv.id, {
+            phaseAt: this.suiviPenalForm.phaseAt.toISOString(),
+            phase: this.suiviPenalForm.phase.trim(),
+            commentaire: this.suiviPenalForm.commentaire.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: res => {
+                    this.suivisProcedurePenale = res.suivis;
+                    this.addingSuiviPenal = false;
+                    this.showSuiviPenalDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Étape ajoutée' });
+                },
+                error: (err: ApiError) => { this.addingSuiviPenal = false; this.showError(err); }
+            });
+    }
+
+    // ── Plan d'actions ───────────────────────────────────────────
+    private loadPlanActions(investigationId: string): void {
+        this.loadingPlanActions = true;
+        this.planActionsService.getStatus(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(p => { this.planActions = p; this.loadingPlanActions = false; });
+    }
+
+    openPlanActionsDialog(): void {
+        this.planActionsForm = { entiteControlee: '', contenu: '' };
+        this.showPlanActionsDialog = true;
+    }
+
+    executeCreerPlanActions(): void {
+        if (!this.inv || !this.planActionsForm.entiteControlee.trim() || !this.planActionsForm.contenu.trim()) return;
+        this.creatingPlanActions = true;
+        this.planActionsService.creer(this.inv.id, {
+            entiteControlee: this.planActionsForm.entiteControlee.trim(),
+            contenu: this.planActionsForm.contenu.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.planActions = p;
+                    this.creatingPlanActions = false;
+                    this.showPlanActionsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'actions déposé" });
+                },
+                error: (err: ApiError) => { this.creatingPlanActions = false; this.showError(err); }
+            });
+    }
+
+    openAvancementDialog(): void {
+        this.avancementContenu = '';
+        this.showAvancementDialog = true;
+    }
+
+    executeAjouterAvancement(): void {
+        if (!this.inv) return;
+        this.addingAvancement = true;
+        this.planActionsService.ajouterAvancement(this.inv.id, { contenu: this.avancementContenu.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.planActions = p;
+                    this.addingAvancement = false;
+                    this.showAvancementDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Note d'avancement ajoutée" });
+                },
+                error: (err: ApiError) => { this.addingAvancement = false; this.showError(err); }
+            });
+    }
+
+    // ── Missions de suivi ────────────────────────────────────────
+    private loadMissionsSuivi(investigationId: string): void {
+        this.loadingMissionsSuivi = true;
+        this.missionSuiviService.lister(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(res => {
+                this.missionsSuivi = res.missions;
+                this.missionSuiviDueAt = res.missionSuiviDueAt ?? null;
+                this.missionSuiviOverdue = res.missionSuiviOverdue;
+                this.loadingMissionsSuivi = false;
+            });
+    }
+
+    openMissionDialog(): void {
+        this.missionForm = { missionDate: new Date(), objectifs: '', syntheseRecommandations: '', nouvellesRecommandations: '' };
+        this.showMissionDialog = true;
+    }
+
+    executeAjouterMission(): void {
+        if (!this.inv || !this.missionForm.missionDate
+            || !this.missionForm.objectifs.trim() || !this.missionForm.syntheseRecommandations.trim()) return;
+        this.addingMission = true;
+        this.missionSuiviService.ajouter(this.inv.id, {
+            missionDate: this.missionForm.missionDate.toISOString(),
+            objectifs: this.missionForm.objectifs.trim(),
+            syntheseRecommandations: this.missionForm.syntheseRecommandations.trim(),
+            nouvellesRecommandations: this.missionForm.nouvellesRecommandations.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: res => {
+                    this.missionsSuivi = res.missions;
+                    this.missionSuiviDueAt = res.missionSuiviDueAt ?? null;
+                    this.missionSuiviOverdue = res.missionSuiviOverdue;
+                    this.addingMission = false;
+                    this.showMissionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mission de suivi enregistrée' });
+                },
+                error: (err: ApiError) => { this.addingMission = false; this.showError(err); }
             });
     }
 
