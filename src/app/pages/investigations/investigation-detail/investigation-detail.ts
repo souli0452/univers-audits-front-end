@@ -59,6 +59,10 @@ import {
     AuditionService, AuditionResponse, IntervieweeType, AuditionStatus,
     PvAuditionResponse
 } from '../../../core/services/audition.service';
+import {
+    VisiteTerrainService, VisiteTerrainResponse, VisiteStatus,
+    PvConstatResponse
+} from '../../../core/services/visite-terrain.service';
 import { TargetedPartyService, TargetedPartyResponse } from '../../../core/services/targeted-party.service';
 import { WitnessService, WitnessResponse } from '../../../core/services/witness.service';
 
@@ -996,6 +1000,106 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog planifier visite terrain ─────────────────────────── -->
+<p-dialog [(visible)]="showScheduleVisiteDialog"
+    header="Planifier une visite terrain"
+    [modal]="true" [style]="{width:'500px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Lieu <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="scheduleVisiteForm.location" class="w-full"
+                placeholder="Ex : Siège de l'entité contrôlée, Ouagadougou..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date et heure <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="scheduleVisiteForm.scheduledAt" dateFormat="dd/mm/yy"
+                [showTime]="true" showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showScheduleVisiteDialog=false"/>
+        <p-button label="Planifier" icon="pi pi-check"
+            [loading]="schedulingVisite"
+            [disabled]="!scheduleVisiteForm.location.trim() || !scheduleVisiteForm.scheduledAt"
+            (onClick)="executeScheduleVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog tenir visite terrain ──────────────────────────────── -->
+<p-dialog [(visible)]="showConductVisiteDialog"
+    header="Tenir la visite terrain"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Compte-rendu <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="conductVisiteSummary" rows="6" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConductVisiteDialog=false"/>
+        <p-button label="Valider" icon="pi pi-check"
+            [loading]="conductingVisite" [disabled]="!conductVisiteSummary.trim()"
+            (onClick)="executeConductVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog annuler visite terrain ─────────────────────────────── -->
+<p-dialog [(visible)]="showCancelVisiteDialog"
+    header="Annuler la visite terrain"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif d'annulation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="cancelVisiteReason" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Retour" severity="secondary" outlined (onClick)="showCancelVisiteDialog=false"/>
+        <p-button label="Confirmer l'annulation" icon="pi pi-times" severity="danger"
+            [loading]="cancellingVisite" [disabled]="!cancelVisiteReason.trim()"
+            (onClick)="executeCancelVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog carence visite terrain ─────────────────────────────── -->
+<p-dialog [(visible)]="showCarenceDialog"
+    header="Constater une carence"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif de la carence <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="carenceReason" rows="3" class="w-full"
+            placeholder="Ex : site inaccessible, accès refusé..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showCarenceDialog=false"/>
+        <p-button label="Constater la carence" icon="pi pi-exclamation-triangle" severity="warn"
+            [loading]="markingCarence" [disabled]="!carenceReason.trim()"
+            (onClick)="executeMarkCarence()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rédiger PV de constat ─────────────────────────────── -->
+<p-dialog [(visible)]="showPvConstatCreateDialog"
+    header="Rédiger le procès-verbal de constat"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="pvConstatContent" rows="10" class="w-full"
+            placeholder="Contenu du procès-verbal de constat..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvConstatCreateDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPvConstat" [disabled]="!pvConstatContent.trim()"
+            (onClick)="executeCreatePvConstat()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1456,6 +1560,71 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Visites terrain -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-map-marker text-teal-600 text-xs"></i>
+                            </div>
+                            Visites terrain
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Planifier une visite" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openScheduleVisiteDialog()"/>
+                    </div>
+                    <div *ngIf="loadingVisites" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingVisites && !visitesTerrain.length" class="text-sm text-surface-400">
+                        Aucune visite terrain planifiée.
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div *ngFor="let v of visitesTerrain" class="p-3 rounded-xl border border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ v.location }}</span>
+                                <p-tag [value]="getVisiteStatusLabel(v.status)"
+                                    [severity]="v.status==='CONDUCTED' ? 'success' : v.status==='SCHEDULED' ? 'info' : 'danger'"
+                                    styleClass="text-xs"/>
+                            </div>
+                            <div class="text-xs text-surface-500 flex flex-wrap items-center gap-3 mb-1">
+                                <span>{{ v.scheduledAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                <span *ngIf="v.plannedByName">Planifiée par {{ v.plannedByName }}</span>
+                            </div>
+
+                            <div *ngIf="v.status==='SCHEDULED' && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Tenir" icon="pi pi-check" text size="small" (onClick)="openConductVisiteDialog(v)"/>
+                                <p-button label="Annuler" icon="pi pi-times" text size="small" severity="secondary" (onClick)="openCancelVisiteDialog(v)"/>
+                                <p-button label="Carence" icon="pi pi-exclamation-triangle" text size="small" severity="warn" (onClick)="openCarenceDialog(v)"/>
+                            </div>
+
+                            <p *ngIf="v.status==='CANCELLED' && v.cancellationReason" class="text-sm text-surface-500 mt-1">
+                                Motif d'annulation : {{ v.cancellationReason }}
+                            </p>
+                            <p *ngIf="v.status==='CARENCE' && v.carenceReason" class="text-sm text-surface-500 mt-1">
+                                Motif de carence : {{ v.carenceReason }}
+                            </p>
+
+                            <!-- Sous-section PV de constat -->
+                            <div *ngIf="v.status==='CONDUCTED'" class="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700">
+                                <p *ngIf="v.summary" class="text-sm text-surface-600 mb-2">{{ v.summary }}</p>
+
+                                <div *ngIf="!pvByVisite[v.id] && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])">
+                                    <p-button label="Rédiger le PV de constat" icon="pi pi-file-edit" text size="small" (onClick)="openPvConstatCreateDialog(v)"/>
+                                </div>
+
+                                <div *ngIf="pvByVisite[v.id] as pv" class="bg-surface-50 dark:bg-surface-700 rounded-xl p-3">
+                                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                        Procès-verbal de constat
+                                    </div>
+                                    <p class="text-sm text-surface-700 whitespace-pre-line mb-2">{{ pv.content }}</p>
+                                    <div class="text-xs text-surface-500">Rédigé par {{ pv.draftedByName || '—' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Requête au Parquet (saisine judiciaire, rédigée avant décision CGE) -->
                 <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL'"
                     class="bg-white dark:bg-surface-800 rounded-2xl p-5
@@ -1887,6 +2056,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly demandeDocumentsService = inject(DemandeDocumentsService);
     private readonly inventairePiecesService = inject(InventairePiecesService);
     private readonly auditionService = inject(AuditionService);
+    private readonly visiteTerrainService = inject(VisiteTerrainService);
     private readonly targetedPartyService = inject(TargetedPartyService);
     private readonly witnessService = inject(WitnessService);
     private readonly destroy$             = new Subject<void>();
@@ -2024,6 +2194,33 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         { label: 'Témoin', value: 'WITNESS' },
         { label: 'Partie visée', value: 'TARGETED_PARTY' }
     ];
+
+    // ── Visites terrain ──────────────────────────────────────
+    visitesTerrain:          VisiteTerrainResponse[] = [];
+    loadingVisites            = false;
+    pvByVisite:               Record<string, PvConstatResponse | null> = {};
+
+    showScheduleVisiteDialog = false;
+    schedulingVisite          = false;
+    scheduleVisiteForm: { location: string; scheduledAt: Date | null } = { location: '', scheduledAt: new Date() };
+
+    showConductVisiteDialog  = false;
+    conductingVisite          = false;
+    conductVisiteSummary      = '';
+
+    showCancelVisiteDialog   = false;
+    cancellingVisite           = false;
+    cancelVisiteReason         = '';
+
+    showCarenceDialog          = false;
+    markingCarence             = false;
+    carenceReason               = '';
+
+    showPvConstatCreateDialog = false;
+    creatingPvConstat          = false;
+    pvConstatContent           = '';
+
+    private actionVisite: VisiteTerrainResponse | null = null;
 
     suspendReason = '';
 
@@ -2186,6 +2383,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                     .pipe(takeUntil(this.destroy$))
                     .subscribe(list => { this.witnesses = list; });
             }
+            this.loadVisitesTerrain(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -2198,6 +2396,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.inventairePieces = [];
             this.auditions = [];
             this.pvByAudition = {};
+            this.visitesTerrain = [];
+            this.pvByVisite = {};
         }
     }
 
@@ -2786,6 +2986,144 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             WITNESS: 'Témoin',
             DECLARANT: 'Dénonciateur'
         } as Record<string, string>)[t] ?? t;
+    }
+
+    // ── Visites terrain ──────────────────────────────────────
+    private loadVisitesTerrain(investigationId: string): void {
+        this.loadingVisites = true;
+        this.visiteTerrainService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => {
+                this.visitesTerrain = list;
+                this.loadingVisites = false;
+                list.filter(v => v.status === 'CONDUCTED').forEach(v => this.loadPvConstat(investigationId, v.id));
+            });
+    }
+
+    private loadPvConstat(investigationId: string, visiteId: string): void {
+        this.visiteTerrainService.getPv(investigationId, visiteId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(pv => { this.pvByVisite = { ...this.pvByVisite, [visiteId]: pv }; });
+    }
+
+    openScheduleVisiteDialog(): void {
+        this.scheduleVisiteForm = { location: '', scheduledAt: new Date() };
+        this.showScheduleVisiteDialog = true;
+    }
+
+    executeScheduleVisite(): void {
+        if (!this.inv || !this.scheduleVisiteForm.location.trim() || !this.scheduleVisiteForm.scheduledAt) return;
+        this.schedulingVisite = true;
+        this.visiteTerrainService.schedule(this.inv.id, {
+            location: this.scheduleVisiteForm.location.trim(),
+            scheduledAt: this.scheduleVisiteForm.scheduledAt.toISOString()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: v => {
+                    this.visitesTerrain = [...this.visitesTerrain, v];
+                    this.schedulingVisite = false;
+                    this.showScheduleVisiteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Visite planifiée' });
+                },
+                error: (err: ApiError) => { this.schedulingVisite = false; this.showError(err); }
+            });
+    }
+
+    openConductVisiteDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.conductVisiteSummary = '';
+        this.showConductVisiteDialog = true;
+    }
+
+    executeConductVisite(): void {
+        if (!this.inv || !this.actionVisite || !this.conductVisiteSummary.trim()) return;
+        this.conductingVisite = true;
+        this.visiteTerrainService.conduct(this.inv.id, this.actionVisite.id, { summary: this.conductVisiteSummary.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.conductingVisite = false;
+                    this.showConductVisiteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Visite tenue' });
+                },
+                error: (err: ApiError) => { this.conductingVisite = false; this.showError(err); }
+            });
+    }
+
+    openCancelVisiteDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.cancelVisiteReason = '';
+        this.showCancelVisiteDialog = true;
+    }
+
+    executeCancelVisite(): void {
+        if (!this.inv || !this.actionVisite || !this.cancelVisiteReason.trim()) return;
+        this.cancellingVisite = true;
+        this.visiteTerrainService.cancel(this.inv.id, this.actionVisite.id, this.cancelVisiteReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.cancellingVisite = false;
+                    this.showCancelVisiteDialog = false;
+                    this.messageService.add({ severity: 'info', summary: 'Visite annulée' });
+                },
+                error: (err: ApiError) => { this.cancellingVisite = false; this.showError(err); }
+            });
+    }
+
+    openCarenceDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.carenceReason = '';
+        this.showCarenceDialog = true;
+    }
+
+    executeMarkCarence(): void {
+        if (!this.inv || !this.actionVisite || !this.carenceReason.trim()) return;
+        this.markingCarence = true;
+        this.visiteTerrainService.markCarence(this.inv.id, this.actionVisite.id, this.carenceReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.markingCarence = false;
+                    this.showCarenceDialog = false;
+                    this.messageService.add({ severity: 'warn', summary: 'Carence constatée' });
+                },
+                error: (err: ApiError) => { this.markingCarence = false; this.showError(err); }
+            });
+    }
+
+    openPvConstatCreateDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.pvConstatContent = '';
+        this.showPvConstatCreateDialog = true;
+    }
+
+    executeCreatePvConstat(): void {
+        if (!this.inv || !this.actionVisite || !this.pvConstatContent.trim()) return;
+        this.creatingPvConstat = true;
+        this.visiteTerrainService.createPv(this.inv.id, this.actionVisite.id, { content: this.pvConstatContent.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByVisite = { ...this.pvByVisite, [pv.visiteTerrainId]: pv };
+                    this.creatingPvConstat = false;
+                    this.showPvConstatCreateDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal de constat enregistré' });
+                },
+                error: (err: ApiError) => { this.creatingPvConstat = false; this.showError(err); }
+            });
+    }
+
+    getVisiteStatusLabel(s: VisiteStatus): string {
+        return ({
+            SCHEDULED: 'Planifiée',
+            CONDUCTED: 'Tenue',
+            CANCELLED: 'Annulée',
+            CARENCE: 'Carence'
+        } as Record<string, string>)[s] ?? s;
     }
 
     openReportDialog(): void {
