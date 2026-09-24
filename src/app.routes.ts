@@ -46,6 +46,13 @@ export const appRoutes: Routes = [
                     .then(m => m.default)
             },
             {
+                path: 'informations-preoccupantes',
+                canActivate: [roleGuard(['AGENT_BRPD', 'ADMIN_DDIC'])],
+                loadChildren: () =>
+                    import('./app/pages/informations-preoccupantes/informations-preoccupantes.routes')
+                    .then(m => m.default)
+            },
+            {
                 path: 'statistiques',
                 loadChildren: () =>
                     import('./app/pages/statistiques/statistiques.routes')

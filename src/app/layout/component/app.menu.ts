@@ -85,6 +85,12 @@ export class AppMenu {
                     label: 'Séances CTADP',
                     icon: 'pi pi-fw pi-users',
                     routerLink: ['/app/seances-ctadp']
+                },
+                {
+                    label: 'Informations préoccupantes',
+                    icon: 'pi pi-fw pi-eye',
+                    visible: this.keycloakService.hasAnyRole(['AGENT_BRPD', 'ADMIN_DDIC']),
+                    routerLink: ['/app/informations-preoccupantes']
                 }
             ]
         },
