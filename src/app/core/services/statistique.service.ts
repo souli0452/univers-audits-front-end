@@ -48,4 +48,9 @@ export class StatistiqueService {
     getDepassementsParActeur(): Observable<ActeurDepassement[]> {
         return this.http.get<ActeurDepassement[]>(`${this.baseUrl}/depassements-par-acteur`);
     }
+
+    exportAnnualReport(year: number): Observable<Blob> {
+        const params = new HttpParams().set('year', year);
+        return this.http.get(`${this.baseUrl}/annual/export`, { params, responseType: 'blob' });
+    }
 }
