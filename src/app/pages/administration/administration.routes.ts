@@ -43,6 +43,12 @@ export default [
       loadComponent: () =>
        import('./parametres-metier/parametres-metier')
          .then(m => m.ParametresMetier)
+    },
+    {
+      path: 'notifications-queue',
+      loadComponent: () =>
+       import('./notifications-queue/notifications-queue')
+         .then(m => m.NotificationsQueue)
     }
 
 ] as Routes;

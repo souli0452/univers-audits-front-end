@@ -161,6 +161,12 @@ export class AppMenu {
                     label: 'Paramètres métier',
                     icon: 'pi pi-fw pi-cog',
                     routerLink: ['/app/administration/parametres-metier']
+                },
+                {
+                    label: 'File des notifications',
+                    icon: 'pi pi-fw pi-bell',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGEA']),
+                    routerLink: ['/app/administration/notifications-queue']
                 }
                             ]
         },
