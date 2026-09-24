@@ -46,6 +46,13 @@ import {
     PlanActionsService, PlanActionsStatusResponse,
     MissionSuiviService, MissionSuiviResponse
 } from '../../../core/services/suivi-sanctions.service';
+import {
+    DemandeDocumentsService, DemandeDocumentsResponse, EscalationLevel
+} from '../../../core/services/demande-documents.service';
+import {
+    InventairePiecesService, InventairePieceItemResponse,
+    AttachmentSource, ModeObtention, AttachmentStatus
+} from '../../../core/services/inventaire-pieces.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -747,6 +754,55 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog nouvelle demande de documents ───────────────────── -->
+<p-dialog [(visible)]="showDemandeDocumentsDialog"
+    header="Nouvelle demande de documents"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Destinataire <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="demandeDocumentsForm.recipientLabel" class="w-full"
+                placeholder="Ex : Banque XYZ, agence de Ouagadougou..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Documents demandés <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="demandeDocumentsForm.documentsRequested"
+                rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showDemandeDocumentsDialog=false"/>
+        <p-button label="Envoyer" icon="pi pi-send"
+            [loading]="creatingDemande"
+            [disabled]="!demandeDocumentsForm.recipientLabel.trim() || !demandeDocumentsForm.documentsRequested.trim()"
+            (onClick)="executeCreerDemandeDocuments()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog adresse erronée ───────────────────────────────── -->
+<p-dialog [(visible)]="showAddressErrorDialog"
+    header="Corriger l'adresse du destinataire"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Destinataire corrigé <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="addressErrorForm.correctedRecipientLabel" class="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAddressErrorDialog=false"/>
+        <p-button label="Corriger et renvoyer" icon="pi pi-check"
+            [loading]="correctingAddress" [disabled]="!addressErrorForm.correctedRecipientLabel.trim()"
+            (onClick)="executeReportAddressError()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1023,6 +1079,88 @@ interface ApiError { error?: { message?: string }; }
                                 [style.color]="step.done ? '#16a34a' : step.active ? '#2563eb' : '#9ca3af'">
                                 {{ i+1 }}
                             </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demandes de documents -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900 flex items-center justify-center">
+                                <i class="pi pi-inbox text-sky-600 text-xs"></i>
+                            </div>
+                            Demandes de documents
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Nouvelle demande" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openDemandeDocumentsDialog()"/>
+                    </div>
+                    <div *ngIf="loadingDemandes" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingDemandes && !demandesDocuments.length" class="text-sm text-surface-400">
+                        Aucune demande de documents envoyée.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let d of demandesDocuments"
+                            class="p-3 rounded-xl border"
+                            [class.bg-red-50]="d.overdue && !d.received"
+                            [class.border-red-200]="d.overdue && !d.received"
+                            [class.bg-green-50]="d.received"
+                            [class.border-green-200]="d.received"
+                            [class.bg-surface-50]="!d.received && !d.overdue"
+                            [class.border-surface-200]="!d.received && !d.overdue">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ d.recipientLabel }}</span>
+                                <p-tag [value]="getEscalationLabel(d.escalationLevel)"
+                                    [severity]="d.received ? 'success' : (d.overdue ? 'danger' : 'info')" styleClass="text-xs"/>
+                            </div>
+                            <p class="text-sm text-surface-600 mb-1">{{ d.documentsRequested }}</p>
+                            <div class="text-xs text-surface-500 flex items-center gap-3">
+                                <span>Envoyée le {{ d.sentAt | date:'dd/MM/yyyy' }}</span>
+                                <span *ngIf="d.deadline">Échéance {{ d.deadline | date:'dd/MM/yyyy' }}</span>
+                                <span *ngIf="d.received" class="text-green-600">✓ Reçue le {{ d.receivedAt | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div *ngIf="!d.received && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Marquer reçue" icon="pi pi-check" text size="small"
+                                    (onClick)="executeMarkReceived(d)"/>
+                                <p-button *ngIf="d.overdue" label="Escalader" icon="pi pi-arrow-up" text size="small" severity="warn"
+                                    (onClick)="executeEscalate(d)"/>
+                                <p-button label="Adresse erronée" icon="pi pi-map-marker" text size="small" severity="secondary"
+                                    (onClick)="openAddressErrorDialog(d)"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventaire des pièces -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4 flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-lime-100 dark:bg-lime-900 flex items-center justify-center">
+                            <i class="pi pi-box text-lime-600 text-xs"></i>
+                        </div>
+                        Inventaire des pièces ({{ inventairePieces.length }})
+                    </h3>
+                    <div *ngIf="loadingInventaire" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingInventaire && !inventairePieces.length" class="text-sm text-surface-400">
+                        Aucune pièce dans le dossier.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let p of inventairePieces"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-surface-800">{{ p.code || '—' }}</div>
+                                <div class="text-xs text-surface-500">{{ p.description || 'Sans description' }}</div>
+                                <div class="text-xs text-surface-400 mt-0.5">
+                                    {{ getAttachmentSourceLabel(p.source) }} — {{ getModeObtentionLabel(p.modeObtention) }}
+                                    — {{ p.uploadedAt | date:'dd/MM/yyyy' }}
+                                </div>
+                            </div>
+                            <p-tag [value]="getAttachmentStatusLabel(p.status)"
+                                [severity]="p.status==='VALIDATED' ? 'success' : p.status==='REJECTED' ? 'danger' : 'info'"
+                                styleClass="text-xs"/>
                         </div>
                     </div>
                 </div>
@@ -1455,6 +1593,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly suiviProcedurePenaleService = inject(SuiviProcedurePenaleService);
     private readonly planActionsService = inject(PlanActionsService);
     private readonly missionSuiviService = inject(MissionSuiviService);
+    private readonly demandeDocumentsService = inject(DemandeDocumentsService);
+    private readonly inventairePiecesService = inject(InventairePiecesService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -1523,6 +1663,22 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     addingMission          = false;
     missionForm: { missionDate: Date | null; objectifs: string; syntheseRecommandations: string; nouvellesRecommandations: string } =
         { missionDate: new Date(), objectifs: '', syntheseRecommandations: '', nouvellesRecommandations: '' };
+
+    // ── Demandes de documents ─────────────────────────────────
+    demandesDocuments:      DemandeDocumentsResponse[] = [];
+    loadingDemandes         = false;
+    showDemandeDocumentsDialog = false;
+    creatingDemande          = false;
+    demandeDocumentsForm: { recipientLabel: string; documentsRequested: string } =
+        { recipientLabel: '', documentsRequested: '' };
+    showAddressErrorDialog  = false;
+    correctingAddress       = false;
+    addressErrorForm: { correctedRecipientLabel: string } = { correctedRecipientLabel: '' };
+    private demandeBeingCorrected: DemandeDocumentsResponse | null = null;
+
+    // ── Inventaire des pièces ─────────────────────────────────
+    inventairePieces:       InventairePieceItemResponse[] = [];
+    loadingInventaire       = false;
 
     suspendReason = '';
 
@@ -1673,6 +1829,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                 this.planActions = null;
                 this.missionsSuivi = [];
             }
+            this.loadDemandesDocuments(inv.id);
+            this.loadInventairePieces(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -1681,6 +1839,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.suivisProcedurePenale = [];
             this.planActions = null;
             this.missionsSuivi = [];
+            this.demandesDocuments = [];
+            this.inventairePieces = [];
         }
     }
 
@@ -1921,6 +2081,130 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                 },
                 error: (err: ApiError) => { this.addingMission = false; this.showError(err); }
             });
+    }
+
+    // ── Demandes de documents ──────────────────────────────────
+    private loadDemandesDocuments(investigationId: string): void {
+        this.loadingDemandes = true;
+        this.demandeDocumentsService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.demandesDocuments = list; this.loadingDemandes = false; });
+    }
+
+    openDemandeDocumentsDialog(): void {
+        this.demandeDocumentsForm = { recipientLabel: '', documentsRequested: '' };
+        this.showDemandeDocumentsDialog = true;
+    }
+
+    executeCreerDemandeDocuments(): void {
+        if (!this.inv || !this.demandeDocumentsForm.recipientLabel.trim()
+            || !this.demandeDocumentsForm.documentsRequested.trim()) return;
+        this.creatingDemande = true;
+        this.demandeDocumentsService.create(this.inv.id, {
+            recipientLabel: this.demandeDocumentsForm.recipientLabel.trim(),
+            documentsRequested: this.demandeDocumentsForm.documentsRequested.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: d => {
+                    this.demandesDocuments = [d, ...this.demandesDocuments];
+                    this.creatingDemande = false;
+                    this.showDemandeDocumentsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Demande envoyée' });
+                },
+                error: (err: ApiError) => { this.creatingDemande = false; this.showError(err); }
+            });
+    }
+
+    executeMarkReceived(d: DemandeDocumentsResponse): void {
+        if (!this.inv) return;
+        this.demandeDocumentsService.markReceived(this.inv.id, d.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.messageService.add({ severity: 'success', summary: 'Demande marquée reçue' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    executeEscalate(d: DemandeDocumentsResponse): void {
+        if (!this.inv) return;
+        this.demandeDocumentsService.escalate(this.inv.id, d.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.messageService.add({ severity: 'warn', summary: 'Demande escaladée', detail: this.getEscalationLabel(updated.escalationLevel) });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    openAddressErrorDialog(d: DemandeDocumentsResponse): void {
+        this.demandeBeingCorrected = d;
+        this.addressErrorForm = { correctedRecipientLabel: d.recipientLabel };
+        this.showAddressErrorDialog = true;
+    }
+
+    executeReportAddressError(): void {
+        if (!this.inv || !this.demandeBeingCorrected || !this.addressErrorForm.correctedRecipientLabel.trim()) return;
+        this.correctingAddress = true;
+        this.demandeDocumentsService.reportAddressError(
+            this.inv.id, this.demandeBeingCorrected.id,
+            { correctedRecipientLabel: this.addressErrorForm.correctedRecipientLabel.trim() }
+        ).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.correctingAddress = false;
+                    this.showAddressErrorDialog = false;
+                    this.demandeBeingCorrected = null;
+                    this.messageService.add({ severity: 'success', summary: 'Adresse corrigée, demande renvoyée' });
+                },
+                error: (err: ApiError) => { this.correctingAddress = false; this.showError(err); }
+            });
+    }
+
+    getEscalationLabel(l: EscalationLevel): string {
+        return ({
+            INITIAL: 'Demande initiale',
+            RELANCE: 'Relance',
+            SOMMATION: 'Sommation',
+            SAISINE_JUDICIAIRE: 'Saisine judiciaire'
+        } as Record<string, string>)[l] ?? l;
+    }
+
+    // ── Inventaire des pièces ──────────────────────────────────
+    private loadInventairePieces(investigationId: string): void {
+        this.loadingInventaire = true;
+        this.inventairePiecesService.getInventaire(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.inventairePieces = list; this.loadingInventaire = false; });
+    }
+
+    getAttachmentSourceLabel(s: AttachmentSource): string {
+        return ({
+            INITIAL_SUBMISSION: 'Dépôt initial',
+            FIELD_INVESTIGATION: 'Investigation terrain',
+            SOCIAL_MEDIA: 'Réseaux sociaux',
+            PRESS_MEDIA: 'Presse/média',
+            EXTERNAL_AUDIT: 'Audit externe',
+            OTHER: 'Autre'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    getModeObtentionLabel(m: ModeObtention): string {
+        return ({ VOLONTAIRE: 'Volontaire', REQUISITION: 'Réquisition' } as Record<string, string>)[m] ?? m;
+    }
+
+    getAttachmentStatusLabel(s: AttachmentStatus): string {
+        return ({
+            PENDING_VALIDATION: 'En attente',
+            VALIDATED: 'Validée',
+            REJECTED: 'Rejetée',
+            ARCHIVED: 'Archivée'
+        } as Record<string, string>)[s] ?? s;
     }
 
     openReportDialog(): void {
