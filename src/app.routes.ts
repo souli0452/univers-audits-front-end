@@ -70,6 +70,12 @@ export const appRoutes: Routes = [
                     .then(m => m.default)
             },
             {
+                path: 'lecons-a-partager',
+                loadComponent: () =>
+                    import('./app/pages/lecons-a-partager/lecons-a-partager-list')
+                    .then(m => m.LeconsAPartagerList)
+            },
+            {
                 path: 'profil',
                 loadComponent: () =>
                     import('./app/pages/profil/profil')

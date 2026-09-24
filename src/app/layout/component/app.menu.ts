@@ -109,7 +109,12 @@ export class AppMenu {
             label: 'Rapport investigations',
             icon:  'pi pi-fw pi-chart-bar',
             routerLink: ['/app/rapports/investigations']
-        }
+        },
+                {
+                    label: 'Leçons à partager',
+                    icon: 'pi pi-fw pi-lightbulb',
+                    routerLink: ['/app/lecons-a-partager']
+                }
             ]
         },
 

@@ -71,6 +71,10 @@ import {
 } from '../../../core/services/rapport-enquete.service';
 import { TargetedPartyService, TargetedPartyResponse } from '../../../core/services/targeted-party.service';
 import { WitnessService, WitnessResponse } from '../../../core/services/witness.service';
+import {
+    FicheRetexService, FicheRetexResponse, FicheRetexRequest, PublierLeconRequest
+} from '../../../core/services/fiche-retex.service';
+import { TypeInfractionService, TypeInfraction } from '../../../core/services/parametres-metier.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -1178,6 +1182,105 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog fiche RETEX ────────────────────────────────────────── -->
+<p-dialog [(visible)]="showFicheRetexDialog"
+    header="Fiche RETEX (retour d'expérience)"
+    [modal]="true" [style]="{width:'680px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Type d'infraction</label>
+            <p-select [(ngModel)]="ficheRetexForm.typeInfractionId" [options]="typesInfractionOptions"
+                optionLabel="libelle" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body" [showClear]="true"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Lieu</label>
+            <input pInputText [(ngModel)]="ficheRetexForm.lieu" class="w-full"/>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Impact financier</label>
+                <p-inputnumber [(ngModel)]="ficheRetexForm.impactFinancier" [min]="0" mode="decimal" styleClass="w-full" inputStyleClass="w-full"/>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Jours-hommes chargés</label>
+                <p-inputnumber [(ngModel)]="ficheRetexForm.joursCharges" [min]="0" styleClass="w-full" inputStyleClass="w-full"/>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Contexte</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.contexte" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Origine des soupçons</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.origineSoupcons" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Difficultés rencontrées</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.difficultesRencontrees" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Originalité des schémas</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.originaliteSchemas" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Stratégie et méthodes employées</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.strategieMethodes" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Collaborateurs planifiés</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.collaborateursPlanifies" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Synthèse des résultats <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.syntheseResultats" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Enseignements et axes d'amélioration <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.enseignementsAxesAmelioration" rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showFicheRetexDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="!ficheRetexForm.syntheseResultats.trim() || !ficheRetexForm.enseignementsAxesAmelioration.trim()"
+            [loading]="savingFicheRetex" (onClick)="executeSaveFicheRetex()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog publier leçon à partager ─────────────────────────────── -->
+<p-dialog [(visible)]="showPublierLeconDialog"
+    header="Publier comme leçon à partager"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <p class="text-xs text-surface-400">
+            Cette leçon sera visible par tous les agents dans la page « Leçons à partager ».
+        </p>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Titre <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="publierLeconForm.titre" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Résumé <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="publierLeconForm.resume" rows="6" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPublierLeconDialog=false"/>
+        <p-button label="Publier" icon="pi pi-send"
+            [disabled]="!publierLeconForm.titre.trim() || !publierLeconForm.resume.trim()"
+            [loading]="savingPublierLecon" (onClick)="executeSavePublierLecon()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1813,6 +1916,52 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Fiche RETEX & leçon à partager -->
+                <div *ngIf="inv.cgeApprovedAt" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <i class="pi pi-lightbulb text-amber-600 text-xs"></i>
+                            </div>
+                            Fiche RETEX (retour d'expérience)
+                        </h3>
+                        <p-button *ngIf="!ficheRetex && !loadingFicheRetex && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            label="Rédiger" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openFicheRetexDialog()"/>
+                    </div>
+                    <div *ngIf="loadingFicheRetex" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingFicheRetex && !ficheRetex" class="text-sm text-surface-400">
+                        Aucune fiche RETEX rédigée pour l'instant.
+                    </div>
+                    <div *ngIf="ficheRetex" class="flex flex-col gap-3">
+                        <div *ngIf="ficheRetex.typeInfractionLibelle" class="text-sm font-bold text-surface-800">
+                            {{ ficheRetex.typeInfractionLibelle }}
+                        </div>
+                        <div *ngIf="ficheRetex.contexte">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Contexte</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.contexte }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Synthèse des résultats</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.syntheseResultats }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Enseignements et axes d'amélioration</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.enseignementsAxesAmelioration }}</p>
+                        </div>
+                        <div class="text-xs text-surface-400">Rédigée par {{ ficheRetex.redigeParNom }}</div>
+
+                        <div class="pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">Leçon à partager</span>
+                            <p-tag *ngIf="leconPubliee" value="Publiée" severity="success" styleClass="text-xs"/>
+                            <p-button *ngIf="!leconPubliee && hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                                label="Publier comme leçon à partager" icon="pi pi-send" text size="small"
+                                (onClick)="openPublierLeconDialog()"/>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Requête au Parquet (saisine judiciaire, rédigée avant décision CGE) -->
                 <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL'"
                     class="bg-white dark:bg-surface-800 rounded-2xl p-5
@@ -2249,6 +2398,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly rapportEnqueteService = inject(RapportEnqueteService);
     private readonly targetedPartyService = inject(TargetedPartyService);
     private readonly witnessService = inject(WitnessService);
+    private readonly ficheRetexService = inject(FicheRetexService);
+    private readonly typeInfractionService = inject(TypeInfractionService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -2439,6 +2590,19 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     showNoteRecommandationsDialog = false;
     noteRecommandationsContent = '';
 
+    // ── Fiche RETEX & leçon à partager ──────────────────────────
+    ficheRetex:           FicheRetexResponse | null = null;
+    loadingFicheRetex     = false;
+    savingFicheRetex      = false;
+    showFicheRetexDialog  = false;
+    typesInfractionOptions: TypeInfraction[] = [];
+    ficheRetexForm: FicheRetexRequest = this.emptyFicheRetexForm();
+
+    savingPublierLecon    = false;
+    showPublierLeconDialog = false;
+    leconPubliee          = false;
+    publierLeconForm: PublierLeconRequest = { titre: '', resume: '' };
+
     suspendReason = '';
 
     extendDays             = 30;
@@ -2603,6 +2767,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.loadVisitesTerrain(inv.id);
             this.loadChecklist(inv.id);
             this.loadRapportEnquete(inv.id);
+            this.loadFicheRetex(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -2613,6 +2778,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.missionsSuivi = [];
             this.demandesDocuments = [];
             this.inventairePieces = [];
+            this.ficheRetex = null;
+            this.leconPubliee = false;
             this.auditions = [];
             this.pvByAudition = {};
             this.visitesTerrain = [];
@@ -3473,6 +3640,94 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                     this.messageService.add({ severity: 'success', summary: 'Note de recommandations enregistrée' });
                 },
                 error: (err: ApiError) => { this.savingNoteRecommandations = false; this.showError(err); }
+            });
+    }
+
+    // ── Fiche RETEX & leçon à partager ──────────────────────────
+    private emptyFicheRetexForm(): FicheRetexRequest {
+        return {
+            typeInfractionId: undefined, lieu: '', difficultesRencontrees: '',
+            origineSoupcons: '', impactFinancier: undefined, originaliteSchemas: '',
+            collaborateursPlanifies: '', joursCharges: undefined, contexte: '',
+            strategieMethodes: '', syntheseResultats: '', enseignementsAxesAmelioration: ''
+        };
+    }
+
+    private loadFicheRetex(investigationId: string): void {
+        this.loadingFicheRetex = true;
+        this.ficheRetexService.getFicheRetex(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(f => {
+                this.ficheRetex = f;
+                this.loadingFicheRetex = false;
+            });
+    }
+
+    openFicheRetexDialog(): void {
+        this.ficheRetexForm = this.emptyFicheRetexForm();
+        if (!this.typesInfractionOptions.length) {
+            this.typeInfractionService.findAllActifs()
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(list => { this.typesInfractionOptions = list; });
+        }
+        this.showFicheRetexDialog = true;
+    }
+
+    executeSaveFicheRetex(): void {
+        if (!this.inv) return;
+        const f = this.ficheRetexForm;
+        if (!f.syntheseResultats.trim() || !f.enseignementsAxesAmelioration.trim()) return;
+        this.savingFicheRetex = true;
+        this.ficheRetexService.createFicheRetex(this.inv.id, {
+            typeInfractionId: f.typeInfractionId || undefined,
+            lieu: f.lieu?.trim() || undefined,
+            difficultesRencontrees: f.difficultesRencontrees?.trim() || undefined,
+            origineSoupcons: f.origineSoupcons?.trim() || undefined,
+            impactFinancier: f.impactFinancier ?? undefined,
+            originaliteSchemas: f.originaliteSchemas?.trim() || undefined,
+            collaborateursPlanifies: f.collaborateursPlanifies?.trim() || undefined,
+            joursCharges: f.joursCharges ?? undefined,
+            contexte: f.contexte?.trim() || undefined,
+            strategieMethodes: f.strategieMethodes?.trim() || undefined,
+            syntheseResultats: f.syntheseResultats.trim(),
+            enseignementsAxesAmelioration: f.enseignementsAxesAmelioration.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.ficheRetex = r;
+                    this.savingFicheRetex = false;
+                    this.showFicheRetexDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Fiche RETEX rédigée' });
+                },
+                error: (err: ApiError) => { this.savingFicheRetex = false; this.showError(err); }
+            });
+    }
+
+    openPublierLeconDialog(): void {
+        this.publierLeconForm = {
+            titre: this.ficheRetex?.typeInfractionLibelle ?? '',
+            resume: this.ficheRetex?.enseignementsAxesAmelioration ?? ''
+        };
+        this.showPublierLeconDialog = true;
+    }
+
+    executeSavePublierLecon(): void {
+        if (!this.inv) return;
+        const f = this.publierLeconForm;
+        if (!f.titre.trim() || !f.resume.trim()) return;
+        this.savingPublierLecon = true;
+        this.ficheRetexService.publierLecon(this.inv.id, {
+            titre: f.titre.trim(),
+            resume: f.resume.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.savingPublierLecon = false;
+                    this.showPublierLeconDialog = false;
+                    this.leconPubliee = true;
+                    this.messageService.add({ severity: 'success', summary: 'Leçon publiée', detail: 'Visible dans "Leçons à partager"' });
+                },
+                error: (err: ApiError) => { this.savingPublierLecon = false; this.showError(err); }
             });
     }
 

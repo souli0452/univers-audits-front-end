@@ -73,6 +73,10 @@ export class TypeInfractionService {
     private http = inject(HttpClient);
     private url = `${environment.apiUrl}/types-infraction`;
 
+    findAllActifs(): Observable<TypeInfraction[]> {
+        return this.http.get<TypeInfraction[]>(this.url);
+    }
+
     findAll(): Observable<TypeInfraction[]> {
         return this.http.get<TypeInfraction[]>(`${this.url}/admin`);
     }
