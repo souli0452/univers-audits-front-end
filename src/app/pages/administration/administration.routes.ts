@@ -37,6 +37,12 @@ export default [
       loadComponent: () =>
        import('./portal-settings/portal-settings')
          .then(m => m.PortalSettings)
+    },
+    {
+      path: 'parametres-metier',
+      loadComponent: () =>
+       import('./parametres-metier/parametres-metier')
+         .then(m => m.ParametresMetier)
     }
-    
+
 ] as Routes;

@@ -145,6 +145,11 @@ export class AppMenu {
                     label: 'Paramètres du portail',
                     icon: 'pi pi-fw pi-sliders-h',
                     routerLink: ['/app/administration/parametres-portail']
+                },
+                {
+                    label: 'Paramètres métier',
+                    icon: 'pi pi-fw pi-cog',
+                    routerLink: ['/app/administration/parametres-metier']
                 }
                             ]
         },
