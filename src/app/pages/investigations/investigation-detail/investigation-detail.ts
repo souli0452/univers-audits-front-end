@@ -63,6 +63,12 @@ import {
     VisiteTerrainService, VisiteTerrainResponse, VisiteStatus,
     PvConstatResponse
 } from '../../../core/services/visite-terrain.service';
+import {
+    ChecklistDossierTravailService, ChecklistDossierTravailItemResponse
+} from '../../../core/services/checklist-dossier-travail.service';
+import {
+    RapportEnqueteService, RapportEnqueteResponse, NoteRecommandationsResponse
+} from '../../../core/services/rapport-enquete.service';
 import { TargetedPartyService, TargetedPartyResponse } from '../../../core/services/targeted-party.service';
 import { WitnessService, WitnessResponse } from '../../../core/services/witness.service';
 
@@ -1100,6 +1106,78 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog commentaire check-list ───────────────────────────── -->
+<p-dialog [(visible)]="showChecklistCommentDialog"
+    header="Commentaire du point de contrôle"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="checklistCommentValue" rows="4" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showChecklistCommentDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" (onClick)="executeSaveChecklistComment()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rapport d'enquête ─────────────────────────────────── -->
+<p-dialog [(visible)]="showRapportEnqueteDialog"
+    header="Rapport d'enquête officiel"
+    [modal]="true" [style]="{width:'680px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Titre</label>
+            <input pInputText [(ngModel)]="rapportEnqueteForm.titre" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Introduction</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.introduction" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Méthodologie</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.methodologie" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Informations collectées</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.informationsCollectees" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Exposé factuel des anomalies</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.exposeFactuelAnomalies" rows="4" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Quantification du préjudice</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.quantificationPrejudice" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Réserves</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.reserves" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Conclusions</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.conclusions" rows="3" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRapportEnqueteDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingRapportEnquete" (onClick)="executeSaveRapportEnquete()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog note de recommandations ───────────────────────────── -->
+<p-dialog [(visible)]="showNoteRecommandationsDialog"
+    header="Note de recommandations"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="noteRecommandationsContent" rows="8" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showNoteRecommandationsDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingNoteRecommandations" (onClick)="executeSaveNoteRecommandations()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1625,6 +1703,116 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Check-list du dossier de travail -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4 flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
+                            <i class="pi pi-check-square text-violet-600 text-xs"></i>
+                        </div>
+                        Check-list du dossier de travail
+                        <span *ngIf="checklistItems.length" class="text-xs font-normal text-surface-400 ml-1">
+                            ({{ getChecklistCheckedCount() }}/{{ checklistItems.length }})
+                        </span>
+                    </h3>
+                    <div *ngIf="loadingChecklist" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingChecklist && !checklistItems.length" class="text-sm text-surface-400">
+                        Aucun point de contrôle configuré.
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div *ngFor="let item of checklistItems"
+                            class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700">
+                            <p-checkbox [ngModel]="item.coche" [binary]="true"
+                                [disabled]="inv.status!=='IN_PROGRESS' || !hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC']) || savingChecklistCode===item.code"
+                                (onChange)="executeToggleChecklist(item)"/>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm" [class.text-surface-400]="!item.coche" [class.text-surface-800]="item.coche">
+                                    {{ item.libelle }}
+                                </div>
+                                <div *ngIf="item.commentaire" class="text-xs text-surface-500 mt-0.5">{{ item.commentaire }}</div>
+                                <div *ngIf="item.coche && item.cocheParNom" class="text-xs text-surface-400 mt-0.5">
+                                    Coché par {{ item.cocheParNom }} — {{ item.cocheAt | date:'dd/MM/yyyy' }}
+                                </div>
+                            </div>
+                            <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                icon="pi pi-comment" text size="small" severity="secondary"
+                                (onClick)="openChecklistCommentDialog(item)"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rapport d'enquête officiel -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                <i class="pi pi-book text-blue-600 text-xs"></i>
+                            </div>
+                            Rapport d'enquête officiel
+                            <p-tag *ngIf="rapportEnquete" [value]="rapportEnquete.complet ? 'Complet' : 'Brouillon'"
+                                [severity]="rapportEnquete.complet ? 'success' : 'warn'" styleClass="text-xs"/>
+                        </h3>
+                        <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            [label]="rapportEnquete ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openRapportEnqueteDialog()"/>
+                    </div>
+                    <div *ngIf="loadingRapportEnquete" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingRapportEnquete && !rapportEnquete" class="text-sm text-surface-400">
+                        Aucun rapport d'enquête rédigé pour l'instant.
+                    </div>
+                    <div *ngIf="rapportEnquete" class="flex flex-col gap-3">
+                        <div *ngIf="rapportEnquete.titre" class="text-sm font-bold text-surface-800">{{ rapportEnquete.titre }}</div>
+                        <div *ngIf="rapportEnquete.introduction">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Introduction</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.introduction }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.methodologie">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Méthodologie</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.methodologie }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.informationsCollectees">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Informations collectées</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.informationsCollectees }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.exposeFactuelAnomalies">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Exposé factuel des anomalies</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.exposeFactuelAnomalies }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.quantificationPrejudice">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Quantification du préjudice</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.quantificationPrejudice }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.reserves">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Réserves</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.reserves }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.conclusions">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Conclusions</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.conclusions }}</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                    Note de recommandations
+                                    <p-tag *ngIf="noteRecommandations" [value]="noteRecommandations.complet ? 'Complète' : 'Brouillon'"
+                                        [severity]="noteRecommandations.complet ? 'success' : 'warn'" styleClass="text-xs ml-1"/>
+                                </div>
+                                <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                    [label]="noteRecommandations ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" text size="small"
+                                    (onClick)="openNoteRecommandationsDialog()"/>
+                            </div>
+                            <p *ngIf="noteRecommandations?.contenu" class="text-sm text-surface-700 whitespace-pre-line">
+                                {{ noteRecommandations?.contenu }}
+                            </p>
+                            <p *ngIf="!noteRecommandations" class="text-sm text-surface-400">
+                                Aucune note de recommandations rédigée.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Requête au Parquet (saisine judiciaire, rédigée avant décision CGE) -->
                 <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL'"
                     class="bg-white dark:bg-surface-800 rounded-2xl p-5
@@ -2057,6 +2245,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly inventairePiecesService = inject(InventairePiecesService);
     private readonly auditionService = inject(AuditionService);
     private readonly visiteTerrainService = inject(VisiteTerrainService);
+    private readonly checklistDossierTravailService = inject(ChecklistDossierTravailService);
+    private readonly rapportEnqueteService = inject(RapportEnqueteService);
     private readonly targetedPartyService = inject(TargetedPartyService);
     private readonly witnessService = inject(WitnessService);
     private readonly destroy$             = new Subject<void>();
@@ -2222,6 +2412,33 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     private actionVisite: VisiteTerrainResponse | null = null;
 
+    // ── Check-list du dossier de travail ──────────────────────
+    checklistItems:          ChecklistDossierTravailItemResponse[] = [];
+    loadingChecklist          = false;
+    savingChecklistCode: string | null = null;
+    showChecklistCommentDialog = false;
+    checklistCommentValue     = '';
+    private checklistItemBeingCommented: ChecklistDossierTravailItemResponse | null = null;
+
+    // ── Rapport d'enquête officiel ─────────────────────────────
+    rapportEnquete:           RapportEnqueteResponse | null = null;
+    loadingRapportEnquete     = false;
+    savingRapportEnquete      = false;
+    showRapportEnqueteDialog  = false;
+    rapportEnqueteForm: {
+        titre: string; introduction: string; methodologie: string;
+        informationsCollectees: string; exposeFactuelAnomalies: string;
+        quantificationPrejudice: string; reserves: string; conclusions: string;
+    } = {
+        titre: '', introduction: '', methodologie: '', informationsCollectees: '',
+        exposeFactuelAnomalies: '', quantificationPrejudice: '', reserves: '', conclusions: ''
+    };
+
+    noteRecommandations:      NoteRecommandationsResponse | null = null;
+    savingNoteRecommandations = false;
+    showNoteRecommandationsDialog = false;
+    noteRecommandationsContent = '';
+
     suspendReason = '';
 
     extendDays             = 30;
@@ -2384,6 +2601,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                     .subscribe(list => { this.witnesses = list; });
             }
             this.loadVisitesTerrain(inv.id);
+            this.loadChecklist(inv.id);
+            this.loadRapportEnquete(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -2398,6 +2617,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.pvByAudition = {};
             this.visitesTerrain = [];
             this.pvByVisite = {};
+            this.checklistItems = [];
+            this.rapportEnquete = null;
+            this.noteRecommandations = null;
         }
     }
 
@@ -3124,6 +3346,134 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             CANCELLED: 'Annulée',
             CARENCE: 'Carence'
         } as Record<string, string>)[s] ?? s;
+    }
+
+    // ── Check-list du dossier de travail ──────────────────────
+    private loadChecklist(investigationId: string): void {
+        this.loadingChecklist = true;
+        this.checklistDossierTravailService.getChecklist(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.checklistItems = list; this.loadingChecklist = false; });
+    }
+
+    getChecklistCheckedCount(): number {
+        return this.checklistItems.filter(i => i.coche).length;
+    }
+
+    executeToggleChecklist(item: ChecklistDossierTravailItemResponse): void {
+        if (!this.inv) return;
+        this.savingChecklistCode = item.code;
+        this.checklistDossierTravailService.setCoche(this.inv.id, item.code, {
+            coche: !item.coche, commentaire: item.commentaire
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.checklistItems = this.checklistItems.map(x => x.pointId === updated.pointId ? updated : x);
+                    this.savingChecklistCode = null;
+                },
+                error: (err: ApiError) => { this.savingChecklistCode = null; this.showError(err); }
+            });
+    }
+
+    openChecklistCommentDialog(item: ChecklistDossierTravailItemResponse): void {
+        this.checklistItemBeingCommented = item;
+        this.checklistCommentValue = item.commentaire ?? '';
+        this.showChecklistCommentDialog = true;
+    }
+
+    executeSaveChecklistComment(): void {
+        if (!this.inv || !this.checklistItemBeingCommented) return;
+        const item = this.checklistItemBeingCommented;
+        this.checklistDossierTravailService.setCoche(this.inv.id, item.code, {
+            coche: item.coche, commentaire: this.checklistCommentValue.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.checklistItems = this.checklistItems.map(x => x.pointId === updated.pointId ? updated : x);
+                    this.showChecklistCommentDialog = false;
+                    this.checklistItemBeingCommented = null;
+                    this.messageService.add({ severity: 'success', summary: 'Commentaire enregistré' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    // ── Rapport d'enquête officiel ─────────────────────────────
+    private loadRapportEnquete(investigationId: string): void {
+        this.loadingRapportEnquete = true;
+        this.rapportEnqueteService.getRapport(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(r => {
+                this.rapportEnquete = r;
+                this.loadingRapportEnquete = false;
+                if (r) {
+                    this.rapportEnqueteService.getNote(investigationId)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(n => { this.noteRecommandations = n; });
+                } else {
+                    this.noteRecommandations = null;
+                }
+            });
+    }
+
+    openRapportEnqueteDialog(): void {
+        this.rapportEnqueteForm = {
+            titre: this.rapportEnquete?.titre ?? '',
+            introduction: this.rapportEnquete?.introduction ?? '',
+            methodologie: this.rapportEnquete?.methodologie ?? '',
+            informationsCollectees: this.rapportEnquete?.informationsCollectees ?? '',
+            exposeFactuelAnomalies: this.rapportEnquete?.exposeFactuelAnomalies ?? '',
+            quantificationPrejudice: this.rapportEnquete?.quantificationPrejudice ?? '',
+            reserves: this.rapportEnquete?.reserves ?? '',
+            conclusions: this.rapportEnquete?.conclusions ?? ''
+        };
+        this.showRapportEnqueteDialog = true;
+    }
+
+    executeSaveRapportEnquete(): void {
+        if (!this.inv) return;
+        this.savingRapportEnquete = true;
+        const f = this.rapportEnqueteForm;
+        this.rapportEnqueteService.saveRapport(this.inv.id, {
+            titre: f.titre.trim() || undefined,
+            introduction: f.introduction.trim() || undefined,
+            methodologie: f.methodologie.trim() || undefined,
+            informationsCollectees: f.informationsCollectees.trim() || undefined,
+            exposeFactuelAnomalies: f.exposeFactuelAnomalies.trim() || undefined,
+            quantificationPrejudice: f.quantificationPrejudice.trim() || undefined,
+            reserves: f.reserves.trim() || undefined,
+            conclusions: f.conclusions.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.rapportEnquete = r;
+                    this.savingRapportEnquete = false;
+                    this.showRapportEnqueteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Rapport enregistré' });
+                },
+                error: (err: ApiError) => { this.savingRapportEnquete = false; this.showError(err); }
+            });
+    }
+
+    openNoteRecommandationsDialog(): void {
+        this.noteRecommandationsContent = this.noteRecommandations?.contenu ?? '';
+        this.showNoteRecommandationsDialog = true;
+    }
+
+    executeSaveNoteRecommandations(): void {
+        if (!this.inv) return;
+        this.savingNoteRecommandations = true;
+        this.rapportEnqueteService.saveNote(this.inv.id, { contenu: this.noteRecommandationsContent.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: n => {
+                    this.noteRecommandations = n;
+                    this.savingNoteRecommandations = false;
+                    this.showNoteRecommandationsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Note de recommandations enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingNoteRecommandations = false; this.showError(err); }
+            });
     }
 
     openReportDialog(): void {
