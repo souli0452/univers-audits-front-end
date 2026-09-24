@@ -20,6 +20,8 @@ import { EditorModule }     from 'primeng/editor';
 import { InputTextModule }  from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { CheckboxModule }   from 'primeng/checkbox';
 import { MessageService }   from 'primeng/api';
 import { environment }      from '../../../../environments/environment';
 import {
@@ -53,6 +55,12 @@ import {
     InventairePiecesService, InventairePieceItemResponse,
     AttachmentSource, ModeObtention, AttachmentStatus
 } from '../../../core/services/inventaire-pieces.service';
+import {
+    AuditionService, AuditionResponse, IntervieweeType, AuditionStatus,
+    PvAuditionResponse
+} from '../../../core/services/audition.service';
+import { TargetedPartyService, TargetedPartyResponse } from '../../../core/services/targeted-party.service';
+import { WitnessService, WitnessResponse } from '../../../core/services/witness.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -83,7 +91,8 @@ interface ApiError { error?: { message?: string }; }
         ButtonModule, TagModule, DialogModule,
         TextareaModule, SelectModule, ToastModule,
         SkeletonModule, AvatarModule, TooltipModule, EditorModule,
-        InputTextModule, InputNumberModule, DatePickerModule
+        InputTextModule, InputNumberModule, DatePickerModule,
+        MultiSelectModule, CheckboxModule
     ],
     providers: [MessageService],
     template: `
@@ -803,6 +812,190 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog planifier audition ─────────────────────────────── -->
+<p-dialog [(visible)]="showScheduleAuditionDialog"
+    header="Planifier une audition"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Personne à auditionner <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.intervieweeType" [options]="intervieweeTypeOptions"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="scheduleAuditionForm.intervieweeType==='TARGETED_PARTY'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Partie visée <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.targetedPartyId" [options]="targetedParties"
+                optionLabel="name" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body">
+                <ng-template let-p pTemplate="item">{{ (p.firstName || '') + ' ' + (p.name || '') }}</ng-template>
+                <ng-template let-p pTemplate="selectedItem">{{ (p.firstName || '') + ' ' + (p.name || '') }}</ng-template>
+            </p-select>
+        </div>
+        <div *ngIf="scheduleAuditionForm.intervieweeType==='WITNESS'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Témoin <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.witnessId" [options]="witnesses"
+                optionLabel="lastName" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body">
+                <ng-template let-w pTemplate="item">{{ w.firstName }} {{ w.lastName }}</ng-template>
+                <ng-template let-w pTemplate="selectedItem">{{ w.firstName }} {{ w.lastName }}</ng-template>
+            </p-select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                    Date et heure <span class="text-red-500">*</span>
+                </label>
+                <p-datepicker [(ngModel)]="scheduleAuditionForm.scheduledAt" dateFormat="dd/mm/yy"
+                    [showTime]="true" showIcon styleClass="w-full" appendTo="body"/>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Lieu</label>
+                <input pInputText [(ngModel)]="scheduleAuditionForm.location" class="w-full"/>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Enquêteurs (au moins 2) <span class="text-red-500">*</span>
+            </label>
+            <p-multiselect [(ngModel)]="scheduleAuditionForm.investigatorIds" [options]="availableAgents"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body" display="chip"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showScheduleAuditionDialog=false"/>
+        <p-button label="Planifier" icon="pi pi-check"
+            [loading]="schedulingAudition" [disabled]="!canScheduleAudition()"
+            (onClick)="executeScheduleAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog tenir audition ──────────────────────────────────── -->
+<p-dialog [(visible)]="showConductAuditionDialog"
+    header="Tenir l'audition"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Compte-rendu <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="conductSummary" rows="6" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConductAuditionDialog=false"/>
+        <p-button label="Valider" icon="pi pi-check"
+            [loading]="conductingAudition" [disabled]="!conductSummary.trim()"
+            (onClick)="executeConductAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog annuler audition ─────────────────────────────────── -->
+<p-dialog [(visible)]="showCancelAuditionDialog"
+    header="Annuler l'audition"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif d'annulation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="cancelAuditionReason" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Retour" severity="secondary" outlined (onClick)="showCancelAuditionDialog=false"/>
+        <p-button label="Confirmer l'annulation" icon="pi pi-times" severity="danger"
+            [loading]="cancellingAudition" [disabled]="!cancelAuditionReason.trim()"
+            (onClick)="executeCancelAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog absence à l'audition ───────────────────────────────── -->
+<p-dialog [(visible)]="showNoShowDialog"
+    header="Constater une absence"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Note (optionnelle)
+        </label>
+        <textarea pTextarea [(ngModel)]="noShowNote" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showNoShowDialog=false"/>
+        <p-button label="Constater l'absence" icon="pi pi-user-minus" severity="warn"
+            [loading]="markingNoShow" (onClick)="executeMarkNoShow()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rédiger le PV ───────────────────────────────────── -->
+<p-dialog [(visible)]="showPvCreateDialog"
+    header="Rédiger le procès-verbal"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="pvCreateContent" rows="10" class="w-full"
+            placeholder="Contenu du procès-verbal..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvCreateDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPv" [disabled]="!pvCreateContent.trim()"
+            (onClick)="executeCreatePv()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog finaliser le PV ─────────────────────────────────── -->
+<p-dialog [(visible)]="showPvFinalizeDialog"
+    header="Finaliser le procès-verbal"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div class="flex items-center gap-2">
+            <p-checkbox [(ngModel)]="pvFinalizeForm.intervieweeSigned" [binary]="true" inputId="pvSigned"
+                (onChange)="pvFinalizeForm.intervieweeSignatureRefused=false"/>
+            <label for="pvSigned" class="text-sm">Signé par la personne auditionnée</label>
+        </div>
+        <div class="flex items-center gap-2">
+            <p-checkbox [(ngModel)]="pvFinalizeForm.intervieweeSignatureRefused" [binary]="true" inputId="pvRefused"
+                (onChange)="pvFinalizeForm.intervieweeSigned=false"/>
+            <label for="pvRefused" class="text-sm">Signature refusée</label>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvFinalizeDialog=false"/>
+        <p-button label="Finaliser" icon="pi pi-verified"
+            [loading]="finalizingPv" (onClick)="executeFinalizePv()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog corriger le PV ─────────────────────────────────── -->
+<p-dialog [(visible)]="showPvCorrectionDialog"
+    header="Corriger le procès-verbal"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Nouveau contenu <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="pvCorrectionForm.content" rows="8" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Motif de la correction <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="pvCorrectionForm.motifCorrection" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvCorrectionDialog=false"/>
+        <p-button label="Enregistrer la correction" icon="pi pi-check"
+            [loading]="correctingPv"
+            [disabled]="!pvCorrectionForm.content.trim() || !pvCorrectionForm.motifCorrection.trim()"
+            (onClick)="executeCorrectPv()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1161,6 +1354,104 @@ interface ApiError { error?: { message?: string }; }
                             <p-tag [value]="getAttachmentStatusLabel(p.status)"
                                 [severity]="p.status==='VALIDATED' ? 'success' : p.status==='REJECTED' ? 'danger' : 'info'"
                                 styleClass="text-xs"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auditions -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <i class="pi pi-comments text-amber-600 text-xs"></i>
+                            </div>
+                            Auditions
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Planifier une audition" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openScheduleAuditionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingAuditions" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingAuditions && !auditions.length" class="text-sm text-surface-400">
+                        Aucune audition planifiée.
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div *ngFor="let a of auditions" class="p-3 rounded-xl border border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ a.intervieweeDisplayName }}</span>
+                                <p-tag [value]="getAuditionStatusLabel(a.status)"
+                                    [severity]="a.status==='CONDUCTED' ? 'success' : a.status==='SCHEDULED' ? 'info' : 'danger'"
+                                    styleClass="text-xs"/>
+                            </div>
+                            <div class="text-xs text-surface-500 flex flex-wrap items-center gap-3 mb-1">
+                                <span>{{ getIntervieweeTypeLabel(a.intervieweeType) }}</span>
+                                <span>{{ a.scheduledAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                <span *ngIf="a.location">📍 {{ a.location }}</span>
+                                <span *ngIf="a.investigatorNames?.length">Enquêteurs : {{ a.investigatorNames.join(', ') }}</span>
+                            </div>
+
+                            <div *ngIf="a.orderWarning" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 mb-1">
+                                <i class="pi pi-exclamation-triangle mr-1"></i>{{ a.orderWarning }}
+                            </div>
+                            <div *ngIf="a.secondAuditionWarning" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 mb-1">
+                                <i class="pi pi-exclamation-triangle mr-1"></i>{{ a.secondAuditionWarning }}
+                            </div>
+
+                            <div *ngIf="a.status==='SCHEDULED' && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Tenir" icon="pi pi-check" text size="small" (onClick)="openConductAuditionDialog(a)"/>
+                                <p-button label="Annuler" icon="pi pi-times" text size="small" severity="secondary" (onClick)="openCancelAuditionDialog(a)"/>
+                                <p-button label="Absence" icon="pi pi-user-minus" text size="small" severity="warn" (onClick)="openNoShowDialog(a)"/>
+                            </div>
+
+                            <p *ngIf="a.status==='CANCELLED' && a.cancellationReason" class="text-sm text-surface-500 mt-1">
+                                Motif d'annulation : {{ a.cancellationReason }}
+                            </p>
+                            <p *ngIf="a.status==='NO_SHOW' && a.noShowNote" class="text-sm text-surface-500 mt-1">
+                                {{ a.noShowNote }}
+                            </p>
+
+                            <!-- Sous-section PV -->
+                            <div *ngIf="a.status==='CONDUCTED'" class="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700">
+                                <p *ngIf="a.summary" class="text-sm text-surface-600 mb-2">{{ a.summary }}</p>
+
+                                <div *ngIf="!pvByAudition[a.id] && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])">
+                                    <p-button label="Rédiger le PV" icon="pi pi-file-edit" text size="small" (onClick)="openPvCreateDialog(a)"/>
+                                </div>
+
+                                <div *ngIf="pvByAudition[a.id] as pv" class="bg-surface-50 dark:bg-surface-700 rounded-xl p-3">
+                                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                        Procès-verbal (v{{ pv.pvVersion }})
+                                    </div>
+                                    <p class="text-sm text-surface-700 whitespace-pre-line mb-2">{{ pv.content }}</p>
+                                    <div class="text-xs text-surface-500 mb-2">
+                                        Rédigé par {{ pv.draftedByName || '—' }}
+                                        <span *ngIf="pv.readBackAt"> — Relu le {{ pv.readBackAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                        <span *ngIf="pv.finalizedAt"> — Finalisé le {{ pv.finalizedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                    </div>
+                                    <div *ngIf="pv.finalizedAt" class="text-xs mb-2">
+                                        <span *ngIf="pv.intervieweeSigned" class="text-green-600">✓ Signé par la personne auditionnée</span>
+                                        <span *ngIf="pv.intervieweeSignatureRefused" class="text-red-600">✗ Signature refusée</span>
+                                    </div>
+
+                                    <div *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])" class="flex items-center gap-2">
+                                        <p-button *ngIf="!pv.readBackAt && !pv.finalizedAt"
+                                            label="Marquer relu" icon="pi pi-eye" text size="small" (onClick)="executeMarkPvReadBack(a)"/>
+                                        <p-button *ngIf="pv.readBackAt && !pv.finalizedAt"
+                                            label="Finaliser (signature)" icon="pi pi-verified" text size="small" (onClick)="openPvFinalizeDialog(a)"/>
+                                        <p-button *ngIf="pv.finalizedAt"
+                                            label="Corriger" icon="pi pi-pencil" text size="small" severity="secondary" (onClick)="openPvCorrectionDialog(a)"/>
+                                    </div>
+
+                                    <div *ngIf="pv.corrections?.length" class="mt-2 flex flex-col gap-1">
+                                        <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide">Historique des corrections</div>
+                                        <div *ngFor="let c of pv.corrections" class="text-xs text-surface-500 bg-white dark:bg-surface-800 rounded-lg p-2">
+                                            v{{ c.versionNumber }} — {{ c.motifCorrection }} ({{ c.correctedByName }}, {{ c.correctedAt | date:'dd/MM/yyyy' }})
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1595,6 +1886,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly missionSuiviService = inject(MissionSuiviService);
     private readonly demandeDocumentsService = inject(DemandeDocumentsService);
     private readonly inventairePiecesService = inject(InventairePiecesService);
+    private readonly auditionService = inject(AuditionService);
+    private readonly targetedPartyService = inject(TargetedPartyService);
+    private readonly witnessService = inject(WitnessService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -1679,6 +1973,57 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     // ── Inventaire des pièces ─────────────────────────────────
     inventairePieces:       InventairePieceItemResponse[] = [];
     loadingInventaire       = false;
+
+    // ── Auditions ────────────────────────────────────────────
+    auditions:               AuditionResponse[] = [];
+    loadingAuditions         = false;
+    pvByAudition:            Record<string, PvAuditionResponse | null> = {};
+    targetedParties:         TargetedPartyResponse[] = [];
+    witnesses:                WitnessResponse[] = [];
+
+    showScheduleAuditionDialog = false;
+    schedulingAudition       = false;
+    scheduleAuditionForm: {
+        intervieweeType: IntervieweeType | null;
+        targetedPartyId: string | null;
+        witnessId: string | null;
+        scheduledAt: Date | null;
+        location: string;
+        investigatorIds: string[];
+    } = { intervieweeType: null, targetedPartyId: null, witnessId: null, scheduledAt: new Date(), location: '', investigatorIds: [] };
+
+    showConductAuditionDialog = false;
+    conductingAudition       = false;
+    conductSummary           = '';
+
+    showCancelAuditionDialog = false;
+    cancellingAudition       = false;
+    cancelAuditionReason     = '';
+
+    showNoShowDialog          = false;
+    markingNoShow             = false;
+    noShowNote                = '';
+
+    showPvCreateDialog        = false;
+    creatingPv                = false;
+    pvCreateContent           = '';
+
+    showPvFinalizeDialog      = false;
+    finalizingPv               = false;
+    pvFinalizeForm: { intervieweeSigned: boolean; intervieweeSignatureRefused: boolean } =
+        { intervieweeSigned: false, intervieweeSignatureRefused: false };
+
+    showPvCorrectionDialog    = false;
+    correctingPv               = false;
+    pvCorrectionForm: { content: string; motifCorrection: string } = { content: '', motifCorrection: '' };
+
+    private actionAudition: AuditionResponse | null = null;
+
+    readonly intervieweeTypeOptions: SelectOption<IntervieweeType>[] = [
+        { label: 'Dénonciateur (déclarant)', value: 'DECLARANT' },
+        { label: 'Témoin', value: 'WITNESS' },
+        { label: 'Partie visée', value: 'TARGETED_PARTY' }
+    ];
 
     suspendReason = '';
 
@@ -1831,6 +2176,16 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             }
             this.loadDemandesDocuments(inv.id);
             this.loadInventairePieces(inv.id);
+            this.loadAuditions(inv.id);
+            const dossierId = inv.dossier?.id ?? inv.dossierId;
+            if (dossierId) {
+                this.targetedPartyService.findAll(dossierId)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe(list => { this.targetedParties = list; });
+                this.witnessService.findAll(dossierId)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe(list => { this.witnesses = list; });
+            }
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -1841,6 +2196,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.missionsSuivi = [];
             this.demandesDocuments = [];
             this.inventairePieces = [];
+            this.auditions = [];
+            this.pvByAudition = {};
         }
     }
 
@@ -2205,6 +2562,230 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             REJECTED: 'Rejetée',
             ARCHIVED: 'Archivée'
         } as Record<string, string>)[s] ?? s;
+    }
+
+    // ── Auditions ────────────────────────────────────────────
+    private loadAuditions(investigationId: string): void {
+        this.loadingAuditions = true;
+        this.auditionService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => {
+                this.auditions = list;
+                this.loadingAuditions = false;
+                list.filter(a => a.status === 'CONDUCTED').forEach(a => this.loadPv(investigationId, a.id));
+            });
+    }
+
+    private loadPv(investigationId: string, auditionId: string): void {
+        this.auditionService.getPv(investigationId, auditionId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(pv => { this.pvByAudition = { ...this.pvByAudition, [auditionId]: pv }; });
+    }
+
+    openScheduleAuditionDialog(): void {
+        this.scheduleAuditionForm = {
+            intervieweeType: null, targetedPartyId: null, witnessId: null,
+            scheduledAt: new Date(), location: '', investigatorIds: []
+        };
+        this.showScheduleAuditionDialog = true;
+    }
+
+    canScheduleAudition(): boolean {
+        const f = this.scheduleAuditionForm;
+        if (!f.intervieweeType || !f.scheduledAt || f.investigatorIds.length < 2) return false;
+        if (f.intervieweeType === 'TARGETED_PARTY') return !!f.targetedPartyId;
+        if (f.intervieweeType === 'WITNESS') return !!f.witnessId;
+        return true;
+    }
+
+    executeScheduleAudition(): void {
+        if (!this.inv || !this.canScheduleAudition() || !this.scheduleAuditionForm.intervieweeType
+            || !this.scheduleAuditionForm.scheduledAt) return;
+        this.schedulingAudition = true;
+        this.auditionService.schedule(this.inv.id, {
+            intervieweeType: this.scheduleAuditionForm.intervieweeType,
+            targetedPartyId: this.scheduleAuditionForm.targetedPartyId ?? undefined,
+            witnessId: this.scheduleAuditionForm.witnessId ?? undefined,
+            scheduledAt: this.scheduleAuditionForm.scheduledAt.toISOString(),
+            location: this.scheduleAuditionForm.location.trim() || undefined,
+            investigatorIds: this.scheduleAuditionForm.investigatorIds
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: a => {
+                    this.auditions = [...this.auditions, a];
+                    this.schedulingAudition = false;
+                    this.showScheduleAuditionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Audition planifiée' });
+                },
+                error: (err: ApiError) => { this.schedulingAudition = false; this.showError(err); }
+            });
+    }
+
+    openConductAuditionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.conductSummary = '';
+        this.showConductAuditionDialog = true;
+    }
+
+    executeConductAudition(): void {
+        if (!this.inv || !this.actionAudition || !this.conductSummary.trim()) return;
+        this.conductingAudition = true;
+        this.auditionService.conduct(this.inv.id, this.actionAudition.id, { summary: this.conductSummary.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.conductingAudition = false;
+                    this.showConductAuditionDialog = false;
+                    if (this.inv) this.loadPv(this.inv.id, updated.id);
+                    this.messageService.add({ severity: 'success', summary: 'Audition tenue' });
+                },
+                error: (err: ApiError) => { this.conductingAudition = false; this.showError(err); }
+            });
+    }
+
+    openCancelAuditionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.cancelAuditionReason = '';
+        this.showCancelAuditionDialog = true;
+    }
+
+    executeCancelAudition(): void {
+        if (!this.inv || !this.actionAudition || !this.cancelAuditionReason.trim()) return;
+        this.cancellingAudition = true;
+        this.auditionService.cancel(this.inv.id, this.actionAudition.id, this.cancelAuditionReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.cancellingAudition = false;
+                    this.showCancelAuditionDialog = false;
+                    this.messageService.add({ severity: 'info', summary: 'Audition annulée' });
+                },
+                error: (err: ApiError) => { this.cancellingAudition = false; this.showError(err); }
+            });
+    }
+
+    openNoShowDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.noShowNote = '';
+        this.showNoShowDialog = true;
+    }
+
+    executeMarkNoShow(): void {
+        if (!this.inv || !this.actionAudition) return;
+        this.markingNoShow = true;
+        this.auditionService.markNoShow(this.inv.id, this.actionAudition.id, this.noShowNote.trim() || undefined)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.markingNoShow = false;
+                    this.showNoShowDialog = false;
+                    this.messageService.add({ severity: 'warn', summary: 'Absence constatée' });
+                },
+                error: (err: ApiError) => { this.markingNoShow = false; this.showError(err); }
+            });
+    }
+
+    openPvCreateDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.pvCreateContent = '';
+        this.showPvCreateDialog = true;
+    }
+
+    executeCreatePv(): void {
+        if (!this.inv || !this.actionAudition || !this.pvCreateContent.trim()) return;
+        this.creatingPv = true;
+        this.auditionService.createPv(this.inv.id, this.actionAudition.id, { content: this.pvCreateContent.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.creatingPv = false;
+                    this.showPvCreateDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal enregistré' });
+                },
+                error: (err: ApiError) => { this.creatingPv = false; this.showError(err); }
+            });
+    }
+
+    executeMarkPvReadBack(a: AuditionResponse): void {
+        if (!this.inv) return;
+        this.auditionService.markPvReadBack(this.inv.id, a.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.messageService.add({ severity: 'success', summary: 'Relecture enregistrée' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    openPvFinalizeDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.pvFinalizeForm = { intervieweeSigned: false, intervieweeSignatureRefused: false };
+        this.showPvFinalizeDialog = true;
+    }
+
+    executeFinalizePv(): void {
+        if (!this.inv || !this.actionAudition) return;
+        this.finalizingPv = true;
+        this.auditionService.finalizePv(this.inv.id, this.actionAudition.id, this.pvFinalizeForm)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.finalizingPv = false;
+                    this.showPvFinalizeDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal finalisé' });
+                },
+                error: (err: ApiError) => { this.finalizingPv = false; this.showError(err); }
+            });
+    }
+
+    openPvCorrectionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        const pv = this.pvByAudition[a.id];
+        this.pvCorrectionForm = { content: pv?.content ?? '', motifCorrection: '' };
+        this.showPvCorrectionDialog = true;
+    }
+
+    executeCorrectPv(): void {
+        if (!this.inv || !this.actionAudition || !this.pvCorrectionForm.content.trim()
+            || !this.pvCorrectionForm.motifCorrection.trim()) return;
+        this.correctingPv = true;
+        this.auditionService.correctPv(this.inv.id, this.actionAudition.id, {
+            content: this.pvCorrectionForm.content.trim(),
+            motifCorrection: this.pvCorrectionForm.motifCorrection.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.correctingPv = false;
+                    this.showPvCorrectionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Correction enregistrée' });
+                },
+                error: (err: ApiError) => { this.correctingPv = false; this.showError(err); }
+            });
+    }
+
+    getAuditionStatusLabel(s: AuditionStatus): string {
+        return ({
+            SCHEDULED: 'Planifiée',
+            CONDUCTED: 'Tenue',
+            CANCELLED: 'Annulée',
+            NO_SHOW: 'Absence'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    getIntervieweeTypeLabel(t: IntervieweeType): string {
+        return ({
+            TARGETED_PARTY: 'Partie visée',
+            WITNESS: 'Témoin',
+            DECLARANT: 'Dénonciateur'
+        } as Record<string, string>)[t] ?? t;
     }
 
     openReportDialog(): void {
