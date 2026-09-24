@@ -76,6 +76,13 @@ export const appRoutes: Routes = [
                     .then(m => m.LeconsAPartagerList)
             },
             {
+                path: 'registre-auditions',
+                canActivate: [roleGuard(['CGEA', 'ADMIN_DDIC'])],
+                loadComponent: () =>
+                    import('./app/pages/registre-auditions/registre-auditions-list')
+                    .then(m => m.RegistreAuditionsList)
+            },
+            {
                 path: 'profil',
                 loadComponent: () =>
                     import('./app/pages/profil/profil')

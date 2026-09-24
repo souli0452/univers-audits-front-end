@@ -147,6 +147,12 @@ export class AppMenu {
                     routerLink: ['/app/administration/audit']
                 },
                 {
+                    label: 'Registre des auditions',
+                    icon: 'pi pi-fw pi-id-card',
+                    visible: this.keycloakService.hasAnyRole(['CGEA', 'ADMIN_DDIC']),
+                    routerLink: ['/app/registre-auditions']
+                },
+                {
                     label: 'Paramètres du portail',
                     icon: 'pi pi-fw pi-sliders-h',
                     routerLink: ['/app/administration/parametres-portail']

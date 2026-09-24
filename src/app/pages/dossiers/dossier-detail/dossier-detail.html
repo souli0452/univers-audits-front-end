@@ -452,6 +452,50 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showHabilitationDialog" header="Octroyer un accès"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">
+                Agent <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="habilitationForm.agentId" [options]="habilitationAgentOptions"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner un agent..."
+                styleClass="w-full" [filter]="true" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">
+                Motif <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="habilitationForm.reason" rows="3" class="w-full resize-none"
+                placeholder="Motif de l'octroi manuel d'accès..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showHabilitationDialog=false"/>
+        <p-button label="Octroyer" icon="pi pi-check"
+            [disabled]="!habilitationForm.agentId || !habilitationForm.reason.trim()"
+            [loading]="savingHabilitation" (onClick)="executeGrantHabilitation()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showRevokeHabilitationDialog" header="Révoquer l'accès"
+    [modal]="true" [style]="{width:'440px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-sm font-semibold text-surface-700 mb-1 block">
+            Motif de révocation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="revokeHabilitationReason" rows="3" class="w-full resize-none"
+            placeholder="Motif de la révocation..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRevokeHabilitationDialog=false"/>
+        <p-button label="Révoquer" icon="pi pi-times" severity="danger"
+            [disabled]="!revokeHabilitationReason.trim()"
+            [loading]="revokingHabilitation" (onClick)="executeRevokeHabilitation()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showPriorityDialog"
     header="Définir la priorité du dossier"
     [modal]="true" [style]="{width:'500px'}" [draggable]="false">
@@ -1392,6 +1436,39 @@
                 <div class="font-mono text-2xl font-bold tracking-widest mb-1">{{ dossier?.accessCode }}</div>
                 <div class="text-xs opacity-50 flex items-center gap-1 mt-2">
                     <i class="pi pi-info-circle text-xs"></i> À remettre avec le formulaire B4
+                </div>
+            </div>
+
+            <div *ngIf="dossier?.isConfidential && hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                class="bg-white dark:bg-surface-800 rounded-2xl border
+                       border-surface-100 dark:border-surface-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-700 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                            <i class="pi pi-key text-orange-600 text-xs"></i>
+                        </div>
+                        <h3 class="font-semibold text-sm text-surface-900 dark:text-surface-0">Habilitations</h3>
+                    </div>
+                    <p-button icon="pi pi-plus" text size="small" pTooltip="Octroyer un accès"
+                        (onClick)="openHabilitationDialog()"/>
+                </div>
+                <div class="p-4">
+                    <div *ngIf="loadingHabilitations" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingHabilitations && !habilitations.length" class="text-xs text-surface-400">
+                        Aucune habilitation active.
+                    </div>
+                    <div *ngFor="let h of habilitations"
+                        class="flex items-start justify-between gap-2 py-2 border-b border-surface-50 dark:border-surface-700 last:border-0">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-surface-800 dark:text-surface-100 truncate">
+                                {{ h.agent.firstName }} {{ h.agent.lastName }}
+                            </div>
+                            <div class="text-xs text-surface-400">{{ getHabilitationSourceLabel(h.source) }}</div>
+                            <div *ngIf="h.reason" class="text-xs text-surface-400 mt-0.5">{{ h.reason }}</div>
+                        </div>
+                        <p-button *ngIf="h.source === 'MANUAL'" icon="pi pi-times" text size="small" severity="danger"
+                            pTooltip="Révoquer" (onClick)="openRevokeHabilitationDialog(h)"/>
+                    </div>
                 </div>
             </div>
 

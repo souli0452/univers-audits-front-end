@@ -53,6 +53,12 @@ import {
     SectionDossierTravailResponse,
     OrganisationDetail
 } from '../../../core/services/section-dossier-travail.service';
+import {
+    DossierHabilitationService,
+    DossierHabilitationResponse,
+    HabilitationSource
+} from '../../../core/services/dossier-habilitation.service';
+import { AgentService } from '../../../core/services/agent.service';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -124,6 +130,8 @@ export class DossierDetail implements OnInit {
     private sectionDossierTravailService = inject(SectionDossierTravailService);
     private pdfService              = inject(PdfService);
     private etudeOpportuniteService = inject(EtudeOpportuniteService);
+    private dossierHabilitationService = inject(DossierHabilitationService);
+    private agentService            = inject(AgentService);
     private sanitizer            = inject(DomSanitizer);
 
     dossier:              DossierResponse | null  = null;
@@ -143,6 +151,16 @@ export class DossierDetail implements OnInit {
     ficheAffectation:     FicheAffectationResponse | null = null;
     departements:         DepartementOption[]      = [];
     conseillers:          AgentSummary[]           = [];
+    habilitations:        DossierHabilitationResponse[] = [];
+    loadingHabilitations  = false;
+    showHabilitationDialog = false;
+    savingHabilitation    = false;
+    habilitationAgentOptions: { label: string; value: string }[] = [];
+    habilitationForm: { agentId: string; reason: string } = { agentId: '', reason: '' };
+    showRevokeHabilitationDialog = false;
+    revokingHabilitation  = false;
+    revokeHabilitationReason = '';
+    private habilitationBeingRevoked: DossierHabilitationResponse | null = null;
     attachmentBlobs:      { [id: string]: string } = {};
     previewId:            string | null = null;
     docxHtml:             { [id: string]: string } = {};
@@ -361,6 +379,92 @@ export class DossierDetail implements OnInit {
             next: e => { this.etudeOpportunite = e; }
         });
         this.loadSectionsDossierTravail(id);
+        if (this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC'])) {
+            this.loadHabilitations(id);
+        }
+    }
+
+    private loadHabilitations(id: string): void {
+        this.loadingHabilitations = true;
+        this.dossierHabilitationService.findActive(id).subscribe({
+            next: h => { this.habilitations = h; this.loadingHabilitations = false; },
+            error: () => { this.loadingHabilitations = false; }
+        });
+    }
+
+    openHabilitationDialog(): void {
+        this.habilitationForm = { agentId: '', reason: '' };
+        if (!this.habilitationAgentOptions.length) {
+            this.agentService.findAll(0, 200).subscribe({
+                next: page => {
+                    this.habilitationAgentOptions = page.content.map(a => ({
+                        label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
+                        value: a.id
+                    }));
+                },
+                error: () => {}
+            });
+        }
+        this.showHabilitationDialog = true;
+    }
+
+    executeGrantHabilitation(): void {
+        if (!this.dossier || !this.habilitationForm.agentId || !this.habilitationForm.reason.trim()) return;
+        this.savingHabilitation = true;
+        this.dossierHabilitationService.grant(this.dossier.id, {
+            agentId: this.habilitationForm.agentId,
+            reason: this.habilitationForm.reason.trim()
+        }).subscribe({
+            next: h => {
+                this.habilitations = [...this.habilitations, h];
+                this.savingHabilitation = false;
+                this.showHabilitationDialog = false;
+                this.messageService.add({ severity: 'success', summary: 'Accès octroyé' });
+            },
+            error: err => {
+                this.savingHabilitation = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Octroi impossible'
+                });
+            }
+        });
+    }
+
+    openRevokeHabilitationDialog(h: DossierHabilitationResponse): void {
+        this.habilitationBeingRevoked = h;
+        this.revokeHabilitationReason = '';
+        this.showRevokeHabilitationDialog = true;
+    }
+
+    executeRevokeHabilitation(): void {
+        if (!this.dossier || !this.habilitationBeingRevoked || !this.revokeHabilitationReason.trim()) return;
+        this.revokingHabilitation = true;
+        const agentId = this.habilitationBeingRevoked.agent.id;
+        this.dossierHabilitationService.revoke(this.dossier.id, agentId, this.revokeHabilitationReason.trim())
+            .subscribe({
+                next: () => {
+                    this.habilitations = this.habilitations.filter(h => h.agent.id !== agentId);
+                    this.revokingHabilitation = false;
+                    this.showRevokeHabilitationDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Accès révoqué' });
+                },
+                error: err => {
+                    this.revokingHabilitation = false;
+                    this.messageService.add({
+                        severity: 'error', summary: 'Erreur',
+                        detail: err.error?.message || 'Révocation impossible'
+                    });
+                }
+            });
+    }
+
+    getHabilitationSourceLabel(s: HabilitationSource): string {
+        return ({
+            AGENT_IN_CHARGE: 'Chargé du dossier',
+            INVESTIGATION_TEAM: "Équipe d'investigation",
+            MANUAL: 'Octroi manuel'
+        } as Record<string, string>)[s] ?? s;
     }
 
     private loadSectionsDossierTravail(id: string): void {
