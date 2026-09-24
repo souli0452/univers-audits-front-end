@@ -11,6 +11,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
+import { InputTextModule } from 'primeng/inputtext';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
@@ -47,6 +48,11 @@ import {
     DepartementOption,
     AgentSummary
 } from '../../../core/services/fiche-affectation.service';
+import {
+    SectionDossierTravailService,
+    SectionDossierTravailResponse,
+    OrganisationDetail
+} from '../../../core/services/section-dossier-travail.service';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -66,7 +72,8 @@ interface WorkflowStep {
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
         TextareaModule, ToastModule, SkeletonModule,
-        ConfirmDialogModule, TooltipModule, SelectModule
+        ConfirmDialogModule, TooltipModule, SelectModule,
+        InputTextModule
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -114,6 +121,7 @@ export class DossierDetail implements OnInit {
     private witnessService       = inject(WitnessService);
     private observationService   = inject(ObservationService);
     private ficheAffectationService = inject(FicheAffectationService);
+    private sectionDossierTravailService = inject(SectionDossierTravailService);
     private pdfService              = inject(PdfService);
     private etudeOpportuniteService = inject(EtudeOpportuniteService);
     private sanitizer            = inject(DomSanitizer);
@@ -173,8 +181,23 @@ export class DossierDetail implements OnInit {
         { key: 'affectation',  label: 'Affectation',    icon: 'pi pi-send',
           count: () => this.ficheAffectation ? 1 : 0    },
         { key: 'etude',        label: "Analyse première", icon: 'pi pi-verified',
-          count: () => this.etudeOpportunite ? 1 : 0    }
+          count: () => this.etudeOpportunite ? 1 : 0    },
+        { key: 'dossierTravail', label: 'Dossier de travail', icon: 'pi pi-folder-open',
+          count: () => this.sectionsDossierTravail.length }
     ];
+
+    sectionsDossierTravail: SectionDossierTravailResponse[] = [];
+    loadingSections           = false;
+    savingOrganisationDetail  = false;
+    organisationDetailChoice: OrganisationDetail | null = null;
+    readonly organisationDetailOptions: { label: string; value: OrganisationDetail }[] = [
+        { label: 'Par étape',          value: 'PAR_ETAPE' },
+        { label: 'Par entité',         value: 'PAR_ENTITE' },
+        { label: 'Par site',           value: 'PAR_SITE' },
+        { label: 'Par cycle comptable', value: 'PAR_CYCLE_COMPTABLE' }
+    ];
+    newSectionLibelle = '';
+    creatingSection     = false;
 
     showCreateFicheDialog   = false;
     showAffecterFicheDialog = false;
@@ -337,6 +360,66 @@ export class DossierDetail implements OnInit {
         this.etudeOpportuniteService.get(id).subscribe({
             next: e => { this.etudeOpportunite = e; }
         });
+        this.loadSectionsDossierTravail(id);
+    }
+
+    private loadSectionsDossierTravail(id: string): void {
+        this.loadingSections = true;
+        this.sectionDossierTravailService.listerSections(id).subscribe({
+            next: s => { this.sectionsDossierTravail = s; this.loadingSections = false; },
+            error: () => { this.loadingSections = false; }
+        });
+    }
+
+    executeDefinirOrganisationDetail(): void {
+        if (!this.dossier || !this.organisationDetailChoice) return;
+        this.savingOrganisationDetail = true;
+        this.sectionDossierTravailService.definirOrganisationDetail(this.dossier.id, {
+            organisationDetail: this.organisationDetailChoice
+        }).subscribe({
+            next: () => {
+                this.savingOrganisationDetail = false;
+                this.messageService.add({ severity: 'success', summary: "Mode d'organisation défini" });
+            },
+            error: err => {
+                this.savingOrganisationDetail = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Enregistrement impossible'
+                });
+            }
+        });
+    }
+
+    executeCreerSectionDetail(): void {
+        if (!this.dossier || !this.newSectionLibelle.trim()) return;
+        this.creatingSection = true;
+        this.sectionDossierTravailService.creerSectionDetail(this.dossier.id, {
+            libelle: this.newSectionLibelle.trim()
+        }).subscribe({
+            next: s => {
+                this.sectionsDossierTravail = [...this.sectionsDossierTravail, s];
+                this.creatingSection = false;
+                this.newSectionLibelle = '';
+                this.messageService.add({ severity: 'success', summary: 'Section ajoutée' });
+            },
+            error: err => {
+                this.creatingSection = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Création impossible'
+                });
+            }
+        });
+    }
+
+    getSectionTypeLabel(type: string): string {
+        return ({
+            ADMINISTRATION_MISSION: 'Administration de la mission',
+            PRISE_CONNAISSANCE_ENTITE: "Prise de connaissance de l'entité",
+            PRISE_CONNAISSANCE_ENVIRONNEMENT: "Prise de connaissance de l'environnement",
+            DETAIL: 'Détail'
+        } as Record<string, string>)[type] ?? type;
     }
 
     get todayStr(): string {
