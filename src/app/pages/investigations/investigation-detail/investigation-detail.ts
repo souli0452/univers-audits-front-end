@@ -75,6 +75,14 @@ import {
     FicheRetexService, FicheRetexResponse, FicheRetexRequest, PublierLeconRequest
 } from '../../../core/services/fiche-retex.service';
 import { TypeInfractionService, TypeInfraction } from '../../../core/services/parametres-metier.service';
+import {
+    InvestigationCadrageService, MandatResponse,
+    EngagementConfidentialiteResponse,
+    PlanInvestigationResponse, RevisionPlanResponse,
+    IncidentObjectiviteResponse,
+    ProcedureUrgenceResponse, StatutProcedureUrgence,
+    MesureConservatoireResponse
+} from '../../../core/services/investigation-cadrage.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -1281,6 +1289,135 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog engagement préalable ──────────────────────────────── -->
+<p-dialog [(visible)]="showEngagementDialog" header="Mon engagement préalable"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-2 block uppercase tracking-wide">
+                Avez-vous un conflit d'intérêts sur cette investigation ? <span class="text-red-500">*</span>
+            </label>
+            <div class="flex gap-2">
+                <p-button label="Non" [outlined]="engagementForm.hasConflictOfInterest !== false"
+                    severity="success" size="small" (onClick)="engagementForm.hasConflictOfInterest = false"/>
+                <p-button label="Oui" [outlined]="engagementForm.hasConflictOfInterest !== true"
+                    severity="warn" size="small" (onClick)="engagementForm.hasConflictOfInterest = true"/>
+            </div>
+        </div>
+        <div *ngIf="engagementForm.hasConflictOfInterest">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Détails du conflit</label>
+            <textarea pTextarea [(ngModel)]="engagementForm.conflictDetails" rows="3" class="w-full"></textarea>
+        </div>
+        <p class="text-xs text-surface-400">
+            En validant, vous vous engagez également à respecter la confidentialité de cette investigation.
+        </p>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showEngagementDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="engagementForm.hasConflictOfInterest === null"
+            [loading]="savingEngagement" (onClick)="executeSaveEngagement()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog plan d'investigation ──────────────────────────────── -->
+<p-dialog [(visible)]="showPlanDialog" [header]="planDialogHeader"
+    [modal]="true" [style]="{width:'640px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Objectifs <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.objectifs" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Méthodologie <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.methodologie" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Moyens mobilisés</label>
+            <textarea pTextarea [(ngModel)]="planForm.moyensMobilises" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Planning / procédures</label>
+            <textarea pTextarea [(ngModel)]="planForm.planningProcedures" rows="2" class="w-full"></textarea>
+        </div>
+        <div *ngIf="plan">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Motif de la révision <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.motifRevision" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPlanDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="!planForm.objectifs.trim() || !planForm.methodologie.trim() || (!!plan && !planForm.motifRevision.trim())"
+            [loading]="savingPlan" (onClick)="executeSavePlan()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog incident d'objectivité ─────────────────────────────── -->
+<p-dialog [(visible)]="showIncidentDialog" header="Déclarer un incident d'objectivité"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="incidentDescription" rows="4" class="w-full"
+            placeholder="Description de l'incident..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showIncidentDialog=false"/>
+        <p-button label="Déclarer" icon="pi pi-check"
+            [disabled]="!incidentDescription.trim()"
+            [loading]="savingIncident" (onClick)="executeDeclareIncident()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog demande procédure d'urgence ────────────────────────── -->
+<p-dialog [(visible)]="showProcedureDialog" header="Demander une procédure d'urgence"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="procedureJustification" rows="4" class="w-full"
+            placeholder="Justification de la procédure d'urgence..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showProcedureDialog=false"/>
+        <p-button label="Demander" icon="pi pi-check"
+            [disabled]="!procedureJustification.trim()"
+            [loading]="savingProcedure" (onClick)="executeDemanderProcedure()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog décision procédure d'urgence ───────────────────────── -->
+<p-dialog [(visible)]="showProcedureDecisionDialog" header="Décision sur la procédure d'urgence"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="procedureDecisionMotif" rows="3" class="w-full"
+            placeholder="Motif de la décision (optionnel)..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showProcedureDecisionDialog=false"/>
+        <p-button label="Confirmer" icon="pi pi-check"
+            [loading]="savingProcedure" (onClick)="executeDecideProcedure()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog mesure conservatoire ───────────────────────────────── -->
+<p-dialog [(visible)]="showMesureDialog" header="Déclarer une mesure conservatoire"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="mesureDescription" rows="4" class="w-full"
+            placeholder="Description de la mesure conservatoire..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showMesureDialog=false"/>
+        <p-button label="Déclarer" icon="pi pi-check"
+            [disabled]="!mesureDescription.trim()"
+            [loading]="savingMesure" (onClick)="executeDeclarerMesure()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -1558,6 +1695,193 @@ interface ApiError { error?: { message?: string }; }
                                 {{ i+1 }}
                             </span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Mandat -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                <i class="pi pi-verified text-indigo-600 text-xs"></i>
+                            </div>
+                            Mandat
+                        </h3>
+                        <p-button *ngIf="!mandat && !loadingMandat && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Délivrer le mandat" icon="pi pi-check" size="small" outlined
+                            [loading]="deliveringMandat" (onClick)="executeDeliverMandat()"/>
+                    </div>
+                    <div *ngIf="loadingMandat" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMandat && !mandat" class="text-sm text-surface-400">Aucun mandat délivré pour l'instant.</div>
+                    <div *ngIf="mandat" class="text-sm text-surface-700">
+                        Délivré le {{ mandat.dateDelivrance | date:'dd/MM/yyyy' }} par {{ mandat.agentCGENom }}
+                    </div>
+                </div>
+
+                <!-- Engagement préalable (agent connecté) -->
+                <div *ngIf="mandat" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-shield text-teal-600 text-xs"></i>
+                            </div>
+                            Mon engagement préalable
+                        </h3>
+                        <p-button *ngIf="!myEngagement && !loadingEngagement"
+                            label="Déclarer" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openEngagementDialog()"/>
+                    </div>
+                    <div *ngIf="loadingEngagement" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingEngagement && !myEngagement" class="text-sm text-surface-400">
+                        Confidentialité et absence de conflit d'intérêts non encore déclarées.
+                    </div>
+                    <div *ngIf="myEngagement" class="text-sm text-surface-700">
+                        <p-tag [value]="myEngagement.hasConflictOfInterest ? 'Conflit déclaré' : 'Aucun conflit'"
+                            [severity]="myEngagement.hasConflictOfInterest ? 'warn' : 'success'" styleClass="text-xs"/>
+                        <span class="text-xs text-surface-400 ml-2">Signé le {{ myEngagement.signedAt | date:'dd/MM/yyyy' }}</span>
+                        <p *ngIf="myEngagement.conflictDetails" class="mt-1 whitespace-pre-line">{{ myEngagement.conflictDetails }}</p>
+                    </div>
+                </div>
+
+                <!-- Plan d'investigation -->
+                <div *ngIf="mandat" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                                <i class="pi pi-map text-purple-600 text-xs"></i>
+                            </div>
+                            Plan d'investigation
+                            <p-tag *ngIf="plan" [value]="'v' + plan.planVersion" severity="secondary" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && plan.validatedAt" value="Validé" severity="success" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && !plan.validatedAt && plan.overdue" value="Validation en retard" severity="danger" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && !plan.validatedAt && !plan.overdue" value="En attente de validation DEI" severity="warn" styleClass="text-xs"/>
+                        </h3>
+                        <div class="flex gap-2">
+                            <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                [label]="plan ? 'Réviser' : 'Soumettre'" icon="pi pi-pencil" size="small" outlined
+                                (onClick)="openPlanDialog()"/>
+                            <p-button *ngIf="plan && !plan.validatedAt && hasRole(['CGEA','ADMIN_DDIC'])"
+                                label="Valider" icon="pi pi-check" size="small"
+                                [loading]="validatingPlan" (onClick)="executeValidatePlan()"/>
+                        </div>
+                    </div>
+                    <div *ngIf="loadingPlan" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingPlan && !plan" class="text-sm text-surface-400">Aucun plan d'investigation soumis pour l'instant.</div>
+                    <div *ngIf="plan" class="flex flex-col gap-3">
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Objectifs</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.objectifs }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Méthodologie</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.methodologie }}</p>
+                        </div>
+                        <div *ngIf="plan.moyensMobilises">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Moyens mobilisés</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.moyensMobilises }}</p>
+                        </div>
+                        <div *ngIf="plan.planningProcedures">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Planning / procédures</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.planningProcedures }}</p>
+                        </div>
+                        <div class="text-xs text-surface-400">
+                            Soumis par {{ plan.submittedByNom }} le {{ plan.submittedAt | date:'dd/MM/yyyy' }}
+                            <span *ngIf="plan.validatedByNom"> — Validé par {{ plan.validatedByNom }} le {{ plan.validatedAt | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <p-button *ngIf="planRevisions.length" [label]="'Historique des révisions (' + planRevisions.length + ')'"
+                            icon="pi pi-history" text size="small" styleClass="self-start"
+                            (onClick)="showPlanRevisions = !showPlanRevisions"/>
+                        <div *ngIf="showPlanRevisions" class="flex flex-col gap-2">
+                            <div *ngFor="let r of planRevisions" class="p-2 bg-surface-50 dark:bg-surface-700 rounded-xl text-xs">
+                                <div class="font-semibold">v{{ r.versionNumber }} — {{ r.revisedByNom }} — {{ r.revisedAt | date:'dd/MM/yyyy' }}</div>
+                                <div class="text-surface-500 mt-0.5">Motif : {{ r.motifRevision }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incidents d'objectivité -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                                <i class="pi pi-exclamation-circle text-red-600 text-xs"></i>
+                            </div>
+                            Incidents d'objectivité
+                            <span *ngIf="incidents.length" class="text-xs font-normal text-surface-400 ml-1">({{ incidents.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CGEA','CGE','CONTROLEUR_ETAT','MEMBRE_CTADP','CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            label="Déclarer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openIncidentDialog()"/>
+                    </div>
+                    <div *ngIf="loadingIncidents" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingIncidents && !incidents.length" class="text-sm text-surface-400">Aucun incident déclaré.</div>
+                    <div *ngFor="let inc of incidents" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ inc.description }}</p>
+                        <div class="text-xs text-surface-400 mt-1">{{ inc.declaredByNom }} — {{ inc.declaredAt | date:'dd/MM/yyyy' }}</div>
+                    </div>
+                </div>
+
+                <!-- Procédures d'urgence -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                                <i class="pi pi-bolt text-orange-600 text-xs"></i>
+                            </div>
+                            Procédures d'urgence
+                            <span *ngIf="proceduresUrgence.length" class="text-xs font-normal text-surface-400 ml-1">({{ proceduresUrgence.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
+                            label="Demander" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openProcedureDialog()"/>
+                    </div>
+                    <div *ngIf="loadingProcedures" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingProcedures && !proceduresUrgence.length" class="text-sm text-surface-400">Aucune procédure d'urgence.</div>
+                    <div *ngFor="let p of proceduresUrgence" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <p-tag [value]="getProcedureStatusLabel(p.status)" [severity]="getProcedureStatusSeverity(p.status)" styleClass="text-xs"/>
+                            <div *ngIf="p.status === 'EN_ATTENTE' && hasRole(['CGE','ADMIN_DDIC'])" class="flex gap-1">
+                                <p-button icon="pi pi-check" text size="small" severity="success"
+                                    pTooltip="Approuver" (onClick)="openProcedureDecisionDialog(p.id, 'approuver')"/>
+                                <p-button icon="pi pi-times" text size="small" severity="danger"
+                                    pTooltip="Rejeter" (onClick)="openProcedureDecisionDialog(p.id, 'rejeter')"/>
+                            </div>
+                        </div>
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ p.justification }}</p>
+                        <div class="text-xs text-surface-400 mt-1">
+                            Demandée par {{ p.requestedByNom }} — {{ p.requestedAt | date:'dd/MM/yyyy' }}
+                            <span *ngIf="p.decidedByNom"> — Décidée par {{ p.decidedByNom }} le {{ p.decidedAt | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <p *ngIf="p.motifDecision" class="text-xs text-surface-500 mt-1">Motif : {{ p.motifDecision }}</p>
+                    </div>
+                </div>
+
+                <!-- Mesures conservatoires -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center">
+                                <i class="pi pi-lock text-cyan-600 text-xs"></i>
+                            </div>
+                            Mesures conservatoires
+                            <span *ngIf="mesuresConservatoires.length" class="text-xs font-normal text-surface-400 ml-1">({{ mesuresConservatoires.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Déclarer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openMesureDialog()"/>
+                    </div>
+                    <div *ngIf="loadingMesures" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMesures && !mesuresConservatoires.length" class="text-sm text-surface-400">Aucune mesure conservatoire.</div>
+                    <div *ngFor="let m of mesuresConservatoires" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ m.description }}</p>
+                        <div class="text-xs text-surface-400 mt-1">{{ m.takenByNom }} — {{ m.takenAt | date:'dd/MM/yyyy' }}</div>
                     </div>
                 </div>
 
@@ -2400,6 +2724,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly witnessService = inject(WitnessService);
     private readonly ficheRetexService = inject(FicheRetexService);
     private readonly typeInfractionService = inject(TypeInfractionService);
+    private readonly cadrageService = inject(InvestigationCadrageService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -2603,6 +2928,52 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     leconPubliee          = false;
     publierLeconForm: PublierLeconRequest = { titre: '', resume: '' };
 
+    // ── Cadrage de l'enquête : mandat, engagement, plan, incidents, urgences, mesures ──
+    currentAgentId: string | null = null;
+
+    mandat:            MandatResponse | null = null;
+    loadingMandat      = false;
+    deliveringMandat   = false;
+
+    myEngagement:      EngagementConfidentialiteResponse | null = null;
+    loadingEngagement  = false;
+    savingEngagement   = false;
+    showEngagementDialog = false;
+    engagementForm: { hasConflictOfInterest: boolean | null; conflictDetails: string } =
+        { hasConflictOfInterest: null, conflictDetails: '' };
+
+    plan:              PlanInvestigationResponse | null = null;
+    planRevisions:     RevisionPlanResponse[] = [];
+    loadingPlan        = false;
+    savingPlan         = false;
+    validatingPlan     = false;
+    showPlanDialog     = false;
+    planForm: { objectifs: string; methodologie: string; moyensMobilises: string; planningProcedures: string; motifRevision: string } =
+        { objectifs: '', methodologie: '', moyensMobilises: '', planningProcedures: '', motifRevision: '' };
+    showPlanRevisions  = false;
+
+    incidents:         IncidentObjectiviteResponse[] = [];
+    loadingIncidents   = false;
+    savingIncident     = false;
+    showIncidentDialog = false;
+    incidentDescription = '';
+
+    proceduresUrgence: ProcedureUrgenceResponse[] = [];
+    loadingProcedures  = false;
+    savingProcedure    = false;
+    showProcedureDialog = false;
+    procedureJustification = '';
+    decidingProcedureId: string | null = null;
+    showProcedureDecisionDialog = false;
+    procedureDecisionMotif = '';
+    private procedureDecisionAction: 'approuver' | 'rejeter' | null = null;
+
+    mesuresConservatoires: MesureConservatoireResponse[] = [];
+    loadingMesures     = false;
+    savingMesure       = false;
+    showMesureDialog   = false;
+    mesureDescription  = '';
+
     suspendReason = '';
 
     extendDays             = 30;
@@ -2661,6 +3032,20 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             if (id) this.loadById(id);
         }
         this.loadAgents();
+        this.resolveCurrentAgentId();
+    }
+
+    private resolveCurrentAgentId(): void {
+        const email = this.keycloakService.getUserInfo().email;
+        this.agentService.findActive()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: agents => {
+                    this.currentAgentId = agents.find(a => a.email === email)?.id ?? null;
+                    if (this.currentAgentId && this.inv) this.loadMyEngagement(this.inv.id);
+                },
+                error: () => {}
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -2768,6 +3153,12 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.loadChecklist(inv.id);
             this.loadRapportEnquete(inv.id);
             this.loadFicheRetex(inv.id);
+            this.loadMandat(inv.id);
+            this.loadPlan(inv.id);
+            this.loadIncidents(inv.id);
+            this.loadProcedures(inv.id);
+            this.loadMesures(inv.id);
+            if (this.currentAgentId) this.loadMyEngagement(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
             this.transmission = null;
@@ -2780,6 +3171,13 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.inventairePieces = [];
             this.ficheRetex = null;
             this.leconPubliee = false;
+            this.mandat = null;
+            this.myEngagement = null;
+            this.plan = null;
+            this.planRevisions = [];
+            this.incidents = [];
+            this.proceduresUrgence = [];
+            this.mesuresConservatoires = [];
             this.auditions = [];
             this.pvByAudition = {};
             this.visitesTerrain = [];
@@ -3728,6 +4126,256 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                     this.messageService.add({ severity: 'success', summary: 'Leçon publiée', detail: 'Visible dans "Leçons à partager"' });
                 },
                 error: (err: ApiError) => { this.savingPublierLecon = false; this.showError(err); }
+            });
+    }
+
+    // ── Mandat ───────────────────────────────────────────────
+    private loadMandat(investigationId: string): void {
+        this.loadingMandat = true;
+        this.cadrageService.getMandat(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(m => { this.mandat = m; this.loadingMandat = false; });
+    }
+
+    executeDeliverMandat(): void {
+        if (!this.inv) return;
+        this.deliveringMandat = true;
+        this.cadrageService.deliverMandat(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: m => {
+                    this.mandat = m;
+                    this.deliveringMandat = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mandat délivré' });
+                },
+                error: (err: ApiError) => { this.deliveringMandat = false; this.showError(err); }
+            });
+    }
+
+    // ── Engagement préalable ────────────────────────────────
+    private loadMyEngagement(investigationId: string): void {
+        if (!this.currentAgentId) return;
+        this.loadingEngagement = true;
+        this.cadrageService.getEngagementPrealable(investigationId, this.currentAgentId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(e => { this.myEngagement = e; this.loadingEngagement = false; });
+    }
+
+    openEngagementDialog(): void {
+        this.engagementForm = { hasConflictOfInterest: null, conflictDetails: '' };
+        this.showEngagementDialog = true;
+    }
+
+    executeSaveEngagement(): void {
+        if (!this.inv || this.engagementForm.hasConflictOfInterest === null) return;
+        this.savingEngagement = true;
+        this.cadrageService.declareEngagementPrealable(this.inv.id, {
+            hasConflictOfInterest: this.engagementForm.hasConflictOfInterest,
+            conflictDetails: this.engagementForm.conflictDetails.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: e => {
+                    this.myEngagement = e;
+                    this.savingEngagement = false;
+                    this.showEngagementDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Engagement enregistré' });
+                },
+                error: (err: ApiError) => { this.savingEngagement = false; this.showError(err); }
+            });
+    }
+
+    // ── Plan d'investigation ─────────────────────────────────
+    private loadPlan(investigationId: string): void {
+        this.loadingPlan = true;
+        this.cadrageService.getPlan(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(p => {
+                this.plan = p;
+                this.loadingPlan = false;
+                if (p) {
+                    this.cadrageService.getPlanRevisions(investigationId)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(r => { this.planRevisions = r; });
+                }
+            });
+    }
+
+    get planDialogHeader(): string {
+        return this.plan ? "Réviser le plan d'investigation" : "Soumettre le plan d'investigation";
+    }
+
+    openPlanDialog(): void {
+        this.planForm = this.plan
+            ? {
+                objectifs: this.plan.objectifs, methodologie: this.plan.methodologie,
+                moyensMobilises: this.plan.moyensMobilises ?? '', planningProcedures: this.plan.planningProcedures ?? '',
+                motifRevision: ''
+              }
+            : { objectifs: '', methodologie: '', moyensMobilises: '', planningProcedures: '', motifRevision: '' };
+        this.showPlanDialog = true;
+    }
+
+    executeSavePlan(): void {
+        if (!this.inv || !this.planForm.objectifs.trim() || !this.planForm.methodologie.trim()) return;
+        if (this.plan && !this.planForm.motifRevision.trim()) return;
+        this.savingPlan = true;
+        const base = {
+            objectifs: this.planForm.objectifs.trim(),
+            methodologie: this.planForm.methodologie.trim(),
+            moyensMobilises: this.planForm.moyensMobilises.trim() || undefined,
+            planningProcedures: this.planForm.planningProcedures.trim() || undefined
+        };
+        const obs = this.plan
+            ? this.cadrageService.revisePlan(this.inv.id, { ...base, motifRevision: this.planForm.motifRevision.trim() })
+            : this.cadrageService.submitPlan(this.inv.id, base);
+        obs.pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.plan = p;
+                    this.savingPlan = false;
+                    this.showPlanDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'investigation enregistré" });
+                    this.cadrageService.getPlanRevisions(this.inv!.id)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(r => { this.planRevisions = r; });
+                },
+                error: (err: ApiError) => { this.savingPlan = false; this.showError(err); }
+            });
+    }
+
+    executeValidatePlan(): void {
+        if (!this.inv) return;
+        this.validatingPlan = true;
+        this.cadrageService.validatePlan(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.plan = p;
+                    this.validatingPlan = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'investigation validé" });
+                },
+                error: (err: ApiError) => { this.validatingPlan = false; this.showError(err); }
+            });
+    }
+
+    // ── Incidents d'objectivité ──────────────────────────────
+    private loadIncidents(investigationId: string): void {
+        this.loadingIncidents = true;
+        this.cadrageService.getIncidents(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.incidents = list; this.loadingIncidents = false; });
+    }
+
+    openIncidentDialog(): void {
+        this.incidentDescription = '';
+        this.showIncidentDialog = true;
+    }
+
+    executeDeclareIncident(): void {
+        if (!this.inv || !this.incidentDescription.trim()) return;
+        this.savingIncident = true;
+        this.cadrageService.declareIncident(this.inv.id, { description: this.incidentDescription.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: i => {
+                    this.incidents = [...this.incidents, i];
+                    this.savingIncident = false;
+                    this.showIncidentDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Incident déclaré' });
+                },
+                error: (err: ApiError) => { this.savingIncident = false; this.showError(err); }
+            });
+    }
+
+    // ── Procédures d'urgence ─────────────────────────────────
+    private loadProcedures(investigationId: string): void {
+        this.loadingProcedures = true;
+        this.cadrageService.getProcedures(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.proceduresUrgence = list; this.loadingProcedures = false; });
+    }
+
+    openProcedureDialog(): void {
+        this.procedureJustification = '';
+        this.showProcedureDialog = true;
+    }
+
+    executeDemanderProcedure(): void {
+        if (!this.inv || !this.procedureJustification.trim()) return;
+        this.savingProcedure = true;
+        this.cadrageService.demanderProcedureUrgence(this.inv.id, { justification: this.procedureJustification.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.proceduresUrgence = [...this.proceduresUrgence, p];
+                    this.savingProcedure = false;
+                    this.showProcedureDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procédure d\'urgence demandée' });
+                },
+                error: (err: ApiError) => { this.savingProcedure = false; this.showError(err); }
+            });
+    }
+
+    openProcedureDecisionDialog(procedureId: string, action: 'approuver' | 'rejeter'): void {
+        this.decidingProcedureId = procedureId;
+        this.procedureDecisionAction = action;
+        this.procedureDecisionMotif = '';
+        this.showProcedureDecisionDialog = true;
+    }
+
+    executeDecideProcedure(): void {
+        if (!this.inv || !this.decidingProcedureId || !this.procedureDecisionAction) return;
+        this.savingProcedure = true;
+        const req = { motifDecision: this.procedureDecisionMotif.trim() || undefined };
+        const obs = this.procedureDecisionAction === 'approuver'
+            ? this.cadrageService.approuverProcedureUrgence(this.inv.id, this.decidingProcedureId, req)
+            : this.cadrageService.rejeterProcedureUrgence(this.inv.id, this.decidingProcedureId, req);
+        obs.pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.proceduresUrgence = this.proceduresUrgence.map(x => x.id === p.id ? p : x);
+                    this.savingProcedure = false;
+                    this.showProcedureDecisionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Décision enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingProcedure = false; this.showError(err); }
+            });
+    }
+
+    getProcedureStatusLabel(s: StatutProcedureUrgence): string {
+        return ({ EN_ATTENTE: 'En attente', APPROUVEE: 'Approuvée', REJETEE: 'Rejetée' } as Record<string, string>)[s] ?? s;
+    }
+
+    getProcedureStatusSeverity(s: StatutProcedureUrgence): TagSeverity {
+        return ({ EN_ATTENTE: 'warn', APPROUVEE: 'success', REJETEE: 'danger' } as Record<string, TagSeverity>)[s] ?? 'info';
+    }
+
+    // ── Mesures conservatoires ────────────────────────────────
+    private loadMesures(investigationId: string): void {
+        this.loadingMesures = true;
+        this.cadrageService.getMesures(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.mesuresConservatoires = list; this.loadingMesures = false; });
+    }
+
+    openMesureDialog(): void {
+        this.mesureDescription = '';
+        this.showMesureDialog = true;
+    }
+
+    executeDeclarerMesure(): void {
+        if (!this.inv || !this.mesureDescription.trim()) return;
+        this.savingMesure = true;
+        this.cadrageService.declarerMesureConservatoire(this.inv.id, { description: this.mesureDescription.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: m => {
+                    this.mesuresConservatoires = [...this.mesuresConservatoires, m];
+                    this.savingMesure = false;
+                    this.showMesureDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mesure conservatoire déclarée' });
+                },
+                error: (err: ApiError) => { this.savingMesure = false; this.showError(err); }
             });
     }
 
