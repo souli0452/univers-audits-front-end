@@ -496,6 +496,22 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showReclasserDialog" header="Classer dans une section"
+    [modal]="true" [style]="{width:'420px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-sm font-semibold text-surface-700 mb-1 block">Section du dossier de travail</label>
+        <p-select [(ngModel)]="reclasserSectionId" [options]="sectionOptions"
+            optionLabel="displayLabel" optionValue="id" placeholder="Sélectionner une section..."
+            styleClass="w-full" appendTo="body"/>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showReclasserDialog=false"/>
+        <p-button label="Classer" icon="pi pi-check"
+            [disabled]="!reclasserSectionId"
+            [loading]="savingReclasser" (onClick)="executeReclasser()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showPriorityDialog"
     header="Définir la priorité du dossier"
     [modal]="true" [style]="{width:'500px'}" [draggable]="false">
@@ -869,6 +885,12 @@
                     severity="secondary" outlined size="small"
     [loading]="exportingPdf"
     pTooltip="Exporter en PDF (4 pages complètes)" (onClick)="exportPdf()"/>
+
+                <p-button *ngIf="dossier.status !== 'CLASSE' && dossier.status !== 'TRANSFERE'"
+                    label="Export officiel" icon="pi pi-file"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingOfficialPdf"
+                    pTooltip="Export PDF officiel généré par le serveur" (onClick)="downloadOfficialPdf()"/>
                 <p-button *ngIf="dossier.status === 'CLASSE' || dossier.status === 'TRANSFERE'"
                     label="Exporter PDF" icon="pi pi-file-pdf"
                     severity="secondary" outlined size="small"
@@ -1327,6 +1349,10 @@
                                     <div class="text-xs text-surface-400 mt-0.5">{{ formatSize(att.fileSizeBytes) }}</div>
                                 </div>
                                 <div class="flex items-center gap-1 flex-shrink-0">
+                                    <p-button *ngIf="sectionsDossierTravail.length && hasRole(['CONTROLEUR_ETAT','AGENT_BRPD','ADMIN_DDIC'])"
+                                        icon="pi pi-folder" severity="secondary" text size="small"
+                                        pTooltip="Classer dans une section du dossier de travail"
+                                        (onClick)="openReclasserDialog(att.id)"/>
                                     <p-button *ngIf="getBlobUrl(att.id)"
                                         [icon]="previewId===att.id ? 'pi pi-eye-slash' : 'pi pi-eye'"
                                         severity="info" text size="small"

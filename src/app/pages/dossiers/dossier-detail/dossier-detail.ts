@@ -139,6 +139,7 @@ export class DossierDetail implements OnInit {
     transitioning         = false;
     openingInvestigation  = false;
     exportingPdf          = false;
+    downloadingOfficialPdf = false;
     downloadingRecepisse   = false;
     downloadingAccuse      = false;
     downloadingReponse     = false;
@@ -206,6 +207,10 @@ export class DossierDetail implements OnInit {
 
     sectionsDossierTravail: SectionDossierTravailResponse[] = [];
     loadingSections           = false;
+    showReclasserDialog       = false;
+    savingReclasser           = false;
+    reclasserSectionId: string | null = null;
+    private reclasserAttachmentId: string | null = null;
     savingOrganisationDetail  = false;
     organisationDetailChoice: OrganisationDetail | null = null;
     readonly organisationDetailOptions: { label: string; value: OrganisationDetail }[] = [
@@ -472,6 +477,39 @@ export class DossierDetail implements OnInit {
         this.sectionDossierTravailService.listerSections(id).subscribe({
             next: s => { this.sectionsDossierTravail = s; this.loadingSections = false; },
             error: () => { this.loadingSections = false; }
+        });
+    }
+
+    get sectionOptions(): { id: string; displayLabel: string }[] {
+        return this.sectionsDossierTravail.map(s => ({
+            id: s.id,
+            displayLabel: s.type === 'DETAIL' ? (s.libelle || 'Section détail') : this.getSectionTypeLabel(s.type)
+        }));
+    }
+
+    openReclasserDialog(attachmentId: string): void {
+        this.reclasserAttachmentId = attachmentId;
+        this.reclasserSectionId = null;
+        this.showReclasserDialog = true;
+    }
+
+    executeReclasser(): void {
+        if (!this.dossier || !this.reclasserAttachmentId || !this.reclasserSectionId) return;
+        this.savingReclasser = true;
+        this.attachmentService.reclasser(this.reclasserAttachmentId, this.reclasserSectionId).subscribe({
+            next: () => {
+                this.savingReclasser = false;
+                this.showReclasserDialog = false;
+                this.messageService.add({ severity: 'success', summary: 'Pièce classée' });
+                this.loadSectionsDossierTravail(this.dossier!.id);
+            },
+            error: err => {
+                this.savingReclasser = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Classement impossible'
+                });
+            }
         });
     }
 
@@ -1766,6 +1804,24 @@ export class DossierDetail implements OnInit {
 
     getEtatAvancementSeverity(v?: string): TagSeverity {
         return ({ EN_COURS: 'warn', CLOTURE: 'success', AUTRE: 'info' } as Record<string, TagSeverity>)[v || ''] ?? 'info';
+    }
+
+    downloadOfficialPdf(): void {
+        if (!this.dossier) return;
+        this.downloadingOfficialPdf = true;
+        this.pdfService.exportDossier(this.dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `dossier-${this.dossier!.number || this.dossier!.id}.pdf`);
+                this.downloadingOfficialPdf = false;
+            },
+            error: err => {
+                this.downloadingOfficialPdf = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Export officiel impossible'
+                });
+            }
+        });
     }
 
     downloadRecepisse(): void {

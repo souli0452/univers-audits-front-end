@@ -9,6 +9,10 @@ export class PdfService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/pdf`;
 
+    exportDossier(dossierId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/dossier/${dossierId}`, { responseType: 'blob' });
+    }
+
     downloadRecepisse(dossierId: string): Observable<Blob> {
         return this.http.get(`${this.baseUrl}/recepisse/${dossierId}`, { responseType: 'blob' });
     }

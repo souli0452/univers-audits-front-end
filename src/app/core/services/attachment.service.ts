@@ -51,6 +51,10 @@ export class AttachmentService {
         return this.http.delete(`${this.baseUrl}/${attachmentId}`);
     }
 
+    reclasser(attachmentId: string, sectionId: string): Observable<void> {
+        return this.http.patch<void>(`${this.baseUrl}/${attachmentId}/section`, { sectionId });
+    }
+
     formatSize(bytes: number): string {
         if (!bytes) return '0 B';
         if (bytes < 1024)        return bytes + ' B';
