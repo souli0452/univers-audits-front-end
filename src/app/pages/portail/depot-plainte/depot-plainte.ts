@@ -1383,6 +1383,7 @@ export class DepotPlainte {
             type:             this.f['type'].value as any,
             quality:          this.f['quality'].value as any,
             submissionMode:   'WEB_FORM' as any,
+            anonymous:        this.fd['anonymous'].value || false,
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
