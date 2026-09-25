@@ -1,8 +1,8 @@
 export const environment = {
     production: true,
-    apiUrl: 'https://api.asce-lc.bf/api/v1',
+    apiUrl: 'https://denoncer.asce-lc.bf/api/v1',
     keycloak: {
-        url: 'https://auth.asce-lc.bf',
+        url: 'https://denoncer.asce-lc.bf/auth',
         realm: 'asce-lc',
         clientId: 'asce-lc-frontend'
     }
