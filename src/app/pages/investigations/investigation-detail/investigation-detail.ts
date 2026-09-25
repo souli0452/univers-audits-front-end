@@ -232,6 +232,18 @@ interface ApiError { error?: { message?: string }; }
     header="Soumettre le rapport final"
     [modal]="true" [style]="{width:'740px'}" [draggable]="false">
     <div class="flex flex-col gap-5 py-2">
+        <div *ngIf="!rapportEnquete?.complet || !noteRecommandations?.complet || !isChecklistFullyChecked()"
+            class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+            <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
+            <div class="text-xs text-amber-800 leading-relaxed">
+                La soumission exige que le <strong>Rapport d'enquête officiel</strong> et la
+                <strong>Note de recommandations</strong> (sections ci-dessus) soient tous deux
+                complets, et que <strong>tous les points de la check-list du dossier de travail</strong>
+                soient cochés ({{ getChecklistCheckedCount() }}/{{ checklistItems.length }} actuellement).
+                Les champs ci-dessous sont indicatifs — le contenu officiel provient des sections
+                Rapport d'enquête et Note de recommandations.
+            </div>
+        </div>
         <div class="grid grid-cols-2 gap-3">
             <div class="border-2 rounded-xl p-3 cursor-pointer transition-all"
                 [class.border-primary-500]="reportMode==='ONLINE'"
@@ -3925,6 +3937,10 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
         return this.checklistItems.filter(i => i.coche).length;
     }
 
+    isChecklistFullyChecked(): boolean {
+        return this.checklistItems.every(i => i.coche);
+    }
+
     executeToggleChecklist(item: ChecklistDossierTravailItemResponse): void {
         if (!this.inv) return;
         this.savingChecklistCode = item.code;
@@ -4399,6 +4415,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     canSubmitReport(): boolean {
         if (!this.reportRequest.outcome) return false;
+        if (!this.rapportEnquete?.complet || !this.noteRecommandations?.complet) return false;
+        if (!this.isChecklistFullyChecked()) return false;
         if (this.reportMode === 'ONLINE') {
             return !!(this.reportRequest.finalReport?.trim()
                 && this.reportRequest.conclusions?.trim());
