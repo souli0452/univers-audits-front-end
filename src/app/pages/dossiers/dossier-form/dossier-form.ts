@@ -848,7 +848,7 @@ export class DossierForm {
             description:    this.f['description'].value,
             isConfidential: this.f['isConfidential'].value ?? false,
             anonymous:      isAnon,
-            quality:        isAnon ? undefined : cleanStr(this.fd['quality'].value),
+            quality:        isAnon ? 'TEMOIN' : cleanStr(this.fd['quality'].value),
             declarantData
         };
 
