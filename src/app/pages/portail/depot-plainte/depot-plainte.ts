@@ -460,7 +460,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div *ngFor="let type of typeOptions"
                             class="type-card"
                             [class.selected]="f['type'].value === type.value"
-                            (click)="f['type'].setValue(type.value)">
+                            (click)="selectType(type.value)">
                             <div class="type-icon"
                                 [style.background]="f['type'].value === type.value
                                     ? 'var(--mist)' : 'var(--mist)'">
@@ -471,6 +471,18 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             </div>
                             <div class="type-name">{{ type.label }}</div>
                             <div class="type-desc">{{ type.description }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field" *ngIf="f['type'].value === 'COMPLAINT'">
+                    <label>Vous êtes <span class="req">*</span></label>
+                    <div class="type-grid">
+                        <div *ngFor="let q of qualityOptions"
+                            class="type-card"
+                            [class.selected]="f['quality'].value === q.value"
+                            (click)="f['quality'].setValue(q.value)">
+                            <div class="type-name">{{ q.label }}</div>
                         </div>
                     </div>
                 </div>
@@ -728,6 +740,29 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
             <div *ngIf="!fd['anonymous'].value"
                 style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.25rem;">
+                <div class="field">
+                    <label>Vous déposez cette plainte en tant que</label>
+                    <div class="type-grid">
+                        <div *ngFor="let cat of declarantCategoryOptions"
+                            class="type-card"
+                            [class.selected]="fd['typeDeclarant'].value === cat.value"
+                            (click)="fd['typeDeclarant'].setValue(cat.value)">
+                            <div class="type-icon" style="background:var(--mist);">
+                                <i [class]="cat.icon"
+                                    [style.color]="fd['typeDeclarant'].value === cat.value
+                                        ? 'var(--green)' : 'var(--ink-40)'"
+                                    style="font-size:1.1rem;"></i>
+                            </div>
+                            <div class="type-name">{{ cat.label }}</div>
+                            <div class="type-desc">{{ cat.description }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field" *ngIf="fd['typeDeclarant'].value !== 'CITIZEN'">
+                    <label>Nom de l'organisation <span class="opt">— optionnel</span></label>
+                    <input pInputText [formControl]="fd['organizationName']"
+                        placeholder="Raison sociale de l'entreprise ou de l'association" class="w-full" />
+                </div>
                 <div class="grid2">
                     <div class="field">
                         <label>Prénom <span class="opt">— optionnel</span></label>
@@ -1101,6 +1136,7 @@ export class DepotPlainte {
 
     dossierForm = this.fb.group({
         type:             ['COMPLAINT'],
+        quality:          ['VICTIME'],
         object:           ['', [Validators.required, Validators.minLength(10)]],
         description:      ['', Validators.required],
         incidentLocation: [''],
@@ -1110,6 +1146,7 @@ export class DepotPlainte {
 
     declarantForm = this.fb.group({
         typeDeclarant:         ['CITIZEN'],
+        organizationName:      [''],
         firstName:             [''],
         lastName:              [''],
         email:                 [''],
@@ -1127,9 +1164,28 @@ export class DepotPlainte {
 
     typeOptions = [
         { label: 'Plainte',      value: 'COMPLAINT',
-          description: 'Je suis victime ou témoin', icon: 'pi pi-exclamation-circle' },
+          description: 'Je suis la victime ou son représentant', icon: 'pi pi-exclamation-circle' },
         { label: 'Dénonciation', value: 'DENUNCIATION',
-          description: 'Je signale des faits',      icon: 'pi pi-megaphone'          }
+          description: 'Je signale des faits en tant que témoin', icon: 'pi pi-megaphone'          }
+    ];
+
+    qualityOptions = [
+        { label: 'Je suis la victime',          value: 'VICTIME' },
+        { label: 'Je représente la victime',    value: 'REPRESENTANT_VICTIME' }
+    ];
+
+    selectType(value: string): void {
+        this.f['type'].setValue(value);
+        this.f['quality'].setValue(value === 'DENUNCIATION' ? 'TEMOIN' : 'VICTIME');
+    }
+
+    declarantCategoryOptions = [
+        { label: 'Citoyen',          value: 'CITIZEN',
+          description: 'Personne physique', icon: 'pi pi-user' },
+        { label: 'Entreprise',       value: 'COMPANY',
+          description: 'Société privée ou publique', icon: 'pi pi-building' },
+        { label: 'Association / ONG', value: 'ASSOCIATION',
+          description: 'Société civile', icon: 'pi pi-users' }
     ];
     toggleProtectionRequested(): void {
         if (this.fd['protectionRequested'].value) {
@@ -1167,6 +1223,14 @@ export class DepotPlainte {
     setAnonymous(): void {
         this.fd['anonymous'].setValue(true);
         this.cancelProtection();
+        if (this.f['quality'].value !== 'TEMOIN') {
+            this.f['type'].setValue('DENUNCIATION');
+            this.f['quality'].setValue('TEMOIN');
+            this.messageService.add({
+                severity: 'info', summary: 'Signalement basculé en dénonciation',
+                detail: 'L\'anonymat n\'est possible qu\'en tant que témoin, conformément à la loi.'
+            });
+        }
     }
     goToStep2(): void {
         this.dossierForm.markAllAsTouched();
@@ -1317,6 +1381,7 @@ export class DepotPlainte {
 
         const request = {
             type:             this.f['type'].value as any,
+            quality:          this.f['quality'].value as any,
             submissionMode:   'WEB_FORM' as any,
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
@@ -1325,7 +1390,8 @@ export class DepotPlainte {
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {
                 typeDeclarant:          this.fd['anonymous'].value
-                                            ? 'ANONYMOUS' as any : 'CITIZEN' as any,
+                                            ? 'ANONYMOUS' as any : this.fd['typeDeclarant'].value as any,
+                organizationName:       this.fd['organizationName'].value || undefined,
                 firstName:              this.fd['firstName'].value   || undefined,
                 lastName:               this.fd['lastName'].value    || undefined,
                 email:                  this.fd['email'].value       || undefined,
