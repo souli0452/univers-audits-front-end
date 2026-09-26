@@ -98,7 +98,7 @@ export default {
       preconditions: ['Investigation IN_PROGRESS'],
       steps: [
         'Bloc « Demandes de documents » : cliquer sur « Nouvelle demande »',
-        'Renseigner destinataire, adresse et documents demandés dans « Nouvelle demande de documents »',
+        'Renseigner le destinataire et les documents demandés dans « Nouvelle demande de documents »',
         'Cliquer sur « Marquer reçue » sur une demande',
         'Sur une autre demande dont l’échéance est dépassée, cliquer sur « Escalader »',
         'Utiliser « Adresse erronée » puis corriger l’adresse du destinataire'
@@ -118,18 +118,21 @@ export default {
       priority: 'Majeur',
       type: 'nominal',
       role: 'CONTROLEUR_ETAT',
-      preconditions: ['Investigation IN_PROGRESS', 'Fichier document.pdf disponible'],
+      preconditions: ['Investigation IN_PROGRESS', 'Deux pièces jointes ajoutées au dossier (onglet « Pièces jointes », voir P07-10)'],
       steps: [
-        'Bloc « Inventaire des pièces » : ajouter une pièce (désignation, origine, référence)',
-        'Ajouter une seconde pièce puis modifier la première',
-        'Relire le compteur affiché entre parenthèses dans le titre du bloc'
+        'Dans le dossier, onglet « Pièces jointes », ajouter document.pdf puis photo.jpg',
+        'Ouvrir l’investigation et lire le bloc « Inventaire des pièces »',
+        'Relire le compteur affiché entre parenthèses dans le titre du bloc',
+        'Sur un dossier sans aucune pièce jointe, lire le même bloc'
       ],
-      data: ['Pièce 1 : Facture de test', 'Pièce 2 : Bon de commande de test'],
+      data: ['Fichiers : document.pdf, photo.jpg'],
       expected: [
-        'Le compteur du titre « Inventaire des pièces (2) » correspond au nombre de pièces',
-        'Les pièces et leurs modifications restent après rechargement de la page'
+        'Le compteur du titre « Inventaire des pièces (2) » correspond au nombre de pièces du dossier',
+        'Chaque pièce affiche son code, sa description, sa source, son mode d’obtention (volontaire ou réquisition), sa date et son statut',
+        'Sans pièce, le message « Aucune pièce dans le dossier. » s’affiche'
       ],
-      ui: ['Inventaire des pièces']
+      ui: ['Inventaire des pièces', 'Aucune pièce dans le dossier.'],
+      aConfirmer: 'Le bloc est en lecture seule dans l’écran : la source et le mode d’obtention d’une pièce (volontaire ou réquisition) se renseignent-ils à l’ajout de la pièce jointe, et par qui ?'
     },
     {
       id: 'P08-07',
