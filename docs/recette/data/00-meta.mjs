@@ -22,7 +22,7 @@ export default {
     { name: 'document.pdf', usage: 'Pièce jointe valide, moins de 5 Mo' },
     { name: 'photo.jpg', usage: 'Image valide pour pièce jointe et photo du dépôt vocal' },
     { name: 'audio.webm ou audio.mp3', usage: 'Enregistrement audio de test' },
-    { name: 'gros-fichier.pdf', usage: 'Fichier au-dessus de la limite autorisée (cas négatif)' },
+    { name: 'gros-fichier.pdf', usage: 'Fichier de plus de 25 Mo, au-dessus de la limite du formulaire (cas négatif)' },
     { name: 'script.html', usage: 'Fichier de type interdit (cas négatif)' }
   ],
   startDossiers: [
