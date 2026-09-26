@@ -88,10 +88,11 @@ export default {
       expected: [
         'Chaque bouton social affiche son logo, les icônes de contact (e-mail, globe, repère) sont visibles',
         'Le bouton Facebook ouvre la page de l’ASCE-LC dans un nouvel onglet',
-        'Les liens « Nos missions », « Textes juridiques », « FAQ », « Mentions légales », « Confidentialité », « Conditions d\'utilisation » et « Rapport annuel » ouvrent la page ou le document correspondant'
+        'Les boutons Twitter et LinkedIn sans adresse configurée n’ouvrent aucun nouvel onglet',
+        'Un clic sur « Nos missions », « Textes juridiques », « FAQ », « Mentions légales », « Confidentialité », « Conditions d\'utilisation » ou « Rapport annuel » ne change ni l’adresse, ni la page affichée, et ne recharge pas l’accueil'
       ],
       ui: ['LIENS RAPIDES', 'INFORMATIONS', 'Nos missions', 'Textes juridiques', 'FAQ', 'Mentions légales'],
-      aConfirmer: 'Dans le code, ces 7 liens pointent vers « # » (aucune page cible) : contenu à fournir ou liens à retirer avant la mise en production'
+      aConfirmer: 'Ces 7 liens sont conservés mais n’ont pas encore de page : contenu (missions, textes juridiques, FAQ, mentions légales, confidentialité, conditions, rapport annuel) à fournir par l’ASCE-LC avant la mise en production'
     },
     {
       id: 'P01-05',
@@ -131,10 +132,10 @@ export default {
       data: ['Code de suivi : celui du dossier D-A'],
       expected: [
         'Le bouton du bandeau ouvre /portail/suivi',
-        'Entrée et la flèche de la carte ouvrent la page de suivi avec le code transmis'
+        'Entrée et la flèche de la carte ouvrent la page de suivi avec le code transmis',
+        'La zone de la carte n’accepte pas plus de 8 caractères, comme la page de suivi'
       ],
-      ui: ['Suivre mon dossier'],
-      aConfirmer: 'La zone de la carte accepte 10 caractères (maxlength 10) alors que la page de suivi en accepte 8 : confirmer la longueur réelle du code'
+      ui: ['Suivre mon dossier']
     },
     {
       id: 'P01-07',

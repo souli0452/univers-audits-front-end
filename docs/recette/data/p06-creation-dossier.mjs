@@ -53,7 +53,7 @@ export default {
       expected: [
         'L’écran « Dossier créé avec succès » propose « Imprimer le B4 » et « Voir le dossier »',
         'Cas identifié : anonymous false, typeDeclarant CITIZEN, quality TEMOIN',
-        'Cas type Anonyme : type envoyé DENUNCIATION, anonymous true, typeDeclarant ANONYMOUS, aucun nom de déclarant envoyé',
+        'Cas type Anonyme : type envoyé DENUNCIATION, anonymous true, typeDeclarant ANONYMOUS, aucun nom, téléphone ni commune de déclarant envoyé',
         'Le fichier audio est présent dans les pièces jointes des deux dossiers'
       ],
       ui: ['Démarrer l\'enregistrement', 'Arrêter l\'enregistrement', 'Créer le dossier avec audio', 'Imprimer le B4', 'Voir le dossier'],
@@ -123,10 +123,9 @@ export default {
       data: [],
       expected: [
         'Les modes créés apparaissent dans le détail et dans le filtre « Canal »',
-        'Le mode « Fax » est accepté et enregistré, ou refusé avec un message clair'
+        'Le mode « Fax » est accepté et enregistré (le back le reconnaît)'
       ],
-      ui: ['Email', 'Téléphone', 'Formulaire Papier', 'Courrier Postal', 'Fax'],
-      aConfirmer: 'Le mode « Fax » est proposé par le formulaire mais absent du type des modes de saisine du modèle du front : le back l’accepte-t-il ?'
+      ui: ['Email', 'Téléphone', 'Formulaire Papier', 'Courrier Postal', 'Fax']
     },
     {
       id: 'P06-06',

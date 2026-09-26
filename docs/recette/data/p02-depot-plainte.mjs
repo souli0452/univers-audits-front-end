@@ -47,7 +47,7 @@ export default {
         'Ouvrir /portail/deposer',
         'Étape « Les faits » : choisir « Plainte » puis renseigner résumé et description',
         'Cliquer sur « Continuer »',
-        'Étape « Coordonnées » : cliquer sur « Je reste anonyme »',
+        'Étape « Coordonnées » : saisir d’abord un prénom, un nom, un téléphone et un e-mail, puis cliquer sur « Je reste anonyme »',
         'Lire le message d’information qui apparaît',
         'Cocher l’acceptation du traitement des données puis « Continuer »',
         'À l’étape « Confirmation », lire le bloc Déclarant puis cliquer sur « Soumettre mon signalement »',
@@ -104,7 +104,7 @@ export default {
         'Les deux fichiers sont présents et téléchargeables dans le dossier côté agent'
       ],
       ui: ['Pièces jointes'],
-      aConfirmer: 'Dans le code, si l’envoi des pièces jointes échoue, la fenêtre de succès s’affiche quand même sans avertissement : vérifier que les fichiers sont bien reçus'
+      aConfirmer: 'Cas d’échec à vérifier : réseau coupé juste après la création du dossier. L’écran de succès doit alors s’accompagner de l’avertissement « Dossier créé — Les pièces jointes n\'ont pas pu être envoyées »'
     },
     {
       id: 'P02-05',
@@ -184,10 +184,10 @@ export default {
       ],
       data: ['E-mail : pas-un-email'],
       expected: [
-        'Une adresse invalide est refusée avec un message explicite (à l’écran ou par l’API) et aucun dossier n’est créé avec cette adresse'
+        'Le message « E-mail invalide » s’affiche, l’étape « Confirmation » n’est pas atteinte et aucun dossier n’est créé avec cette adresse',
+        'Un champ e-mail laissé vide reste accepté (champ optionnel)'
       ],
-      ui: ['Continuer'],
-      aConfirmer: 'Aucune validation de format n’apparaît dans le code du formulaire pour l’e-mail : le comportement attendu (refus à l’écran, refus par l’API ou acceptation) est à définir'
+      ui: ['Continuer']
     },
     {
       id: 'P02-09',

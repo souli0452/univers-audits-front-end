@@ -79,16 +79,19 @@ export default {
       preconditions: ['Une information au statut NOUVELLE'],
       steps: [
         'Dans le bloc « Actions », cliquer sur « Classer sans suite »',
+        'Dans la fenêtre « Classer sans suite », cliquer d’abord sur « Annuler », puis rouvrir la fenêtre',
+        'Cliquer sur « Confirmer le classement »',
         'Relire le statut et les actions restantes'
       ],
       data: [],
       expected: [
-        'La notification « Classée sans suite » s’affiche',
+        'La fenêtre prévient que l’action est irréversible ; « Annuler » la ferme sans classer l’information',
+        'La notification « Classée sans suite » s’affiche après « Confirmer le classement »',
         'Le statut devient « Classée sans suite » et le message « Cette information a été classée sans suite. » s’affiche',
         'Les boutons « Déclencher une auto-saisine » et « Classer sans suite » disparaissent'
       ],
       ui: ['Classer sans suite', 'Classée sans suite', 'Cette information a été classée sans suite.'],
-      aConfirmer: 'Le classement est immédiat, sans confirmation ni motif dans le code : demande de confirmation et motif obligatoire à confirmer avec le métier'
+      aConfirmer: 'Aucun motif de classement n’est demandé : motif obligatoire à confirmer avec le métier'
     },
     {
       id: 'P10-05',
@@ -98,18 +101,16 @@ export default {
       role: 'AGENT_BRPD',
       preconditions: ['Fenêtre « Nouvelle information préoccupante » ouverte'],
       steps: [
-        'Laisser l’objet, la description et la source vides et cliquer sur « Créer »',
-        'Renseigner l’objet seul et recliquer',
-        'Renseigner tous les champs marqués d’un astérisque et recliquer'
+        'Laisser l’objet, la description et la source vides et observer le bouton « Créer »',
+        'Renseigner l’objet seul et observer le bouton',
+        'Renseigner tous les champs marqués d’un astérisque et observer le bouton, puis cliquer dessus'
       ],
       data: [],
       expected: [
-        'Aucune information n’est créée tant qu’un champ marqué d’un astérisque est vide',
-        'Un message explique quel champ est manquant, ou le champ est signalé en erreur',
-        'Avec tous les champs renseignés, la création aboutit'
+        'Le bouton « Créer » reste désactivé tant qu’un champ marqué d’un astérisque (objet, description, source, date de réception) est vide, donc aucune information incomplète ne peut être créée',
+        'Avec tous les champs renseignés, le bouton devient actif et la création aboutit'
       ],
-      ui: ['Créer'],
-      aConfirmer: 'Dans le code, un clic sur « Créer » avec des champs manquants ne produit aucune réaction visible (ni message ni champ signalé) : comportement attendu à confirmer'
+      ui: ['Créer']
     },
     {
       id: 'P10-06',

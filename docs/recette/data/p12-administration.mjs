@@ -254,9 +254,8 @@ export default {
       data: [],
       expected: [
         'CONTROLEUR_ETAT est redirigé vers /#/notfound pour chaque adresse, sans données affichées',
-        'CGE ne doit pas pouvoir agir sur la file des notifications : redirection ou accès refusé attendu'
-      ],
-      aConfirmer: 'Seule l’entrée de menu « File des notifications » est masquée pour CGE ; la route elle-même n’a pas de garde dédiée (le parent « Administration » admet CGE) : CGE peut ouvrir la page par adresse directe. Comportement attendu à confirmer'
+        'CGE est redirigé vers /#/notfound pour /#/app/administration/notifications-queue : cette page est réservée à ADMIN_DDIC et CGEA, comme son entrée de menu'
+      ]
     }
   ]
 };

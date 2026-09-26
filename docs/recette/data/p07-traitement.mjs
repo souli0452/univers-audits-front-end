@@ -152,21 +152,24 @@ export default {
       title: 'Transfert du dossier vers une institution compétente',
       priority: 'Majeur',
       type: 'nominal',
-      role: 'CGEA',
-      preconditions: ['Dossier non clôturé', 'Institution destinataire connue (institution partenaire de test)'],
+      role: 'CGE',
+      preconditions: ['Dossier au statut EN_REVUE_CTADP (seule étape où le back autorise le transfert)', 'Session ouverte avec le compte CGE (ou CGEA, ADMIN_DDIC)', 'Institution destinataire connue (institution partenaire de test)'],
       steps: [
-        'Chercher dans le détail du dossier l’action de transfert vers une institution',
-        'Exécuter le transfert en renseignant l’institution destinataire et la note de transfert',
+        'Ouvrir le dossier au statut En revue CTADP',
+        'Cliquer sur « Transférer », à côté de « Déclarer recevable » et « Déclarer irrecevable »',
+        'Dans « Transférer le dossier à une institution », laisser l’institution vide et cliquer sur « Transférer le dossier »',
+        'Saisir l’institution destinataire et un motif puis cliquer sur « Transférer le dossier »',
         'Relire le bandeau affiché sur le dossier'
       ],
-      data: ['Institution : Institution partenaire de test'],
+      data: ['Institution : Institution partenaire de test', 'Motif : Hors du champ de compétence de l’ASCE-LC'],
       expected: [
-        'Le statut devient « Transféré » et le bandeau « Dossier transféré » indique « Transmis à » suivi de l’institution',
+        'Sans institution, le message « Institution requise » s’affiche, la fenêtre reste ouverte et le dossier reste « En revue CTADP »',
+        'Avec l’institution, la notification « Statut mis à jour » s’affiche, le statut devient « Transféré » et le bandeau « Dossier transféré » indique « Transmis à » suivi de l’institution',
         'Le dossier n’est plus modifiable et la note de transfert figure parmi les observations',
-        'Le suivi public affiche « Dossier transféré »'
+        'Le suivi public affiche « Dossier transféré »',
+        'Le bouton « Transférer » n’apparaît sur aucun autre statut, ni pour un rôle autre que CGE, CGEA et ADMIN_DDIC'
       ],
-      ui: ['Dossier transféré'],
-      aConfirmer: 'Le détail du dossier n’a aucun bouton de transfert : le statut Transféré n’est qu’affiché. Où et par qui le transfert se déclenche-t-il (écran, rôle, décision de l’investigation) ? À confirmer avant la recette'
+      ui: ['Déclarer recevable', 'Déclarer irrecevable', 'Dossier transféré']
     },
     {
       id: 'P07-09',

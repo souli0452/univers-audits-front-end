@@ -13,17 +13,15 @@ export default {
       preconditions: ['Navigateur ouvert'],
       steps: [
         'Ouvrir https://denoncer.asce-lc.bf/#/notfound',
-        'Cliquer sur « Go to Dashboard »',
+        'Cliquer sur « Retour à l’accueil »',
         'Ouvrir /#/auth/access puis /#/auth/error puis /#/auth/login'
       ],
       data: [],
       expected: [
-        'La page 404 s’affiche avec un bouton de retour qui ramène à l’accueil du portail',
-        'Le texte des pages d’erreur est en français, sans mention de « PrimeLand »',
-        'La page /#/auth/login ne présente pas de faux formulaire de connexion'
-      ],
-      ui: ['Go to Dashboard'],
-      aConfirmer: 'Dans le code, ces pages sont le gabarit d’origine en anglais (« Not Found », « Access Denied », « Error Occured », « Welcome to PrimeLand! » avec un formulaire Email/Password factice) et sont accessibles sans connexion : à traduire, masquer ou retirer avant la mise en production'
+        'La page 404 s’intitule « Page introuvable », le texte est en français, sans aucun texte factice (Frequently Asked Questions, Solution Center, Permission Manager) et le bouton « Retour à l’accueil » ramène à l’accueil du portail',
+        '/#/auth/access affiche « Accès refusé » et /#/auth/error affiche « Une erreur est survenue », en français',
+        '/#/auth/login n’affiche aucun formulaire : il redirige vers la connexion Keycloak (/#/app)'
+      ]
     },
     {
       id: 'P14-02',
