@@ -3,6 +3,7 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_AUTH } from '../interceptors/skip-auth.context';
+import { ComplementRequestResponse, ComplementSubmissionResponse } from '../models/complement.model';
 import {
     DossierResponse,
     DossierCreateRequest,
@@ -101,6 +102,24 @@ export class DossierService {
     trackByAccessCode(accessCode: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(
             `${this.baseUrl}/public/track/${accessCode}`,
+            { context: new HttpContext().set(SKIP_AUTH, true) });
+    }
+
+    /** Demande de complément vue par le déclarant (le code de suivi sert de preuve). */
+    getComplementRequest(accessCode: string): Observable<ComplementRequestResponse> {
+        return this.http.get<ComplementRequestResponse>(
+            `${this.baseUrl}/public/complement/${encodeURIComponent(accessCode)}`,
+            { context: new HttpContext().set(SKIP_AUTH, true) });
+    }
+
+    /** Réponse du déclarant : message et pièces en un seul envoi, le dossier repasse en étude. */
+    submitComplement(accessCode: string, message: string, files: File[]): Observable<ComplementSubmissionResponse> {
+        const form = new FormData();
+        form.append('message', message);
+        files.forEach(f => form.append('files', f, f.name));
+        return this.http.post<ComplementSubmissionResponse>(
+            `${this.baseUrl}/public/complement/${encodeURIComponent(accessCode)}`,
+            form,
             { context: new HttpContext().set(SKIP_AUTH, true) });
     }
 
