@@ -64,6 +64,10 @@ import { environment } from '../../../../environments/environment';
                 severity="success" outlined size="small"
                 [loading]="exportingExcel" [disabled]="!stats"
                 (onClick)="exportExcel()" />
+            <p-button label="Rapport annuel officiel" icon="pi pi-book"
+                severity="secondary" outlined size="small"
+                [loading]="exportingRapportOfficiel"
+                (onClick)="exportRapportAnnuelOfficiel()" />
         </div>
     </div>
 
@@ -603,6 +607,7 @@ export class RapportEtatComponent implements OnInit {
     loadingDossiers = false;
     exportingPdf    = false;
     exportingExcel  = false;
+    exportingRapportOfficiel = false;
 
     stats:            StatistiqueResponse | null = null;
     allDossiers:      DossierResponse[]          = [];
@@ -824,6 +829,27 @@ export class RapportEtatComponent implements OnInit {
             .map(([s,count])=>({s,count,pct:(count/total)*100,
                 ...(cfg[s]||{label:s,severity:'info',color:'#3b82f6'})}))
             .sort((a,b)=>b.count-a.count);
+    }
+
+    exportRapportAnnuelOfficiel(): void {
+        const year = (this.dateDebut ?? this.today).getFullYear();
+        this.exportingRapportOfficiel = true;
+        this.statsService.exportAnnualReport(year).subscribe({
+            next: blob => {
+                this.exportingRapportOfficiel = false;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `rapport-annuel-activite-${year}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.msgService.add({ severity: 'success', summary: 'Rapport annuel exporté', detail: `Année ${year}` });
+            },
+            error: () => {
+                this.exportingRapportOfficiel = false;
+                this.msgService.add({ severity: 'error', summary: 'Erreur', detail: 'Export du rapport annuel impossible' });
+            }
+        });
     }
 
     async exportPdf(): Promise<void> {

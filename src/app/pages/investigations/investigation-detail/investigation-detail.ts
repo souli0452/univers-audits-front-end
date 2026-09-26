@@ -17,6 +17,11 @@ import { SkeletonModule }   from 'primeng/skeleton';
 import { AvatarModule }     from 'primeng/avatar';
 import { TooltipModule }    from 'primeng/tooltip';
 import { EditorModule }     from 'primeng/editor';
+import { InputTextModule }  from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DatePickerModule } from 'primeng/datepicker';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { CheckboxModule }   from 'primeng/checkbox';
 import { MessageService }   from 'primeng/api';
 import { environment }      from '../../../../environments/environment';
 import {
@@ -30,6 +35,54 @@ import {
 import { AgentService }      from '../../../core/services/agent.service';
 import { KeycloakService }   from '../../../core/auth/keycloak.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
+import {
+    TransmissionAutoriteService,
+    TransmissionAutoriteResponse
+} from '../../../core/services/transmission-autorite.service';
+import {
+    RequeteParquetService, RequeteParquetResponse,
+    ConstitutionPartieCivileService, ConstitutionPartieCivileResponse,
+    SuiviProcedurePenaleService, SuiviProcedurePenaleResponse
+} from '../../../core/services/suites-judiciaires.service';
+import {
+    PlanActionsService, PlanActionsStatusResponse,
+    MissionSuiviService, MissionSuiviResponse
+} from '../../../core/services/suivi-sanctions.service';
+import {
+    DemandeDocumentsService, DemandeDocumentsResponse, EscalationLevel
+} from '../../../core/services/demande-documents.service';
+import {
+    InventairePiecesService, InventairePieceItemResponse,
+    AttachmentSource, ModeObtention, AttachmentStatus
+} from '../../../core/services/inventaire-pieces.service';
+import {
+    AuditionService, AuditionResponse, IntervieweeType, AuditionStatus,
+    PvAuditionResponse
+} from '../../../core/services/audition.service';
+import {
+    VisiteTerrainService, VisiteTerrainResponse, VisiteStatus,
+    PvConstatResponse
+} from '../../../core/services/visite-terrain.service';
+import {
+    ChecklistDossierTravailService, ChecklistDossierTravailItemResponse
+} from '../../../core/services/checklist-dossier-travail.service';
+import {
+    RapportEnqueteService, RapportEnqueteResponse, NoteRecommandationsResponse
+} from '../../../core/services/rapport-enquete.service';
+import { TargetedPartyService, TargetedPartyResponse } from '../../../core/services/targeted-party.service';
+import { WitnessService, WitnessResponse } from '../../../core/services/witness.service';
+import {
+    FicheRetexService, FicheRetexResponse, FicheRetexRequest, PublierLeconRequest
+} from '../../../core/services/fiche-retex.service';
+import { TypeInfractionService, TypeInfraction } from '../../../core/services/parametres-metier.service';
+import {
+    InvestigationCadrageService, MandatResponse,
+    EngagementConfidentialiteResponse,
+    PlanInvestigationResponse, RevisionPlanResponse,
+    IncidentObjectiviteResponse,
+    ProcedureUrgenceResponse, StatutProcedureUrgence,
+    MesureConservatoireResponse
+} from '../../../core/services/investigation-cadrage.service';
 
 type TagSeverity =
     | 'success' | 'info' | 'warn' | 'danger'
@@ -59,7 +112,9 @@ interface ApiError { error?: { message?: string }; }
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
         TextareaModule, SelectModule, ToastModule,
-        SkeletonModule, AvatarModule, TooltipModule, EditorModule
+        SkeletonModule, AvatarModule, TooltipModule, EditorModule,
+        InputTextModule, InputNumberModule, DatePickerModule,
+        MultiSelectModule, CheckboxModule
     ],
     providers: [MessageService],
     template: `
@@ -177,6 +232,18 @@ interface ApiError { error?: { message?: string }; }
     header="Soumettre le rapport final"
     [modal]="true" [style]="{width:'740px'}" [draggable]="false">
     <div class="flex flex-col gap-5 py-2">
+        <div *ngIf="!rapportEnquete?.complet || !noteRecommandations?.complet || !isChecklistFullyChecked()"
+            class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+            <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5"></i>
+            <div class="text-xs text-amber-800 leading-relaxed">
+                La soumission exige que le <strong>Rapport d'enquête officiel</strong> et la
+                <strong>Note de recommandations</strong> (sections ci-dessus) soient tous deux
+                complets, et que <strong>tous les points de la check-list du dossier de travail</strong>
+                soient cochés ({{ getChecklistCheckedCount() }}/{{ checklistItems.length }} actuellement).
+                Les champs ci-dessous sont indicatifs — le contenu officiel provient des sections
+                Rapport d'enquête et Note de recommandations.
+            </div>
+        </div>
         <div class="grid grid-cols-2 gap-3">
             <div class="border-2 rounded-xl p-3 cursor-pointer transition-all"
                 [class.border-primary-500]="reportMode==='ONLINE'"
@@ -518,6 +585,851 @@ interface ApiError { error?: { message?: string }; }
     </ng-template>
 </p-dialog>
 
+<!-- ── Dialog transmission autorité ───────────────────────── -->
+<p-dialog [(visible)]="showTransmissionDialog"
+    header="Transmettre à l'autorité"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Autorité destinataire <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="transmissionForm.autoriteDestinataire"
+                placeholder="Ex : Procureur du Faso près le tribunal de..."
+                class="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showTransmissionDialog=false"/>
+        <p-button label="Transmettre" icon="pi pi-send"
+            [loading]="creatingTransmission" [disabled]="!transmissionForm.autoriteDestinataire.trim()"
+            (onClick)="executeCreerTransmission()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog relance transmission ────────────────────────── -->
+<p-dialog [(visible)]="showRelanceDialog"
+    header="Ajouter une relance"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu de la relance
+            </label>
+            <textarea pTextarea [(ngModel)]="relanceContenu"
+                placeholder="Détails de la relance auprès de l'autorité..."
+                rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRelanceDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingRelance" (onClick)="executeAjouterRelance()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog requête Parquet ─────────────────────────────── -->
+<p-dialog [(visible)]="showRequeteParquetDialog"
+    header="Requête au Parquet"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu de la requête
+            </label>
+            <textarea pTextarea [(ngModel)]="requeteParquetContenu"
+                placeholder="Rédigez la requête à adresser au Parquet..."
+                rows="8" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRequeteParquetDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingRequeteParquet" (onClick)="executeEnregistrerRequeteParquet()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog constitution de partie civile ──────────────────── -->
+<p-dialog [(visible)]="showConstitutionDialog"
+    header="Constitution de partie civile"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Justification <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="constitutionForm.justification"
+                placeholder="Motivez la constitution de partie civile de l'ASCE-LC..."
+                rows="4" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Montant réclamé (FCFA)
+            </label>
+            <p-inputnumber [(ngModel)]="constitutionForm.montantReclame"
+                [min]="0" mode="decimal" styleClass="w-full" inputStyleClass="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConstitutionDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingConstitution" [disabled]="!constitutionForm.justification.trim()"
+            (onClick)="executeCreerConstitution()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog suivi de procédure pénale ───────────────────────── -->
+<p-dialog [(visible)]="showSuiviPenalDialog"
+    header="Ajouter une étape de procédure pénale"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date de la phase <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="suiviPenalForm.phaseAt" dateFormat="dd/mm/yy"
+                showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Phase <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="suiviPenalForm.phase"
+                placeholder="Ex : Instruction, Audience, Jugement..." class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Commentaire
+            </label>
+            <textarea pTextarea [(ngModel)]="suiviPenalForm.commentaire"
+                rows="3" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showSuiviPenalDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingSuiviPenal" [disabled]="!suiviPenalForm.phaseAt || !suiviPenalForm.phase.trim()"
+            (onClick)="executeAjouterSuiviPenal()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog plan d'actions ──────────────────────────────────── -->
+<p-dialog [(visible)]="showPlanActionsDialog"
+    header="Déposer le plan d'actions"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Entité contrôlée <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="planActionsForm.entiteControlee" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Contenu du plan d'actions <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planActionsForm.contenu"
+                rows="6" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPlanActionsDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPlanActions"
+            [disabled]="!planActionsForm.entiteControlee.trim() || !planActionsForm.contenu.trim()"
+            (onClick)="executeCreerPlanActions()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog note d'avancement ────────────────────────────────── -->
+<p-dialog [(visible)]="showAvancementDialog"
+    header="Ajouter une note d'avancement"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="avancementContenu"
+            placeholder="Détails de l'avancement du plan d'actions..."
+            rows="4" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAvancementDialog=false"/>
+        <p-button label="Ajouter" icon="pi pi-plus"
+            [loading]="addingAvancement" (onClick)="executeAjouterAvancement()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog mission de suivi ─────────────────────────────────── -->
+<p-dialog [(visible)]="showMissionDialog"
+    header="Ajouter une mission de suivi"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date de la mission <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="missionForm.missionDate" dateFormat="dd/mm/yy"
+                showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Objectifs <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.objectifs" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Synthèse des recommandations <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.syntheseRecommandations" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Nouvelles recommandations
+            </label>
+            <textarea pTextarea [(ngModel)]="missionForm.nouvellesRecommandations" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showMissionDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="addingMission"
+            [disabled]="!missionForm.missionDate || !missionForm.objectifs.trim() || !missionForm.syntheseRecommandations.trim()"
+            (onClick)="executeAjouterMission()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog nouvelle demande de documents ───────────────────── -->
+<p-dialog [(visible)]="showDemandeDocumentsDialog"
+    header="Nouvelle demande de documents"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Destinataire <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="demandeDocumentsForm.recipientLabel" class="w-full"
+                placeholder="Ex : Banque XYZ, agence de Ouagadougou..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Documents demandés <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="demandeDocumentsForm.documentsRequested"
+                rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showDemandeDocumentsDialog=false"/>
+        <p-button label="Envoyer" icon="pi pi-send"
+            [loading]="creatingDemande"
+            [disabled]="!demandeDocumentsForm.recipientLabel.trim() || !demandeDocumentsForm.documentsRequested.trim()"
+            (onClick)="executeCreerDemandeDocuments()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog adresse erronée ───────────────────────────────── -->
+<p-dialog [(visible)]="showAddressErrorDialog"
+    header="Corriger l'adresse du destinataire"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Destinataire corrigé <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="addressErrorForm.correctedRecipientLabel" class="w-full"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAddressErrorDialog=false"/>
+        <p-button label="Corriger et renvoyer" icon="pi pi-check"
+            [loading]="correctingAddress" [disabled]="!addressErrorForm.correctedRecipientLabel.trim()"
+            (onClick)="executeReportAddressError()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog planifier audition ─────────────────────────────── -->
+<p-dialog [(visible)]="showScheduleAuditionDialog"
+    header="Planifier une audition"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Personne à auditionner <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.intervieweeType" [options]="intervieweeTypeOptions"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="scheduleAuditionForm.intervieweeType==='TARGETED_PARTY'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Partie visée <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.targetedPartyId" [options]="targetedParties"
+                optionLabel="name" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body">
+                <ng-template let-p pTemplate="item">{{ (p.firstName || '') + ' ' + (p.name || '') }}</ng-template>
+                <ng-template let-p pTemplate="selectedItem">{{ (p.firstName || '') + ' ' + (p.name || '') }}</ng-template>
+            </p-select>
+        </div>
+        <div *ngIf="scheduleAuditionForm.intervieweeType==='WITNESS'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Témoin <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="scheduleAuditionForm.witnessId" [options]="witnesses"
+                optionLabel="lastName" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body">
+                <ng-template let-w pTemplate="item">{{ w.firstName }} {{ w.lastName }}</ng-template>
+                <ng-template let-w pTemplate="selectedItem">{{ w.firstName }} {{ w.lastName }}</ng-template>
+            </p-select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                    Date et heure <span class="text-red-500">*</span>
+                </label>
+                <p-datepicker [(ngModel)]="scheduleAuditionForm.scheduledAt" dateFormat="dd/mm/yy"
+                    [showTime]="true" showIcon styleClass="w-full" appendTo="body"/>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Lieu</label>
+                <input pInputText [(ngModel)]="scheduleAuditionForm.location" class="w-full"/>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Enquêteurs (au moins 2) <span class="text-red-500">*</span>
+            </label>
+            <p-multiselect [(ngModel)]="scheduleAuditionForm.investigatorIds" [options]="availableAgents"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body" display="chip"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showScheduleAuditionDialog=false"/>
+        <p-button label="Planifier" icon="pi pi-check"
+            [loading]="schedulingAudition" [disabled]="!canScheduleAudition()"
+            (onClick)="executeScheduleAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog tenir audition ──────────────────────────────────── -->
+<p-dialog [(visible)]="showConductAuditionDialog"
+    header="Tenir l'audition"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Compte-rendu <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="conductSummary" rows="6" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConductAuditionDialog=false"/>
+        <p-button label="Valider" icon="pi pi-check"
+            [loading]="conductingAudition" [disabled]="!conductSummary.trim()"
+            (onClick)="executeConductAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog annuler audition ─────────────────────────────────── -->
+<p-dialog [(visible)]="showCancelAuditionDialog"
+    header="Annuler l'audition"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif d'annulation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="cancelAuditionReason" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Retour" severity="secondary" outlined (onClick)="showCancelAuditionDialog=false"/>
+        <p-button label="Confirmer l'annulation" icon="pi pi-times" severity="danger"
+            [loading]="cancellingAudition" [disabled]="!cancelAuditionReason.trim()"
+            (onClick)="executeCancelAudition()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog absence à l'audition ───────────────────────────────── -->
+<p-dialog [(visible)]="showNoShowDialog"
+    header="Constater une absence"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Note (optionnelle)
+        </label>
+        <textarea pTextarea [(ngModel)]="noShowNote" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showNoShowDialog=false"/>
+        <p-button label="Constater l'absence" icon="pi pi-user-minus" severity="warn"
+            [loading]="markingNoShow" (onClick)="executeMarkNoShow()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rédiger le PV ───────────────────────────────────── -->
+<p-dialog [(visible)]="showPvCreateDialog"
+    header="Rédiger le procès-verbal"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="pvCreateContent" rows="10" class="w-full"
+            placeholder="Contenu du procès-verbal..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvCreateDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPv" [disabled]="!pvCreateContent.trim()"
+            (onClick)="executeCreatePv()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog finaliser le PV ─────────────────────────────────── -->
+<p-dialog [(visible)]="showPvFinalizeDialog"
+    header="Finaliser le procès-verbal"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div class="flex items-center gap-2">
+            <p-checkbox [(ngModel)]="pvFinalizeForm.intervieweeSigned" [binary]="true" inputId="pvSigned"
+                (onChange)="pvFinalizeForm.intervieweeSignatureRefused=false"/>
+            <label for="pvSigned" class="text-sm">Signé par la personne auditionnée</label>
+        </div>
+        <div class="flex items-center gap-2">
+            <p-checkbox [(ngModel)]="pvFinalizeForm.intervieweeSignatureRefused" [binary]="true" inputId="pvRefused"
+                (onChange)="pvFinalizeForm.intervieweeSigned=false"/>
+            <label for="pvRefused" class="text-sm">Signature refusée</label>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvFinalizeDialog=false"/>
+        <p-button label="Finaliser" icon="pi pi-verified"
+            [loading]="finalizingPv" (onClick)="executeFinalizePv()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog corriger le PV ─────────────────────────────────── -->
+<p-dialog [(visible)]="showPvCorrectionDialog"
+    header="Corriger le procès-verbal"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Nouveau contenu <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="pvCorrectionForm.content" rows="8" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Motif de la correction <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="pvCorrectionForm.motifCorrection" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvCorrectionDialog=false"/>
+        <p-button label="Enregistrer la correction" icon="pi pi-check"
+            [loading]="correctingPv"
+            [disabled]="!pvCorrectionForm.content.trim() || !pvCorrectionForm.motifCorrection.trim()"
+            (onClick)="executeCorrectPv()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog planifier visite terrain ─────────────────────────── -->
+<p-dialog [(visible)]="showScheduleVisiteDialog"
+    header="Planifier une visite terrain"
+    [modal]="true" [style]="{width:'500px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Lieu <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="scheduleVisiteForm.location" class="w-full"
+                placeholder="Ex : Siège de l'entité contrôlée, Ouagadougou..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Date et heure <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="scheduleVisiteForm.scheduledAt" dateFormat="dd/mm/yy"
+                [showTime]="true" showIcon styleClass="w-full" appendTo="body"/>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showScheduleVisiteDialog=false"/>
+        <p-button label="Planifier" icon="pi pi-check"
+            [loading]="schedulingVisite"
+            [disabled]="!scheduleVisiteForm.location.trim() || !scheduleVisiteForm.scheduledAt"
+            (onClick)="executeScheduleVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog tenir visite terrain ──────────────────────────────── -->
+<p-dialog [(visible)]="showConductVisiteDialog"
+    header="Tenir la visite terrain"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Compte-rendu <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="conductVisiteSummary" rows="6" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showConductVisiteDialog=false"/>
+        <p-button label="Valider" icon="pi pi-check"
+            [loading]="conductingVisite" [disabled]="!conductVisiteSummary.trim()"
+            (onClick)="executeConductVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog annuler visite terrain ─────────────────────────────── -->
+<p-dialog [(visible)]="showCancelVisiteDialog"
+    header="Annuler la visite terrain"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif d'annulation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="cancelVisiteReason" rows="3" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Retour" severity="secondary" outlined (onClick)="showCancelVisiteDialog=false"/>
+        <p-button label="Confirmer l'annulation" icon="pi pi-times" severity="danger"
+            [loading]="cancellingVisite" [disabled]="!cancelVisiteReason.trim()"
+            (onClick)="executeCancelVisite()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog carence visite terrain ─────────────────────────────── -->
+<p-dialog [(visible)]="showCarenceDialog"
+    header="Constater une carence"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+            Motif de la carence <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="carenceReason" rows="3" class="w-full"
+            placeholder="Ex : site inaccessible, accès refusé..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showCarenceDialog=false"/>
+        <p-button label="Constater la carence" icon="pi pi-exclamation-triangle" severity="warn"
+            [loading]="markingCarence" [disabled]="!carenceReason.trim()"
+            (onClick)="executeMarkCarence()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rédiger PV de constat ─────────────────────────────── -->
+<p-dialog [(visible)]="showPvConstatCreateDialog"
+    header="Rédiger le procès-verbal de constat"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="pvConstatContent" rows="10" class="w-full"
+            placeholder="Contenu du procès-verbal de constat..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPvConstatCreateDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="creatingPvConstat" [disabled]="!pvConstatContent.trim()"
+            (onClick)="executeCreatePvConstat()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog commentaire check-list ───────────────────────────── -->
+<p-dialog [(visible)]="showChecklistCommentDialog"
+    header="Commentaire du point de contrôle"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="checklistCommentValue" rows="4" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showChecklistCommentDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" (onClick)="executeSaveChecklistComment()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog rapport d'enquête ─────────────────────────────────── -->
+<p-dialog [(visible)]="showRapportEnqueteDialog"
+    header="Rapport d'enquête officiel"
+    [modal]="true" [style]="{width:'680px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Titre</label>
+            <input pInputText [(ngModel)]="rapportEnqueteForm.titre" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Introduction</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.introduction" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Méthodologie</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.methodologie" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Informations collectées</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.informationsCollectees" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Exposé factuel des anomalies</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.exposeFactuelAnomalies" rows="4" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Quantification du préjudice</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.quantificationPrejudice" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Réserves</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.reserves" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Conclusions</label>
+            <textarea pTextarea [(ngModel)]="rapportEnqueteForm.conclusions" rows="3" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRapportEnqueteDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingRapportEnquete" (onClick)="executeSaveRapportEnquete()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog note de recommandations ───────────────────────────── -->
+<p-dialog [(visible)]="showNoteRecommandationsDialog"
+    header="Note de recommandations"
+    [modal]="true" [style]="{width:'600px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="noteRecommandationsContent" rows="8" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showNoteRecommandationsDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [loading]="savingNoteRecommandations" (onClick)="executeSaveNoteRecommandations()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog fiche RETEX ────────────────────────────────────────── -->
+<p-dialog [(visible)]="showFicheRetexDialog"
+    header="Fiche RETEX (retour d'expérience)"
+    [modal]="true" [style]="{width:'680px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Type d'infraction</label>
+            <p-select [(ngModel)]="ficheRetexForm.typeInfractionId" [options]="typesInfractionOptions"
+                optionLabel="libelle" optionValue="id" placeholder="Sélectionner..."
+                styleClass="w-full" appendTo="body" [showClear]="true"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Lieu</label>
+            <input pInputText [(ngModel)]="ficheRetexForm.lieu" class="w-full"/>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Impact financier</label>
+                <p-inputnumber [(ngModel)]="ficheRetexForm.impactFinancier" [min]="0" mode="decimal" styleClass="w-full" inputStyleClass="w-full"/>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Jours-hommes chargés</label>
+                <p-inputnumber [(ngModel)]="ficheRetexForm.joursCharges" [min]="0" styleClass="w-full" inputStyleClass="w-full"/>
+            </div>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Contexte</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.contexte" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Origine des soupçons</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.origineSoupcons" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Difficultés rencontrées</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.difficultesRencontrees" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Originalité des schémas</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.originaliteSchemas" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Stratégie et méthodes employées</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.strategieMethodes" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Collaborateurs planifiés</label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.collaborateursPlanifies" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Synthèse des résultats <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.syntheseResultats" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Enseignements et axes d'amélioration <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="ficheRetexForm.enseignementsAxesAmelioration" rows="4" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showFicheRetexDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="!ficheRetexForm.syntheseResultats.trim() || !ficheRetexForm.enseignementsAxesAmelioration.trim()"
+            [loading]="savingFicheRetex" (onClick)="executeSaveFicheRetex()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog publier leçon à partager ─────────────────────────────── -->
+<p-dialog [(visible)]="showPublierLeconDialog"
+    header="Publier comme leçon à partager"
+    [modal]="true" [style]="{width:'560px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <p class="text-xs text-surface-400">
+            Cette leçon sera visible par tous les agents dans la page « Leçons à partager ».
+        </p>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Titre <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="publierLeconForm.titre" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Résumé <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="publierLeconForm.resume" rows="6" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPublierLeconDialog=false"/>
+        <p-button label="Publier" icon="pi pi-send"
+            [disabled]="!publierLeconForm.titre.trim() || !publierLeconForm.resume.trim()"
+            [loading]="savingPublierLecon" (onClick)="executeSavePublierLecon()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog engagement préalable ──────────────────────────────── -->
+<p-dialog [(visible)]="showEngagementDialog" header="Mon engagement préalable"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-2 block uppercase tracking-wide">
+                Avez-vous un conflit d'intérêts sur cette investigation ? <span class="text-red-500">*</span>
+            </label>
+            <div class="flex gap-2">
+                <p-button label="Non" [outlined]="engagementForm.hasConflictOfInterest !== false"
+                    severity="success" size="small" (onClick)="engagementForm.hasConflictOfInterest = false"/>
+                <p-button label="Oui" [outlined]="engagementForm.hasConflictOfInterest !== true"
+                    severity="warn" size="small" (onClick)="engagementForm.hasConflictOfInterest = true"/>
+            </div>
+        </div>
+        <div *ngIf="engagementForm.hasConflictOfInterest">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Détails du conflit</label>
+            <textarea pTextarea [(ngModel)]="engagementForm.conflictDetails" rows="3" class="w-full"></textarea>
+        </div>
+        <p class="text-xs text-surface-400">
+            En validant, vous vous engagez également à respecter la confidentialité de cette investigation.
+        </p>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showEngagementDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="engagementForm.hasConflictOfInterest === null"
+            [loading]="savingEngagement" (onClick)="executeSaveEngagement()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog plan d'investigation ──────────────────────────────── -->
+<p-dialog [(visible)]="showPlanDialog" [header]="planDialogHeader"
+    [modal]="true" [style]="{width:'640px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Objectifs <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.objectifs" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Méthodologie <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.methodologie" rows="3" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Moyens mobilisés</label>
+            <textarea pTextarea [(ngModel)]="planForm.moyensMobilises" rows="2" class="w-full"></textarea>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Planning / procédures</label>
+            <textarea pTextarea [(ngModel)]="planForm.planningProcedures" rows="2" class="w-full"></textarea>
+        </div>
+        <div *ngIf="plan">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Motif de la révision <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="planForm.motifRevision" rows="2" class="w-full"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showPlanDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check"
+            [disabled]="!planForm.objectifs.trim() || !planForm.methodologie.trim() || (!!plan && !planForm.motifRevision.trim())"
+            [loading]="savingPlan" (onClick)="executeSavePlan()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog incident d'objectivité ─────────────────────────────── -->
+<p-dialog [(visible)]="showIncidentDialog" header="Déclarer un incident d'objectivité"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="incidentDescription" rows="4" class="w-full"
+            placeholder="Description de l'incident..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showIncidentDialog=false"/>
+        <p-button label="Déclarer" icon="pi pi-check"
+            [disabled]="!incidentDescription.trim()"
+            [loading]="savingIncident" (onClick)="executeDeclareIncident()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog demande procédure d'urgence ────────────────────────── -->
+<p-dialog [(visible)]="showProcedureDialog" header="Demander une procédure d'urgence"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="procedureJustification" rows="4" class="w-full"
+            placeholder="Justification de la procédure d'urgence..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showProcedureDialog=false"/>
+        <p-button label="Demander" icon="pi pi-check"
+            [disabled]="!procedureJustification.trim()"
+            [loading]="savingProcedure" (onClick)="executeDemanderProcedure()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog décision procédure d'urgence ───────────────────────── -->
+<p-dialog [(visible)]="showProcedureDecisionDialog" header="Décision sur la procédure d'urgence"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="procedureDecisionMotif" rows="3" class="w-full"
+            placeholder="Motif de la décision (optionnel)..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showProcedureDecisionDialog=false"/>
+        <p-button label="Confirmer" icon="pi pi-check"
+            [loading]="savingProcedure" (onClick)="executeDecideProcedure()"/>
+    </ng-template>
+</p-dialog>
+
+<!-- ── Dialog mesure conservatoire ───────────────────────────────── -->
+<p-dialog [(visible)]="showMesureDialog" header="Déclarer une mesure conservatoire"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <textarea pTextarea [(ngModel)]="mesureDescription" rows="4" class="w-full"
+            placeholder="Description de la mesure conservatoire..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showMesureDialog=false"/>
+        <p-button label="Déclarer" icon="pi pi-check"
+            [disabled]="!mesureDescription.trim()"
+            [loading]="savingMesure" (onClick)="executeDeclarerMesure()"/>
+    </ng-template>
+</p-dialog>
+
 <!-- ── Dialog ajout membre ────────────────────────────────── -->
 <p-dialog [(visible)]="showAddMemberDialog"
     header="Ajouter un membre à l'équipe"
@@ -798,6 +1710,848 @@ interface ApiError { error?: { message?: string }; }
                     </div>
                 </div>
 
+                <!-- Mandat -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                <i class="pi pi-verified text-indigo-600 text-xs"></i>
+                            </div>
+                            Mandat
+                        </h3>
+                        <p-button *ngIf="!mandat && !loadingMandat && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Délivrer le mandat" icon="pi pi-check" size="small" outlined
+                            [loading]="deliveringMandat" (onClick)="executeDeliverMandat()"/>
+                    </div>
+                    <div *ngIf="loadingMandat" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMandat && !mandat" class="text-sm text-surface-400">Aucun mandat délivré pour l'instant.</div>
+                    <div *ngIf="mandat" class="text-sm text-surface-700">
+                        Délivré le {{ mandat.dateDelivrance | date:'dd/MM/yyyy' }} par {{ mandat.agentCGENom }}
+                    </div>
+                </div>
+
+                <!-- Engagement préalable (agent connecté) -->
+                <div *ngIf="mandat" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-shield text-teal-600 text-xs"></i>
+                            </div>
+                            Mon engagement préalable
+                        </h3>
+                        <p-button *ngIf="!myEngagement && !loadingEngagement"
+                            label="Déclarer" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openEngagementDialog()"/>
+                    </div>
+                    <div *ngIf="loadingEngagement" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingEngagement && !myEngagement" class="text-sm text-surface-400">
+                        Confidentialité et absence de conflit d'intérêts non encore déclarées.
+                    </div>
+                    <div *ngIf="myEngagement" class="text-sm text-surface-700">
+                        <p-tag [value]="myEngagement.hasConflictOfInterest ? 'Conflit déclaré' : 'Aucun conflit'"
+                            [severity]="myEngagement.hasConflictOfInterest ? 'warn' : 'success'" styleClass="text-xs"/>
+                        <span class="text-xs text-surface-400 ml-2">Signé le {{ myEngagement.signedAt | date:'dd/MM/yyyy' }}</span>
+                        <p *ngIf="myEngagement.conflictDetails" class="mt-1 whitespace-pre-line">{{ myEngagement.conflictDetails }}</p>
+                    </div>
+                </div>
+
+                <!-- Plan d'investigation -->
+                <div *ngIf="mandat" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                                <i class="pi pi-map text-purple-600 text-xs"></i>
+                            </div>
+                            Plan d'investigation
+                            <p-tag *ngIf="plan" [value]="'v' + plan.planVersion" severity="secondary" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && plan.validatedAt" value="Validé" severity="success" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && !plan.validatedAt && plan.overdue" value="Validation en retard" severity="danger" styleClass="text-xs"/>
+                            <p-tag *ngIf="plan && !plan.validatedAt && !plan.overdue" value="En attente de validation DEI" severity="warn" styleClass="text-xs"/>
+                        </h3>
+                        <div class="flex gap-2">
+                            <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                [label]="plan ? 'Réviser' : 'Soumettre'" icon="pi pi-pencil" size="small" outlined
+                                (onClick)="openPlanDialog()"/>
+                            <p-button *ngIf="plan && !plan.validatedAt && hasRole(['CGEA','ADMIN_DDIC'])"
+                                label="Valider" icon="pi pi-check" size="small"
+                                [loading]="validatingPlan" (onClick)="executeValidatePlan()"/>
+                        </div>
+                    </div>
+                    <div *ngIf="loadingPlan" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingPlan && !plan" class="text-sm text-surface-400">Aucun plan d'investigation soumis pour l'instant.</div>
+                    <div *ngIf="plan" class="flex flex-col gap-3">
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Objectifs</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.objectifs }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Méthodologie</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.methodologie }}</p>
+                        </div>
+                        <div *ngIf="plan.moyensMobilises">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Moyens mobilisés</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.moyensMobilises }}</p>
+                        </div>
+                        <div *ngIf="plan.planningProcedures">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Planning / procédures</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ plan.planningProcedures }}</p>
+                        </div>
+                        <div class="text-xs text-surface-400">
+                            Soumis par {{ plan.submittedByNom }} le {{ plan.submittedAt | date:'dd/MM/yyyy' }}
+                            <span *ngIf="plan.validatedByNom"> — Validé par {{ plan.validatedByNom }} le {{ plan.validatedAt | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <p-button *ngIf="planRevisions.length" [label]="'Historique des révisions (' + planRevisions.length + ')'"
+                            icon="pi pi-history" text size="small" styleClass="self-start"
+                            (onClick)="showPlanRevisions = !showPlanRevisions"/>
+                        <div *ngIf="showPlanRevisions" class="flex flex-col gap-2">
+                            <div *ngFor="let r of planRevisions" class="p-2 bg-surface-50 dark:bg-surface-700 rounded-xl text-xs">
+                                <div class="font-semibold">v{{ r.versionNumber }} — {{ r.revisedByNom }} — {{ r.revisedAt | date:'dd/MM/yyyy' }}</div>
+                                <div class="text-surface-500 mt-0.5">Motif : {{ r.motifRevision }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incidents d'objectivité -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                                <i class="pi pi-exclamation-circle text-red-600 text-xs"></i>
+                            </div>
+                            Incidents d'objectivité
+                            <span *ngIf="incidents.length" class="text-xs font-normal text-surface-400 ml-1">({{ incidents.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CGEA','CGE','CONTROLEUR_ETAT','MEMBRE_CTADP','CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            label="Déclarer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openIncidentDialog()"/>
+                    </div>
+                    <div *ngIf="loadingIncidents" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingIncidents && !incidents.length" class="text-sm text-surface-400">Aucun incident déclaré.</div>
+                    <div *ngFor="let inc of incidents" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ inc.description }}</p>
+                        <div class="text-xs text-surface-400 mt-1">{{ inc.declaredByNom }} — {{ inc.declaredAt | date:'dd/MM/yyyy' }}</div>
+                    </div>
+                </div>
+
+                <!-- Procédures d'urgence -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                                <i class="pi pi-bolt text-orange-600 text-xs"></i>
+                            </div>
+                            Procédures d'urgence
+                            <span *ngIf="proceduresUrgence.length" class="text-xs font-normal text-surface-400 ml-1">({{ proceduresUrgence.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
+                            label="Demander" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openProcedureDialog()"/>
+                    </div>
+                    <div *ngIf="loadingProcedures" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingProcedures && !proceduresUrgence.length" class="text-sm text-surface-400">Aucune procédure d'urgence.</div>
+                    <div *ngFor="let p of proceduresUrgence" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <p-tag [value]="getProcedureStatusLabel(p.status)" [severity]="getProcedureStatusSeverity(p.status)" styleClass="text-xs"/>
+                            <div *ngIf="p.status === 'EN_ATTENTE' && hasRole(['CGE','ADMIN_DDIC'])" class="flex gap-1">
+                                <p-button icon="pi pi-check" text size="small" severity="success"
+                                    pTooltip="Approuver" (onClick)="openProcedureDecisionDialog(p.id, 'approuver')"/>
+                                <p-button icon="pi pi-times" text size="small" severity="danger"
+                                    pTooltip="Rejeter" (onClick)="openProcedureDecisionDialog(p.id, 'rejeter')"/>
+                            </div>
+                        </div>
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ p.justification }}</p>
+                        <div class="text-xs text-surface-400 mt-1">
+                            Demandée par {{ p.requestedByNom }} — {{ p.requestedAt | date:'dd/MM/yyyy' }}
+                            <span *ngIf="p.decidedByNom"> — Décidée par {{ p.decidedByNom }} le {{ p.decidedAt | date:'dd/MM/yyyy' }}</span>
+                        </div>
+                        <p *ngIf="p.motifDecision" class="text-xs text-surface-500 mt-1">Motif : {{ p.motifDecision }}</p>
+                    </div>
+                </div>
+
+                <!-- Mesures conservatoires -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center">
+                                <i class="pi pi-lock text-cyan-600 text-xs"></i>
+                            </div>
+                            Mesures conservatoires
+                            <span *ngIf="mesuresConservatoires.length" class="text-xs font-normal text-surface-400 ml-1">({{ mesuresConservatoires.length }})</span>
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Déclarer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openMesureDialog()"/>
+                    </div>
+                    <div *ngIf="loadingMesures" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMesures && !mesuresConservatoires.length" class="text-sm text-surface-400">Aucune mesure conservatoire.</div>
+                    <div *ngFor="let m of mesuresConservatoires" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl mb-2 last:mb-0">
+                        <p class="text-sm text-surface-700 whitespace-pre-line">{{ m.description }}</p>
+                        <div class="text-xs text-surface-400 mt-1">{{ m.takenByNom }} — {{ m.takenAt | date:'dd/MM/yyyy' }}</div>
+                    </div>
+                </div>
+
+                <!-- Demandes de documents -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900 flex items-center justify-center">
+                                <i class="pi pi-inbox text-sky-600 text-xs"></i>
+                            </div>
+                            Demandes de documents
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Nouvelle demande" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openDemandeDocumentsDialog()"/>
+                    </div>
+                    <div *ngIf="loadingDemandes" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingDemandes && !demandesDocuments.length" class="text-sm text-surface-400">
+                        Aucune demande de documents envoyée.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let d of demandesDocuments"
+                            class="p-3 rounded-xl border"
+                            [class.bg-red-50]="d.overdue && !d.received"
+                            [class.border-red-200]="d.overdue && !d.received"
+                            [class.bg-green-50]="d.received"
+                            [class.border-green-200]="d.received"
+                            [class.bg-surface-50]="!d.received && !d.overdue"
+                            [class.border-surface-200]="!d.received && !d.overdue">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ d.recipientLabel }}</span>
+                                <p-tag [value]="getEscalationLabel(d.escalationLevel)"
+                                    [severity]="d.received ? 'success' : (d.overdue ? 'danger' : 'info')" styleClass="text-xs"/>
+                            </div>
+                            <p class="text-sm text-surface-600 mb-1">{{ d.documentsRequested }}</p>
+                            <div class="text-xs text-surface-500 flex items-center gap-3">
+                                <span>Envoyée le {{ d.sentAt | date:'dd/MM/yyyy' }}</span>
+                                <span *ngIf="d.deadline">Échéance {{ d.deadline | date:'dd/MM/yyyy' }}</span>
+                                <span *ngIf="d.received" class="text-green-600">✓ Reçue le {{ d.receivedAt | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div *ngIf="!d.received && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Marquer reçue" icon="pi pi-check" text size="small"
+                                    (onClick)="executeMarkReceived(d)"/>
+                                <p-button *ngIf="d.overdue" label="Escalader" icon="pi pi-arrow-up" text size="small" severity="warn"
+                                    (onClick)="executeEscalate(d)"/>
+                                <p-button label="Adresse erronée" icon="pi pi-map-marker" text size="small" severity="secondary"
+                                    (onClick)="openAddressErrorDialog(d)"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventaire des pièces -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4 flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-lime-100 dark:bg-lime-900 flex items-center justify-center">
+                            <i class="pi pi-box text-lime-600 text-xs"></i>
+                        </div>
+                        Inventaire des pièces ({{ inventairePieces.length }})
+                    </h3>
+                    <div *ngIf="loadingInventaire" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingInventaire && !inventairePieces.length" class="text-sm text-surface-400">
+                        Aucune pièce dans le dossier.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let p of inventairePieces"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-surface-800">{{ p.code || '—' }}</div>
+                                <div class="text-xs text-surface-500">{{ p.description || 'Sans description' }}</div>
+                                <div class="text-xs text-surface-400 mt-0.5">
+                                    {{ getAttachmentSourceLabel(p.source) }} — {{ getModeObtentionLabel(p.modeObtention) }}
+                                    — {{ p.uploadedAt | date:'dd/MM/yyyy' }}
+                                </div>
+                            </div>
+                            <p-tag [value]="getAttachmentStatusLabel(p.status)"
+                                [severity]="p.status==='VALIDATED' ? 'success' : p.status==='REJECTED' ? 'danger' : 'info'"
+                                styleClass="text-xs"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auditions -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <i class="pi pi-comments text-amber-600 text-xs"></i>
+                            </div>
+                            Auditions
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Planifier une audition" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openScheduleAuditionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingAuditions" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingAuditions && !auditions.length" class="text-sm text-surface-400">
+                        Aucune audition planifiée.
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div *ngFor="let a of auditions" class="p-3 rounded-xl border border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ a.intervieweeDisplayName }}</span>
+                                <p-tag [value]="getAuditionStatusLabel(a.status)"
+                                    [severity]="a.status==='CONDUCTED' ? 'success' : a.status==='SCHEDULED' ? 'info' : 'danger'"
+                                    styleClass="text-xs"/>
+                            </div>
+                            <div class="text-xs text-surface-500 flex flex-wrap items-center gap-3 mb-1">
+                                <span>{{ getIntervieweeTypeLabel(a.intervieweeType) }}</span>
+                                <span>{{ a.scheduledAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                <span *ngIf="a.location">📍 {{ a.location }}</span>
+                                <span *ngIf="a.investigatorNames?.length">Enquêteurs : {{ a.investigatorNames.join(', ') }}</span>
+                            </div>
+
+                            <div *ngIf="a.orderWarning" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 mb-1">
+                                <i class="pi pi-exclamation-triangle mr-1"></i>{{ a.orderWarning }}
+                            </div>
+                            <div *ngIf="a.secondAuditionWarning" class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-1 mb-1">
+                                <i class="pi pi-exclamation-triangle mr-1"></i>{{ a.secondAuditionWarning }}
+                            </div>
+
+                            <div *ngIf="a.status==='SCHEDULED' && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Tenir" icon="pi pi-check" text size="small" (onClick)="openConductAuditionDialog(a)"/>
+                                <p-button label="Annuler" icon="pi pi-times" text size="small" severity="secondary" (onClick)="openCancelAuditionDialog(a)"/>
+                                <p-button label="Absence" icon="pi pi-user-minus" text size="small" severity="warn" (onClick)="openNoShowDialog(a)"/>
+                            </div>
+
+                            <p *ngIf="a.status==='CANCELLED' && a.cancellationReason" class="text-sm text-surface-500 mt-1">
+                                Motif d'annulation : {{ a.cancellationReason }}
+                            </p>
+                            <p *ngIf="a.status==='NO_SHOW' && a.noShowNote" class="text-sm text-surface-500 mt-1">
+                                {{ a.noShowNote }}
+                            </p>
+
+                            <!-- Sous-section PV -->
+                            <div *ngIf="a.status==='CONDUCTED'" class="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700">
+                                <p *ngIf="a.summary" class="text-sm text-surface-600 mb-2">{{ a.summary }}</p>
+
+                                <div *ngIf="!pvByAudition[a.id] && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])">
+                                    <p-button label="Rédiger le PV" icon="pi pi-file-edit" text size="small" (onClick)="openPvCreateDialog(a)"/>
+                                </div>
+
+                                <div *ngIf="pvByAudition[a.id] as pv" class="bg-surface-50 dark:bg-surface-700 rounded-xl p-3">
+                                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                        Procès-verbal (v{{ pv.pvVersion }})
+                                    </div>
+                                    <p class="text-sm text-surface-700 whitespace-pre-line mb-2">{{ pv.content }}</p>
+                                    <div class="text-xs text-surface-500 mb-2">
+                                        Rédigé par {{ pv.draftedByName || '—' }}
+                                        <span *ngIf="pv.readBackAt"> — Relu le {{ pv.readBackAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                        <span *ngIf="pv.finalizedAt"> — Finalisé le {{ pv.finalizedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                    </div>
+                                    <div *ngIf="pv.finalizedAt" class="text-xs mb-2">
+                                        <span *ngIf="pv.intervieweeSigned" class="text-green-600">✓ Signé par la personne auditionnée</span>
+                                        <span *ngIf="pv.intervieweeSignatureRefused" class="text-red-600">✗ Signature refusée</span>
+                                    </div>
+
+                                    <div *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])" class="flex items-center gap-2">
+                                        <p-button *ngIf="!pv.readBackAt && !pv.finalizedAt"
+                                            label="Marquer relu" icon="pi pi-eye" text size="small" (onClick)="executeMarkPvReadBack(a)"/>
+                                        <p-button *ngIf="pv.readBackAt && !pv.finalizedAt"
+                                            label="Finaliser (signature)" icon="pi pi-verified" text size="small" (onClick)="openPvFinalizeDialog(a)"/>
+                                        <p-button *ngIf="pv.finalizedAt"
+                                            label="Corriger" icon="pi pi-pencil" text size="small" severity="secondary" (onClick)="openPvCorrectionDialog(a)"/>
+                                    </div>
+
+                                    <div *ngIf="pv.corrections?.length" class="mt-2 flex flex-col gap-1">
+                                        <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide">Historique des corrections</div>
+                                        <div *ngFor="let c of pv.corrections" class="text-xs text-surface-500 bg-white dark:bg-surface-800 rounded-lg p-2">
+                                            v{{ c.versionNumber }} — {{ c.motifCorrection }} ({{ c.correctedByName }}, {{ c.correctedAt | date:'dd/MM/yyyy' }})
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visites terrain -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-map-marker text-teal-600 text-xs"></i>
+                            </div>
+                            Visites terrain
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                            label="Planifier une visite" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openScheduleVisiteDialog()"/>
+                    </div>
+                    <div *ngIf="loadingVisites" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingVisites && !visitesTerrain.length" class="text-sm text-surface-400">
+                        Aucune visite terrain planifiée.
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div *ngFor="let v of visitesTerrain" class="p-3 rounded-xl border border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ v.location }}</span>
+                                <p-tag [value]="getVisiteStatusLabel(v.status)"
+                                    [severity]="v.status==='CONDUCTED' ? 'success' : v.status==='SCHEDULED' ? 'info' : 'danger'"
+                                    styleClass="text-xs"/>
+                            </div>
+                            <div class="text-xs text-surface-500 flex flex-wrap items-center gap-3 mb-1">
+                                <span>{{ v.scheduledAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                                <span *ngIf="v.plannedByName">Planifiée par {{ v.plannedByName }}</span>
+                            </div>
+
+                            <div *ngIf="v.status==='SCHEDULED' && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])"
+                                class="flex items-center gap-2 mt-2">
+                                <p-button label="Tenir" icon="pi pi-check" text size="small" (onClick)="openConductVisiteDialog(v)"/>
+                                <p-button label="Annuler" icon="pi pi-times" text size="small" severity="secondary" (onClick)="openCancelVisiteDialog(v)"/>
+                                <p-button label="Carence" icon="pi pi-exclamation-triangle" text size="small" severity="warn" (onClick)="openCarenceDialog(v)"/>
+                            </div>
+
+                            <p *ngIf="v.status==='CANCELLED' && v.cancellationReason" class="text-sm text-surface-500 mt-1">
+                                Motif d'annulation : {{ v.cancellationReason }}
+                            </p>
+                            <p *ngIf="v.status==='CARENCE' && v.carenceReason" class="text-sm text-surface-500 mt-1">
+                                Motif de carence : {{ v.carenceReason }}
+                            </p>
+
+                            <!-- Sous-section PV de constat -->
+                            <div *ngIf="v.status==='CONDUCTED'" class="mt-3 pt-3 border-t border-surface-100 dark:border-surface-700">
+                                <p *ngIf="v.summary" class="text-sm text-surface-600 mb-2">{{ v.summary }}</p>
+
+                                <div *ngIf="!pvByVisite[v.id] && hasRole(['CONTROLEUR_ETAT','CGEA','ADMIN_DDIC'])">
+                                    <p-button label="Rédiger le PV de constat" icon="pi pi-file-edit" text size="small" (onClick)="openPvConstatCreateDialog(v)"/>
+                                </div>
+
+                                <div *ngIf="pvByVisite[v.id] as pv" class="bg-surface-50 dark:bg-surface-700 rounded-xl p-3">
+                                    <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                        Procès-verbal de constat
+                                    </div>
+                                    <p class="text-sm text-surface-700 whitespace-pre-line mb-2">{{ pv.content }}</p>
+                                    <div class="text-xs text-surface-500">Rédigé par {{ pv.draftedByName || '—' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Check-list du dossier de travail -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <h3 class="font-bold text-surface-900 dark:text-surface-0 mb-4 flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
+                            <i class="pi pi-check-square text-violet-600 text-xs"></i>
+                        </div>
+                        Check-list du dossier de travail
+                        <span *ngIf="checklistItems.length" class="text-xs font-normal text-surface-400 ml-1">
+                            ({{ getChecklistCheckedCount() }}/{{ checklistItems.length }})
+                        </span>
+                    </h3>
+                    <div *ngIf="loadingChecklist" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingChecklist && !checklistItems.length" class="text-sm text-surface-400">
+                        Aucun point de contrôle configuré.
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div *ngFor="let item of checklistItems"
+                            class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-700">
+                            <p-checkbox [ngModel]="item.coche" [binary]="true"
+                                [disabled]="inv.status!=='IN_PROGRESS' || !hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC']) || savingChecklistCode===item.code"
+                                (onChange)="executeToggleChecklist(item)"/>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm" [class.text-surface-400]="!item.coche" [class.text-surface-800]="item.coche">
+                                    {{ item.libelle }}
+                                </div>
+                                <div *ngIf="item.commentaire" class="text-xs text-surface-500 mt-0.5">{{ item.commentaire }}</div>
+                                <div *ngIf="item.coche && item.cocheParNom" class="text-xs text-surface-400 mt-0.5">
+                                    Coché par {{ item.cocheParNom }} — {{ item.cocheAt | date:'dd/MM/yyyy' }}
+                                </div>
+                            </div>
+                            <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                icon="pi pi-comment" text size="small" severity="secondary"
+                                (onClick)="openChecklistCommentDialog(item)"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rapport d'enquête officiel -->
+                <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                <i class="pi pi-book text-blue-600 text-xs"></i>
+                            </div>
+                            Rapport d'enquête officiel
+                            <p-tag *ngIf="rapportEnquete" [value]="rapportEnquete.complet ? 'Complet' : 'Brouillon'"
+                                [severity]="rapportEnquete.complet ? 'success' : 'warn'" styleClass="text-xs"/>
+                        </h3>
+                        <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            [label]="rapportEnquete ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openRapportEnqueteDialog()"/>
+                    </div>
+                    <div *ngIf="loadingRapportEnquete" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingRapportEnquete && !rapportEnquete" class="text-sm text-surface-400">
+                        Aucun rapport d'enquête rédigé pour l'instant.
+                    </div>
+                    <div *ngIf="rapportEnquete" class="flex flex-col gap-3">
+                        <div *ngIf="rapportEnquete.titre" class="text-sm font-bold text-surface-800">{{ rapportEnquete.titre }}</div>
+                        <div *ngIf="rapportEnquete.introduction">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Introduction</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.introduction }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.methodologie">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Méthodologie</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.methodologie }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.informationsCollectees">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Informations collectées</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.informationsCollectees }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.exposeFactuelAnomalies">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Exposé factuel des anomalies</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.exposeFactuelAnomalies }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.quantificationPrejudice">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Quantification du préjudice</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.quantificationPrejudice }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.reserves">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Réserves</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.reserves }}</p>
+                        </div>
+                        <div *ngIf="rapportEnquete.conclusions">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Conclusions</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ rapportEnquete.conclusions }}</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-surface-100 dark:border-surface-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                    Note de recommandations
+                                    <p-tag *ngIf="noteRecommandations" [value]="noteRecommandations.complet ? 'Complète' : 'Brouillon'"
+                                        [severity]="noteRecommandations.complet ? 'success' : 'warn'" styleClass="text-xs ml-1"/>
+                                </div>
+                                <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                                    [label]="noteRecommandations ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" text size="small"
+                                    (onClick)="openNoteRecommandationsDialog()"/>
+                            </div>
+                            <p *ngIf="noteRecommandations?.contenu" class="text-sm text-surface-700 whitespace-pre-line">
+                                {{ noteRecommandations?.contenu }}
+                            </p>
+                            <p *ngIf="!noteRecommandations" class="text-sm text-surface-400">
+                                Aucune note de recommandations rédigée.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fiche RETEX & leçon à partager -->
+                <div *ngIf="inv.cgeApprovedAt" class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <i class="pi pi-lightbulb text-amber-600 text-xs"></i>
+                            </div>
+                            Fiche RETEX (retour d'expérience)
+                        </h3>
+                        <p-button *ngIf="!ficheRetex && !loadingFicheRetex && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            label="Rédiger" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openFicheRetexDialog()"/>
+                    </div>
+                    <div *ngIf="loadingFicheRetex" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingFicheRetex && !ficheRetex" class="text-sm text-surface-400">
+                        Aucune fiche RETEX rédigée pour l'instant.
+                    </div>
+                    <div *ngIf="ficheRetex" class="flex flex-col gap-3">
+                        <div *ngIf="ficheRetex.typeInfractionLibelle" class="text-sm font-bold text-surface-800">
+                            {{ ficheRetex.typeInfractionLibelle }}
+                        </div>
+                        <div *ngIf="ficheRetex.contexte">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Contexte</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.contexte }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Synthèse des résultats</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.syntheseResultats }}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">Enseignements et axes d'amélioration</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ ficheRetex.enseignementsAxesAmelioration }}</p>
+                        </div>
+                        <div class="text-xs text-surface-400">Rédigée par {{ ficheRetex.redigeParNom }}</div>
+
+                        <div class="pt-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">Leçon à partager</span>
+                            <p-tag *ngIf="leconPubliee" value="Publiée" severity="success" styleClass="text-xs"/>
+                            <p-button *ngIf="!leconPubliee && hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                                label="Publier comme leçon à partager" icon="pi pi-send" text size="small"
+                                (onClick)="openPublierLeconDialog()"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Requête au Parquet (saisine judiciaire, rédigée avant décision CGE) -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL'"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                                <i class="pi pi-file-edit text-orange-600 text-xs"></i>
+                            </div>
+                            Requête au Parquet
+                        </h3>
+                        <p-button *ngIf="!inv.cgeApprovedAt && hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            [label]="requeteParquet?.complet ? 'Modifier' : 'Rédiger'" icon="pi pi-pencil" size="small" outlined
+                            (onClick)="openRequeteParquetDialog()"/>
+                    </div>
+                    <p *ngIf="!requeteParquet?.complet" class="text-sm text-surface-400">
+                        Aucune requête au Parquet rédigée pour l'instant.
+                    </p>
+                    <p *ngIf="requeteParquet?.complet" class="text-sm text-surface-700 whitespace-pre-line leading-relaxed">
+                        {{ requeteParquet?.contenu }}
+                    </p>
+                </div>
+
+                <!-- Transmission à l'autorité (saisine judiciaire) -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                                <i class="pi pi-send text-red-600 text-xs"></i>
+                            </div>
+                            Transmission à l'autorité
+                        </h3>
+                        <p-button *ngIf="!transmission && !loadingTransmission && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Transmettre" icon="pi pi-send" size="small"
+                            (onClick)="openTransmissionDialog()"/>
+                    </div>
+
+                    <div *ngIf="loadingTransmission" class="text-xs text-surface-400">Chargement...</div>
+
+                    <div *ngIf="!loadingTransmission && !transmission" class="text-sm text-surface-400">
+                        Aucune transmission enregistrée pour cette saisine judiciaire.
+                    </div>
+
+                    <div *ngIf="transmission" class="flex flex-col gap-3">
+                        <div class="p-3 rounded-xl border"
+                            [class.bg-red-50]="transmission.relanceOverdue"
+                            [class.border-red-200]="transmission.relanceOverdue"
+                            [class.bg-surface-50]="!transmission.relanceOverdue"
+                            [class.border-surface-200]="!transmission.relanceOverdue">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                Autorité destinataire
+                            </div>
+                            <div class="text-sm font-bold text-surface-800">
+                                {{ transmission.autoriteDestinataire }}
+                            </div>
+                            <div class="text-xs text-surface-500 mt-1">
+                                Transmis le {{ transmission.transmittedAt | date:'dd/MM/yyyy HH:mm' }}
+                                <span *ngIf="transmission.transmittedByNom"> — {{ transmission.transmittedByNom }}</span>
+                            </div>
+                            <div *ngIf="transmission.relanceDueAt" class="text-xs mt-1"
+                                [class.text-red-600]="transmission.relanceOverdue"
+                                [class.text-surface-500]="!transmission.relanceOverdue">
+                                <i class="pi" [class.pi-exclamation-triangle]="transmission.relanceOverdue"
+                                    [class.pi-clock]="!transmission.relanceOverdue"></i>
+                                Relance {{ transmission.relanceOverdue ? 'en retard depuis le' : 'prévue le' }}
+                                {{ transmission.relanceDueAt | date:'dd/MM/yyyy' }}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                Relances ({{ transmission.relances.length }})
+                            </span>
+                            <p-button *ngIf="hasRole(['CGE','ADMIN_DDIC'])"
+                                label="Ajouter une relance" icon="pi pi-plus" text size="small"
+                                (onClick)="openRelanceDialog()"/>
+                        </div>
+                        <div *ngFor="let r of transmission.relances"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-500 flex items-center justify-between mb-1">
+                                <span>{{ r.agentNom || '—' }}</span>
+                                <span>{{ r.relanceAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                            <div *ngIf="r.contenu" class="text-sm text-surface-700">{{ r.contenu }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Constitution de partie civile -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                                <i class="pi pi-shield text-indigo-600 text-xs"></i>
+                            </div>
+                            Constitution de partie civile
+                        </h3>
+                        <p-button *ngIf="!constitutionPartieCivile && !loadingConstitution && hasRole(['CGE','ADMIN_DDIC'])"
+                            label="Se constituer" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openConstitutionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingConstitution" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingConstitution && !constitutionPartieCivile" class="text-sm text-surface-400">
+                        L'ASCE-LC ne s'est pas constituée partie civile pour ce dossier.
+                    </div>
+                    <div *ngIf="constitutionPartieCivile" class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                        <p class="text-sm text-surface-700 mb-2">{{ constitutionPartieCivile.justification }}</p>
+                        <div class="flex items-center gap-4 text-xs text-surface-500">
+                            <span *ngIf="constitutionPartieCivile.montantReclame">
+                                Montant réclamé : <strong>{{ constitutionPartieCivile.montantReclame | number }} FCFA</strong>
+                            </span>
+                            <span>{{ constitutionPartieCivile.constitueAt | date:'dd/MM/yyyy' }}
+                                <span *ngIf="constitutionPartieCivile.constitueeParNom"> — {{ constitutionPartieCivile.constitueeParNom }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suivi de procédure pénale -->
+                <div *ngIf="inv.outcome==='JUDICIAL_REFERRAL' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                                <i class="pi pi-history text-purple-600 text-xs"></i>
+                            </div>
+                            Suivi de procédure pénale
+                        </h3>
+                        <p-button *ngIf="hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+                            label="Ajouter une étape" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openSuiviPenalDialog()"/>
+                    </div>
+                    <div *ngIf="loadingSuiviPenal" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingSuiviPenal && !suivisProcedurePenale.length" class="text-sm text-surface-400">
+                        Aucune étape de procédure pénale enregistrée.
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let s of suivisProcedurePenale"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ s.phase }}</span>
+                                <span class="text-xs text-surface-500">{{ s.phaseAt | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <p *ngIf="s.commentaire" class="text-sm text-surface-600">{{ s.commentaire }}</p>
+                            <div *ngIf="s.agentNom" class="text-xs text-surface-400 mt-1">{{ s.agentNom }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plan d'actions (sanctions administratives) -->
+                <div *ngIf="inv.outcome==='ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
+                                <i class="pi pi-map text-teal-600 text-xs"></i>
+                            </div>
+                            Plan d'actions
+                        </h3>
+                        <p-button *ngIf="planActions && !planActions.exists && hasRole(['CGEA','ADMIN_DDIC'])"
+                            label="Déposer le plan" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openPlanActionsDialog()"/>
+                    </div>
+                    <div *ngIf="loadingPlanActions" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="planActions && !planActions.exists" class="text-sm"
+                        [class.text-red-600]="planActions.planActionsOverdue"
+                        [class.text-surface-400]="!planActions.planActionsOverdue">
+                        Aucun plan d'actions déposé par l'entité contrôlée.
+                        <span *ngIf="planActions.planActionsDueAt">
+                            {{ planActions.planActionsOverdue ? 'Échéance dépassée depuis le' : 'Attendu pour le' }}
+                            {{ planActions.planActionsDueAt | date:'dd/MM/yyyy' }}
+                        </span>
+                    </div>
+                    <div *ngIf="planActions?.exists" class="flex flex-col gap-3">
+                        <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-1">
+                                Entité contrôlée
+                            </div>
+                            <div class="text-sm font-bold text-surface-800 mb-2">{{ planActions?.entiteControlee }}</div>
+                            <p class="text-sm text-surface-700 whitespace-pre-line">{{ planActions?.contenu }}</p>
+                            <div class="text-xs text-surface-500 mt-2">
+                                Reçu le {{ planActions?.submittedAt | date:'dd/MM/yyyy' }}
+                                <span *ngIf="planActions?.receivedByNom"> — {{ planActions?.receivedByNom }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-surface-400 uppercase tracking-wide">
+                                Notes d'avancement ({{ planActions?.avancements?.length || 0 }})
+                            </span>
+                            <p-button *ngIf="hasRole(['CGEA','ADMIN_DDIC'])"
+                                label="Ajouter une note" icon="pi pi-plus" text size="small"
+                                (onClick)="openAvancementDialog()"/>
+                        </div>
+                        <div *ngFor="let a of planActions?.avancements"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="text-xs text-surface-500 flex items-center justify-between mb-1">
+                                <span>{{ a.agentNom || '—' }}</span>
+                                <span>{{ a.noteAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                            <div *ngIf="a.contenu" class="text-sm text-surface-700">{{ a.contenu }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Missions de suivi (sanctions administratives) -->
+                <div *ngIf="inv.outcome==='ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt"
+                    class="bg-white dark:bg-surface-800 rounded-2xl p-5
+                            border border-surface-100 dark:border-surface-700">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-surface-900 dark:text-surface-0 flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center">
+                                <i class="pi pi-verified text-cyan-600 text-xs"></i>
+                            </div>
+                            Missions de suivi
+                        </h3>
+                        <p-button *ngIf="planActions?.exists && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
+                            label="Ajouter une mission" icon="pi pi-plus" size="small" outlined
+                            (onClick)="openMissionDialog()"/>
+                    </div>
+                    <div *ngIf="loadingMissionsSuivi" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingMissionsSuivi && !planActions?.exists" class="text-sm text-surface-400">
+                        Les missions de suivi ne peuvent être programmées qu'après le dépôt du plan d'actions.
+                    </div>
+                    <div *ngIf="!loadingMissionsSuivi && planActions?.exists && !missionsSuivi.length" class="text-sm"
+                        [class.text-red-600]="missionSuiviOverdue"
+                        [class.text-surface-400]="!missionSuiviOverdue">
+                        Aucune mission de suivi réalisée.
+                        <span *ngIf="missionSuiviDueAt">
+                            {{ missionSuiviOverdue ? 'Échéance dépassée depuis le' : 'Attendue pour le' }}
+                            {{ missionSuiviDueAt | date:'dd/MM/yyyy' }}
+                        </span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div *ngFor="let m of missionsSuivi"
+                            class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-sm font-bold text-surface-800">{{ m.objectifs }}</span>
+                                <span class="text-xs text-surface-500">{{ m.missionDate | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <p class="text-sm text-surface-600">{{ m.syntheseRecommandations }}</p>
+                            <p *ngIf="m.nouvellesRecommandations" class="text-sm text-surface-500 mt-1 italic">
+                                Nouvelles recommandations : {{ m.nouvellesRecommandations }}
+                            </p>
+                            <div *ngIf="m.conductedByNom" class="text-xs text-surface-400 mt-1">{{ m.conductedByNom }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div *ngIf="safeReport">
                     <div class="text-xs text-surface-400 uppercase tracking-wide font-semibold mb-2">Rapport</div>
                     <div class="bg-surface-50 dark:bg-surface-700 rounded-xl p-4 leading-relaxed
@@ -966,6 +2720,23 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     private readonly keycloakService      = inject(KeycloakService);
     private readonly messageService       = inject(MessageService);
     private readonly attachmentService    = inject(AttachmentService);
+    private readonly transmissionAutoriteService = inject(TransmissionAutoriteService);
+    private readonly requeteParquetService = inject(RequeteParquetService);
+    private readonly constitutionPartieCivileService = inject(ConstitutionPartieCivileService);
+    private readonly suiviProcedurePenaleService = inject(SuiviProcedurePenaleService);
+    private readonly planActionsService = inject(PlanActionsService);
+    private readonly missionSuiviService = inject(MissionSuiviService);
+    private readonly demandeDocumentsService = inject(DemandeDocumentsService);
+    private readonly inventairePiecesService = inject(InventairePiecesService);
+    private readonly auditionService = inject(AuditionService);
+    private readonly visiteTerrainService = inject(VisiteTerrainService);
+    private readonly checklistDossierTravailService = inject(ChecklistDossierTravailService);
+    private readonly rapportEnqueteService = inject(RapportEnqueteService);
+    private readonly targetedPartyService = inject(TargetedPartyService);
+    private readonly witnessService = inject(WitnessService);
+    private readonly ficheRetexService = inject(FicheRetexService);
+    private readonly typeInfractionService = inject(TypeInfractionService);
+    private readonly cadrageService = inject(InvestigationCadrageService);
     private readonly destroy$             = new Subject<void>();
 
     inv:      InvestigationResponse | null = null;
@@ -982,6 +2753,238 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     showReportDialog    = false;
     showCgeDialog       = false;
     showAddMemberDialog = false;
+
+    transmission:        TransmissionAutoriteResponse | null = null;
+    loadingTransmission  = false;
+    showTransmissionDialog = false;
+    creatingTransmission = false;
+    transmissionForm: { autoriteDestinataire: string } = { autoriteDestinataire: '' };
+    showRelanceDialog = false;
+    addingRelance     = false;
+    relanceContenu    = '';
+
+    // ── Requête Parquet ──────────────────────────────────────
+    requeteParquet:        RequeteParquetResponse | null = null;
+    showRequeteParquetDialog = false;
+    savingRequeteParquet   = false;
+    requeteParquetContenu  = '';
+
+    // ── Constitution de partie civile ────────────────────────
+    constitutionPartieCivile: ConstitutionPartieCivileResponse | null = null;
+    loadingConstitution    = false;
+    showConstitutionDialog = false;
+    creatingConstitution   = false;
+    constitutionForm: { justification: string; montantReclame: number | null } =
+        { justification: '', montantReclame: null };
+
+    // ── Suivi de procédure pénale ─────────────────────────────
+    suivisProcedurePenale: SuiviProcedurePenaleResponse[] = [];
+    loadingSuiviPenal      = false;
+    showSuiviPenalDialog   = false;
+    addingSuiviPenal       = false;
+    suiviPenalForm: { phaseAt: Date | null; phase: string; commentaire: string } =
+        { phaseAt: new Date(), phase: '', commentaire: '' };
+
+    // ── Plan d'actions ─────────────────────────────────────────
+    planActions:           PlanActionsStatusResponse | null = null;
+    loadingPlanActions     = false;
+    showPlanActionsDialog  = false;
+    creatingPlanActions    = false;
+    planActionsForm: { entiteControlee: string; contenu: string } =
+        { entiteControlee: '', contenu: '' };
+    showAvancementDialog   = false;
+    addingAvancement       = false;
+    avancementContenu      = '';
+
+    // ── Missions de suivi ──────────────────────────────────────
+    missionsSuivi:         MissionSuiviResponse[] = [];
+    missionSuiviDueAt:     string | null = null;
+    missionSuiviOverdue    = false;
+    loadingMissionsSuivi   = false;
+    showMissionDialog      = false;
+    addingMission          = false;
+    missionForm: { missionDate: Date | null; objectifs: string; syntheseRecommandations: string; nouvellesRecommandations: string } =
+        { missionDate: new Date(), objectifs: '', syntheseRecommandations: '', nouvellesRecommandations: '' };
+
+    // ── Demandes de documents ─────────────────────────────────
+    demandesDocuments:      DemandeDocumentsResponse[] = [];
+    loadingDemandes         = false;
+    showDemandeDocumentsDialog = false;
+    creatingDemande          = false;
+    demandeDocumentsForm: { recipientLabel: string; documentsRequested: string } =
+        { recipientLabel: '', documentsRequested: '' };
+    showAddressErrorDialog  = false;
+    correctingAddress       = false;
+    addressErrorForm: { correctedRecipientLabel: string } = { correctedRecipientLabel: '' };
+    private demandeBeingCorrected: DemandeDocumentsResponse | null = null;
+
+    // ── Inventaire des pièces ─────────────────────────────────
+    inventairePieces:       InventairePieceItemResponse[] = [];
+    loadingInventaire       = false;
+
+    // ── Auditions ────────────────────────────────────────────
+    auditions:               AuditionResponse[] = [];
+    loadingAuditions         = false;
+    pvByAudition:            Record<string, PvAuditionResponse | null> = {};
+    targetedParties:         TargetedPartyResponse[] = [];
+    witnesses:                WitnessResponse[] = [];
+
+    showScheduleAuditionDialog = false;
+    schedulingAudition       = false;
+    scheduleAuditionForm: {
+        intervieweeType: IntervieweeType | null;
+        targetedPartyId: string | null;
+        witnessId: string | null;
+        scheduledAt: Date | null;
+        location: string;
+        investigatorIds: string[];
+    } = { intervieweeType: null, targetedPartyId: null, witnessId: null, scheduledAt: new Date(), location: '', investigatorIds: [] };
+
+    showConductAuditionDialog = false;
+    conductingAudition       = false;
+    conductSummary           = '';
+
+    showCancelAuditionDialog = false;
+    cancellingAudition       = false;
+    cancelAuditionReason     = '';
+
+    showNoShowDialog          = false;
+    markingNoShow             = false;
+    noShowNote                = '';
+
+    showPvCreateDialog        = false;
+    creatingPv                = false;
+    pvCreateContent           = '';
+
+    showPvFinalizeDialog      = false;
+    finalizingPv               = false;
+    pvFinalizeForm: { intervieweeSigned: boolean; intervieweeSignatureRefused: boolean } =
+        { intervieweeSigned: false, intervieweeSignatureRefused: false };
+
+    showPvCorrectionDialog    = false;
+    correctingPv               = false;
+    pvCorrectionForm: { content: string; motifCorrection: string } = { content: '', motifCorrection: '' };
+
+    private actionAudition: AuditionResponse | null = null;
+
+    readonly intervieweeTypeOptions: SelectOption<IntervieweeType>[] = [
+        { label: 'Dénonciateur (déclarant)', value: 'DECLARANT' },
+        { label: 'Témoin', value: 'WITNESS' },
+        { label: 'Partie visée', value: 'TARGETED_PARTY' }
+    ];
+
+    // ── Visites terrain ──────────────────────────────────────
+    visitesTerrain:          VisiteTerrainResponse[] = [];
+    loadingVisites            = false;
+    pvByVisite:               Record<string, PvConstatResponse | null> = {};
+
+    showScheduleVisiteDialog = false;
+    schedulingVisite          = false;
+    scheduleVisiteForm: { location: string; scheduledAt: Date | null } = { location: '', scheduledAt: new Date() };
+
+    showConductVisiteDialog  = false;
+    conductingVisite          = false;
+    conductVisiteSummary      = '';
+
+    showCancelVisiteDialog   = false;
+    cancellingVisite           = false;
+    cancelVisiteReason         = '';
+
+    showCarenceDialog          = false;
+    markingCarence             = false;
+    carenceReason               = '';
+
+    showPvConstatCreateDialog = false;
+    creatingPvConstat          = false;
+    pvConstatContent           = '';
+
+    private actionVisite: VisiteTerrainResponse | null = null;
+
+    // ── Check-list du dossier de travail ──────────────────────
+    checklistItems:          ChecklistDossierTravailItemResponse[] = [];
+    loadingChecklist          = false;
+    savingChecklistCode: string | null = null;
+    showChecklistCommentDialog = false;
+    checklistCommentValue     = '';
+    private checklistItemBeingCommented: ChecklistDossierTravailItemResponse | null = null;
+
+    // ── Rapport d'enquête officiel ─────────────────────────────
+    rapportEnquete:           RapportEnqueteResponse | null = null;
+    loadingRapportEnquete     = false;
+    savingRapportEnquete      = false;
+    showRapportEnqueteDialog  = false;
+    rapportEnqueteForm: {
+        titre: string; introduction: string; methodologie: string;
+        informationsCollectees: string; exposeFactuelAnomalies: string;
+        quantificationPrejudice: string; reserves: string; conclusions: string;
+    } = {
+        titre: '', introduction: '', methodologie: '', informationsCollectees: '',
+        exposeFactuelAnomalies: '', quantificationPrejudice: '', reserves: '', conclusions: ''
+    };
+
+    noteRecommandations:      NoteRecommandationsResponse | null = null;
+    savingNoteRecommandations = false;
+    showNoteRecommandationsDialog = false;
+    noteRecommandationsContent = '';
+
+    // ── Fiche RETEX & leçon à partager ──────────────────────────
+    ficheRetex:           FicheRetexResponse | null = null;
+    loadingFicheRetex     = false;
+    savingFicheRetex      = false;
+    showFicheRetexDialog  = false;
+    typesInfractionOptions: TypeInfraction[] = [];
+    ficheRetexForm: FicheRetexRequest = this.emptyFicheRetexForm();
+
+    savingPublierLecon    = false;
+    showPublierLeconDialog = false;
+    leconPubliee          = false;
+    publierLeconForm: PublierLeconRequest = { titre: '', resume: '' };
+
+    // ── Cadrage de l'enquête : mandat, engagement, plan, incidents, urgences, mesures ──
+    currentAgentId: string | null = null;
+
+    mandat:            MandatResponse | null = null;
+    loadingMandat      = false;
+    deliveringMandat   = false;
+
+    myEngagement:      EngagementConfidentialiteResponse | null = null;
+    loadingEngagement  = false;
+    savingEngagement   = false;
+    showEngagementDialog = false;
+    engagementForm: { hasConflictOfInterest: boolean | null; conflictDetails: string } =
+        { hasConflictOfInterest: null, conflictDetails: '' };
+
+    plan:              PlanInvestigationResponse | null = null;
+    planRevisions:     RevisionPlanResponse[] = [];
+    loadingPlan        = false;
+    savingPlan         = false;
+    validatingPlan     = false;
+    showPlanDialog     = false;
+    planForm: { objectifs: string; methodologie: string; moyensMobilises: string; planningProcedures: string; motifRevision: string } =
+        { objectifs: '', methodologie: '', moyensMobilises: '', planningProcedures: '', motifRevision: '' };
+    showPlanRevisions  = false;
+
+    incidents:         IncidentObjectiviteResponse[] = [];
+    loadingIncidents   = false;
+    savingIncident     = false;
+    showIncidentDialog = false;
+    incidentDescription = '';
+
+    proceduresUrgence: ProcedureUrgenceResponse[] = [];
+    loadingProcedures  = false;
+    savingProcedure    = false;
+    showProcedureDialog = false;
+    procedureJustification = '';
+    decidingProcedureId: string | null = null;
+    showProcedureDecisionDialog = false;
+    procedureDecisionMotif = '';
+    private procedureDecisionAction: 'approuver' | 'rejeter' | null = null;
+
+    mesuresConservatoires: MesureConservatoireResponse[] = [];
+    loadingMesures     = false;
+    savingMesure       = false;
+    showMesureDialog   = false;
+    mesureDescription  = '';
 
     suspendReason = '';
 
@@ -1041,6 +3044,20 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             if (id) this.loadById(id);
         }
         this.loadAgents();
+        this.resolveCurrentAgentId();
+    }
+
+    private resolveCurrentAgentId(): void {
+        const email = this.keycloakService.getUserInfo().email;
+        this.agentService.findActive()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: agents => {
+                    this.currentAgentId = agents.find(a => a.email === email)?.id ?? null;
+                    if (this.currentAgentId && this.inv) this.loadMyEngagement(this.inv.id);
+                },
+                error: () => {}
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -1108,9 +3125,1274 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             this.safeConclusions = inv.conclusions ?? null;
             this.safeRecommendations = inv.recommendations ?? null;
             this.computeNewDeadline();
+            if (inv.outcome === 'JUDICIAL_REFERRAL') {
+                this.loadRequeteParquet(inv.id);
+                if (inv.cgeApprovedAt) {
+                    this.loadTransmission(inv.id);
+                    this.loadConstitution(inv.id);
+                    this.loadSuivisPenal(inv.id);
+                } else {
+                    this.transmission = null;
+                    this.constitutionPartieCivile = null;
+                    this.suivisProcedurePenale = [];
+                }
+            } else {
+                this.transmission = null;
+                this.requeteParquet = null;
+                this.constitutionPartieCivile = null;
+                this.suivisProcedurePenale = [];
+            }
+            if (inv.outcome === 'ADMINISTRATIVE_SANCTIONS' && inv.cgeApprovedAt) {
+                this.loadPlanActions(inv.id);
+                this.loadMissionsSuivi(inv.id);
+            } else {
+                this.planActions = null;
+                this.missionsSuivi = [];
+            }
+            this.loadDemandesDocuments(inv.id);
+            this.loadInventairePieces(inv.id);
+            this.loadAuditions(inv.id);
+            const dossierId = inv.dossier?.id ?? inv.dossierId;
+            if (dossierId) {
+                this.targetedPartyService.findAll(dossierId)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe(list => { this.targetedParties = list; });
+                this.witnessService.findAll(dossierId)
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe(list => { this.witnesses = list; });
+            }
+            this.loadVisitesTerrain(inv.id);
+            this.loadChecklist(inv.id);
+            this.loadRapportEnquete(inv.id);
+            this.loadFicheRetex(inv.id);
+            this.loadMandat(inv.id);
+            this.loadPlan(inv.id);
+            this.loadIncidents(inv.id);
+            this.loadProcedures(inv.id);
+            this.loadMesures(inv.id);
+            if (this.currentAgentId) this.loadMyEngagement(inv.id);
         } else {
             this.safeReport = this.safeConclusions = this.safeRecommendations = null;
+            this.transmission = null;
+            this.requeteParquet = null;
+            this.constitutionPartieCivile = null;
+            this.suivisProcedurePenale = [];
+            this.planActions = null;
+            this.missionsSuivi = [];
+            this.demandesDocuments = [];
+            this.inventairePieces = [];
+            this.ficheRetex = null;
+            this.leconPubliee = false;
+            this.mandat = null;
+            this.myEngagement = null;
+            this.plan = null;
+            this.planRevisions = [];
+            this.incidents = [];
+            this.proceduresUrgence = [];
+            this.mesuresConservatoires = [];
+            this.auditions = [];
+            this.pvByAudition = {};
+            this.visitesTerrain = [];
+            this.pvByVisite = {};
+            this.checklistItems = [];
+            this.rapportEnquete = null;
+            this.noteRecommandations = null;
         }
+    }
+
+    // ── Transmission autorité ─────────────────────────────────
+    private loadTransmission(investigationId: string): void {
+        this.loadingTransmission = true;
+        this.transmissionAutoriteService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(t => {
+                this.transmission = t;
+                this.loadingTransmission = false;
+            });
+    }
+
+    openTransmissionDialog(): void {
+        this.transmissionForm = { autoriteDestinataire: '' };
+        this.showTransmissionDialog = true;
+    }
+
+    executeCreerTransmission(): void {
+        if (!this.inv || !this.transmissionForm.autoriteDestinataire.trim()) return;
+        this.creatingTransmission = true;
+        this.transmissionAutoriteService
+            .creer(this.inv.id, { autoriteDestinataire: this.transmissionForm.autoriteDestinataire.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: t => {
+                    this.transmission = t;
+                    this.creatingTransmission = false;
+                    this.showTransmissionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Transmission enregistrée' });
+                },
+                error: (err: ApiError) => { this.creatingTransmission = false; this.showError(err); }
+            });
+    }
+
+    openRelanceDialog(): void {
+        this.relanceContenu = '';
+        this.showRelanceDialog = true;
+    }
+
+    executeAjouterRelance(): void {
+        if (!this.inv) return;
+        this.addingRelance = true;
+        this.transmissionAutoriteService
+            .ajouterRelance(this.inv.id, { contenu: this.relanceContenu.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: t => {
+                    this.transmission = t;
+                    this.addingRelance = false;
+                    this.showRelanceDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Relance ajoutée' });
+                },
+                error: (err: ApiError) => { this.addingRelance = false; this.showError(err); }
+            });
+    }
+
+    // ── Requête Parquet ────────────────────────────────────────
+    private loadRequeteParquet(investigationId: string): void {
+        this.requeteParquetService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(r => { this.requeteParquet = r; });
+    }
+
+    openRequeteParquetDialog(): void {
+        this.requeteParquetContenu = this.requeteParquet?.contenu ?? '';
+        this.showRequeteParquetDialog = true;
+    }
+
+    executeEnregistrerRequeteParquet(): void {
+        if (!this.inv) return;
+        this.savingRequeteParquet = true;
+        this.requeteParquetService.enregistrer(this.inv.id, { contenu: this.requeteParquetContenu.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.requeteParquet = r;
+                    this.savingRequeteParquet = false;
+                    this.showRequeteParquetDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Requête Parquet enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingRequeteParquet = false; this.showError(err); }
+            });
+    }
+
+    // ── Constitution de partie civile ─────────────────────────
+    private loadConstitution(investigationId: string): void {
+        this.loadingConstitution = true;
+        this.constitutionPartieCivileService.get(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(c => { this.constitutionPartieCivile = c; this.loadingConstitution = false; });
+    }
+
+    openConstitutionDialog(): void {
+        this.constitutionForm = { justification: '', montantReclame: null };
+        this.showConstitutionDialog = true;
+    }
+
+    executeCreerConstitution(): void {
+        if (!this.inv || !this.constitutionForm.justification.trim()) return;
+        this.creatingConstitution = true;
+        this.constitutionPartieCivileService.creer(this.inv.id, {
+            justification: this.constitutionForm.justification.trim(),
+            montantReclame: this.constitutionForm.montantReclame ?? undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: c => {
+                    this.constitutionPartieCivile = c;
+                    this.creatingConstitution = false;
+                    this.showConstitutionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Constitution de partie civile enregistrée' });
+                },
+                error: (err: ApiError) => { this.creatingConstitution = false; this.showError(err); }
+            });
+    }
+
+    // ── Suivi de procédure pénale ──────────────────────────────
+    private loadSuivisPenal(investigationId: string): void {
+        this.loadingSuiviPenal = true;
+        this.suiviProcedurePenaleService.lister(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(res => { this.suivisProcedurePenale = res.suivis; this.loadingSuiviPenal = false; });
+    }
+
+    openSuiviPenalDialog(): void {
+        this.suiviPenalForm = { phaseAt: new Date(), phase: '', commentaire: '' };
+        this.showSuiviPenalDialog = true;
+    }
+
+    executeAjouterSuiviPenal(): void {
+        if (!this.inv || !this.suiviPenalForm.phaseAt || !this.suiviPenalForm.phase.trim()) return;
+        this.addingSuiviPenal = true;
+        this.suiviProcedurePenaleService.ajouter(this.inv.id, {
+            phaseAt: this.suiviPenalForm.phaseAt.toISOString(),
+            phase: this.suiviPenalForm.phase.trim(),
+            commentaire: this.suiviPenalForm.commentaire.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: res => {
+                    this.suivisProcedurePenale = res.suivis;
+                    this.addingSuiviPenal = false;
+                    this.showSuiviPenalDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Étape ajoutée' });
+                },
+                error: (err: ApiError) => { this.addingSuiviPenal = false; this.showError(err); }
+            });
+    }
+
+    // ── Plan d'actions ───────────────────────────────────────────
+    private loadPlanActions(investigationId: string): void {
+        this.loadingPlanActions = true;
+        this.planActionsService.getStatus(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(p => { this.planActions = p; this.loadingPlanActions = false; });
+    }
+
+    openPlanActionsDialog(): void {
+        this.planActionsForm = { entiteControlee: '', contenu: '' };
+        this.showPlanActionsDialog = true;
+    }
+
+    executeCreerPlanActions(): void {
+        if (!this.inv || !this.planActionsForm.entiteControlee.trim() || !this.planActionsForm.contenu.trim()) return;
+        this.creatingPlanActions = true;
+        this.planActionsService.creer(this.inv.id, {
+            entiteControlee: this.planActionsForm.entiteControlee.trim(),
+            contenu: this.planActionsForm.contenu.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.planActions = p;
+                    this.creatingPlanActions = false;
+                    this.showPlanActionsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'actions déposé" });
+                },
+                error: (err: ApiError) => { this.creatingPlanActions = false; this.showError(err); }
+            });
+    }
+
+    openAvancementDialog(): void {
+        this.avancementContenu = '';
+        this.showAvancementDialog = true;
+    }
+
+    executeAjouterAvancement(): void {
+        if (!this.inv) return;
+        this.addingAvancement = true;
+        this.planActionsService.ajouterAvancement(this.inv.id, { contenu: this.avancementContenu.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.planActions = p;
+                    this.addingAvancement = false;
+                    this.showAvancementDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Note d'avancement ajoutée" });
+                },
+                error: (err: ApiError) => { this.addingAvancement = false; this.showError(err); }
+            });
+    }
+
+    // ── Missions de suivi ────────────────────────────────────────
+    private loadMissionsSuivi(investigationId: string): void {
+        this.loadingMissionsSuivi = true;
+        this.missionSuiviService.lister(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(res => {
+                this.missionsSuivi = res.missions;
+                this.missionSuiviDueAt = res.missionSuiviDueAt ?? null;
+                this.missionSuiviOverdue = res.missionSuiviOverdue;
+                this.loadingMissionsSuivi = false;
+            });
+    }
+
+    openMissionDialog(): void {
+        this.missionForm = { missionDate: new Date(), objectifs: '', syntheseRecommandations: '', nouvellesRecommandations: '' };
+        this.showMissionDialog = true;
+    }
+
+    executeAjouterMission(): void {
+        if (!this.inv || !this.missionForm.missionDate
+            || !this.missionForm.objectifs.trim() || !this.missionForm.syntheseRecommandations.trim()) return;
+        this.addingMission = true;
+        this.missionSuiviService.ajouter(this.inv.id, {
+            missionDate: this.missionForm.missionDate.toISOString(),
+            objectifs: this.missionForm.objectifs.trim(),
+            syntheseRecommandations: this.missionForm.syntheseRecommandations.trim(),
+            nouvellesRecommandations: this.missionForm.nouvellesRecommandations.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: res => {
+                    this.missionsSuivi = res.missions;
+                    this.missionSuiviDueAt = res.missionSuiviDueAt ?? null;
+                    this.missionSuiviOverdue = res.missionSuiviOverdue;
+                    this.addingMission = false;
+                    this.showMissionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mission de suivi enregistrée' });
+                },
+                error: (err: ApiError) => { this.addingMission = false; this.showError(err); }
+            });
+    }
+
+    // ── Demandes de documents ──────────────────────────────────
+    private loadDemandesDocuments(investigationId: string): void {
+        this.loadingDemandes = true;
+        this.demandeDocumentsService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.demandesDocuments = list; this.loadingDemandes = false; });
+    }
+
+    openDemandeDocumentsDialog(): void {
+        this.demandeDocumentsForm = { recipientLabel: '', documentsRequested: '' };
+        this.showDemandeDocumentsDialog = true;
+    }
+
+    executeCreerDemandeDocuments(): void {
+        if (!this.inv || !this.demandeDocumentsForm.recipientLabel.trim()
+            || !this.demandeDocumentsForm.documentsRequested.trim()) return;
+        this.creatingDemande = true;
+        this.demandeDocumentsService.create(this.inv.id, {
+            recipientLabel: this.demandeDocumentsForm.recipientLabel.trim(),
+            documentsRequested: this.demandeDocumentsForm.documentsRequested.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: d => {
+                    this.demandesDocuments = [d, ...this.demandesDocuments];
+                    this.creatingDemande = false;
+                    this.showDemandeDocumentsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Demande envoyée' });
+                },
+                error: (err: ApiError) => { this.creatingDemande = false; this.showError(err); }
+            });
+    }
+
+    executeMarkReceived(d: DemandeDocumentsResponse): void {
+        if (!this.inv) return;
+        this.demandeDocumentsService.markReceived(this.inv.id, d.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.messageService.add({ severity: 'success', summary: 'Demande marquée reçue' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    executeEscalate(d: DemandeDocumentsResponse): void {
+        if (!this.inv) return;
+        this.demandeDocumentsService.escalate(this.inv.id, d.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.messageService.add({ severity: 'warn', summary: 'Demande escaladée', detail: this.getEscalationLabel(updated.escalationLevel) });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    openAddressErrorDialog(d: DemandeDocumentsResponse): void {
+        this.demandeBeingCorrected = d;
+        this.addressErrorForm = { correctedRecipientLabel: d.recipientLabel };
+        this.showAddressErrorDialog = true;
+    }
+
+    executeReportAddressError(): void {
+        if (!this.inv || !this.demandeBeingCorrected || !this.addressErrorForm.correctedRecipientLabel.trim()) return;
+        this.correctingAddress = true;
+        this.demandeDocumentsService.reportAddressError(
+            this.inv.id, this.demandeBeingCorrected.id,
+            { correctedRecipientLabel: this.addressErrorForm.correctedRecipientLabel.trim() }
+        ).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.demandesDocuments = this.demandesDocuments.map(x => x.id === updated.id ? updated : x);
+                    this.correctingAddress = false;
+                    this.showAddressErrorDialog = false;
+                    this.demandeBeingCorrected = null;
+                    this.messageService.add({ severity: 'success', summary: 'Adresse corrigée, demande renvoyée' });
+                },
+                error: (err: ApiError) => { this.correctingAddress = false; this.showError(err); }
+            });
+    }
+
+    getEscalationLabel(l: EscalationLevel): string {
+        return ({
+            INITIAL: 'Demande initiale',
+            RELANCE: 'Relance',
+            SOMMATION: 'Sommation',
+            SAISINE_JUDICIAIRE: 'Saisine judiciaire'
+        } as Record<string, string>)[l] ?? l;
+    }
+
+    // ── Inventaire des pièces ──────────────────────────────────
+    private loadInventairePieces(investigationId: string): void {
+        this.loadingInventaire = true;
+        this.inventairePiecesService.getInventaire(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.inventairePieces = list; this.loadingInventaire = false; });
+    }
+
+    getAttachmentSourceLabel(s: AttachmentSource): string {
+        return ({
+            INITIAL_SUBMISSION: 'Dépôt initial',
+            FIELD_INVESTIGATION: 'Investigation terrain',
+            SOCIAL_MEDIA: 'Réseaux sociaux',
+            PRESS_MEDIA: 'Presse/média',
+            EXTERNAL_AUDIT: 'Audit externe',
+            OTHER: 'Autre'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    getModeObtentionLabel(m: ModeObtention): string {
+        return ({ VOLONTAIRE: 'Volontaire', REQUISITION: 'Réquisition' } as Record<string, string>)[m] ?? m;
+    }
+
+    getAttachmentStatusLabel(s: AttachmentStatus): string {
+        return ({
+            PENDING_VALIDATION: 'En attente',
+            VALIDATED: 'Validée',
+            REJECTED: 'Rejetée',
+            ARCHIVED: 'Archivée'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    // ── Auditions ────────────────────────────────────────────
+    private loadAuditions(investigationId: string): void {
+        this.loadingAuditions = true;
+        this.auditionService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => {
+                this.auditions = list;
+                this.loadingAuditions = false;
+                list.filter(a => a.status === 'CONDUCTED').forEach(a => this.loadPv(investigationId, a.id));
+            });
+    }
+
+    private loadPv(investigationId: string, auditionId: string): void {
+        this.auditionService.getPv(investigationId, auditionId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(pv => { this.pvByAudition = { ...this.pvByAudition, [auditionId]: pv }; });
+    }
+
+    openScheduleAuditionDialog(): void {
+        this.scheduleAuditionForm = {
+            intervieweeType: null, targetedPartyId: null, witnessId: null,
+            scheduledAt: new Date(), location: '', investigatorIds: []
+        };
+        this.showScheduleAuditionDialog = true;
+    }
+
+    canScheduleAudition(): boolean {
+        const f = this.scheduleAuditionForm;
+        if (!f.intervieweeType || !f.scheduledAt || f.investigatorIds.length < 2) return false;
+        if (f.intervieweeType === 'TARGETED_PARTY') return !!f.targetedPartyId;
+        if (f.intervieweeType === 'WITNESS') return !!f.witnessId;
+        return true;
+    }
+
+    executeScheduleAudition(): void {
+        if (!this.inv || !this.canScheduleAudition() || !this.scheduleAuditionForm.intervieweeType
+            || !this.scheduleAuditionForm.scheduledAt) return;
+        this.schedulingAudition = true;
+        this.auditionService.schedule(this.inv.id, {
+            intervieweeType: this.scheduleAuditionForm.intervieweeType,
+            targetedPartyId: this.scheduleAuditionForm.targetedPartyId ?? undefined,
+            witnessId: this.scheduleAuditionForm.witnessId ?? undefined,
+            scheduledAt: this.scheduleAuditionForm.scheduledAt.toISOString(),
+            location: this.scheduleAuditionForm.location.trim() || undefined,
+            investigatorIds: this.scheduleAuditionForm.investigatorIds
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: a => {
+                    this.auditions = [...this.auditions, a];
+                    this.schedulingAudition = false;
+                    this.showScheduleAuditionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Audition planifiée' });
+                },
+                error: (err: ApiError) => { this.schedulingAudition = false; this.showError(err); }
+            });
+    }
+
+    openConductAuditionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.conductSummary = '';
+        this.showConductAuditionDialog = true;
+    }
+
+    executeConductAudition(): void {
+        if (!this.inv || !this.actionAudition || !this.conductSummary.trim()) return;
+        this.conductingAudition = true;
+        this.auditionService.conduct(this.inv.id, this.actionAudition.id, { summary: this.conductSummary.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.conductingAudition = false;
+                    this.showConductAuditionDialog = false;
+                    if (this.inv) this.loadPv(this.inv.id, updated.id);
+                    this.messageService.add({ severity: 'success', summary: 'Audition tenue' });
+                },
+                error: (err: ApiError) => { this.conductingAudition = false; this.showError(err); }
+            });
+    }
+
+    openCancelAuditionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.cancelAuditionReason = '';
+        this.showCancelAuditionDialog = true;
+    }
+
+    executeCancelAudition(): void {
+        if (!this.inv || !this.actionAudition || !this.cancelAuditionReason.trim()) return;
+        this.cancellingAudition = true;
+        this.auditionService.cancel(this.inv.id, this.actionAudition.id, this.cancelAuditionReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.cancellingAudition = false;
+                    this.showCancelAuditionDialog = false;
+                    this.messageService.add({ severity: 'info', summary: 'Audition annulée' });
+                },
+                error: (err: ApiError) => { this.cancellingAudition = false; this.showError(err); }
+            });
+    }
+
+    openNoShowDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.noShowNote = '';
+        this.showNoShowDialog = true;
+    }
+
+    executeMarkNoShow(): void {
+        if (!this.inv || !this.actionAudition) return;
+        this.markingNoShow = true;
+        this.auditionService.markNoShow(this.inv.id, this.actionAudition.id, this.noShowNote.trim() || undefined)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.auditions = this.auditions.map(x => x.id === updated.id ? updated : x);
+                    this.markingNoShow = false;
+                    this.showNoShowDialog = false;
+                    this.messageService.add({ severity: 'warn', summary: 'Absence constatée' });
+                },
+                error: (err: ApiError) => { this.markingNoShow = false; this.showError(err); }
+            });
+    }
+
+    openPvCreateDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.pvCreateContent = '';
+        this.showPvCreateDialog = true;
+    }
+
+    executeCreatePv(): void {
+        if (!this.inv || !this.actionAudition || !this.pvCreateContent.trim()) return;
+        this.creatingPv = true;
+        this.auditionService.createPv(this.inv.id, this.actionAudition.id, { content: this.pvCreateContent.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.creatingPv = false;
+                    this.showPvCreateDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal enregistré' });
+                },
+                error: (err: ApiError) => { this.creatingPv = false; this.showError(err); }
+            });
+    }
+
+    executeMarkPvReadBack(a: AuditionResponse): void {
+        if (!this.inv) return;
+        this.auditionService.markPvReadBack(this.inv.id, a.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.messageService.add({ severity: 'success', summary: 'Relecture enregistrée' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    openPvFinalizeDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        this.pvFinalizeForm = { intervieweeSigned: false, intervieweeSignatureRefused: false };
+        this.showPvFinalizeDialog = true;
+    }
+
+    executeFinalizePv(): void {
+        if (!this.inv || !this.actionAudition) return;
+        this.finalizingPv = true;
+        this.auditionService.finalizePv(this.inv.id, this.actionAudition.id, this.pvFinalizeForm)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.finalizingPv = false;
+                    this.showPvFinalizeDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal finalisé' });
+                },
+                error: (err: ApiError) => { this.finalizingPv = false; this.showError(err); }
+            });
+    }
+
+    openPvCorrectionDialog(a: AuditionResponse): void {
+        this.actionAudition = a;
+        const pv = this.pvByAudition[a.id];
+        this.pvCorrectionForm = { content: pv?.content ?? '', motifCorrection: '' };
+        this.showPvCorrectionDialog = true;
+    }
+
+    executeCorrectPv(): void {
+        if (!this.inv || !this.actionAudition || !this.pvCorrectionForm.content.trim()
+            || !this.pvCorrectionForm.motifCorrection.trim()) return;
+        this.correctingPv = true;
+        this.auditionService.correctPv(this.inv.id, this.actionAudition.id, {
+            content: this.pvCorrectionForm.content.trim(),
+            motifCorrection: this.pvCorrectionForm.motifCorrection.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByAudition = { ...this.pvByAudition, [pv.auditionId]: pv };
+                    this.correctingPv = false;
+                    this.showPvCorrectionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Correction enregistrée' });
+                },
+                error: (err: ApiError) => { this.correctingPv = false; this.showError(err); }
+            });
+    }
+
+    getAuditionStatusLabel(s: AuditionStatus): string {
+        return ({
+            SCHEDULED: 'Planifiée',
+            CONDUCTED: 'Tenue',
+            CANCELLED: 'Annulée',
+            NO_SHOW: 'Absence'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    getIntervieweeTypeLabel(t: IntervieweeType): string {
+        return ({
+            TARGETED_PARTY: 'Partie visée',
+            WITNESS: 'Témoin',
+            DECLARANT: 'Dénonciateur'
+        } as Record<string, string>)[t] ?? t;
+    }
+
+    // ── Visites terrain ──────────────────────────────────────
+    private loadVisitesTerrain(investigationId: string): void {
+        this.loadingVisites = true;
+        this.visiteTerrainService.findAll(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => {
+                this.visitesTerrain = list;
+                this.loadingVisites = false;
+                list.filter(v => v.status === 'CONDUCTED').forEach(v => this.loadPvConstat(investigationId, v.id));
+            });
+    }
+
+    private loadPvConstat(investigationId: string, visiteId: string): void {
+        this.visiteTerrainService.getPv(investigationId, visiteId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(pv => { this.pvByVisite = { ...this.pvByVisite, [visiteId]: pv }; });
+    }
+
+    openScheduleVisiteDialog(): void {
+        this.scheduleVisiteForm = { location: '', scheduledAt: new Date() };
+        this.showScheduleVisiteDialog = true;
+    }
+
+    executeScheduleVisite(): void {
+        if (!this.inv || !this.scheduleVisiteForm.location.trim() || !this.scheduleVisiteForm.scheduledAt) return;
+        this.schedulingVisite = true;
+        this.visiteTerrainService.schedule(this.inv.id, {
+            location: this.scheduleVisiteForm.location.trim(),
+            scheduledAt: this.scheduleVisiteForm.scheduledAt.toISOString()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: v => {
+                    this.visitesTerrain = [...this.visitesTerrain, v];
+                    this.schedulingVisite = false;
+                    this.showScheduleVisiteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Visite planifiée' });
+                },
+                error: (err: ApiError) => { this.schedulingVisite = false; this.showError(err); }
+            });
+    }
+
+    openConductVisiteDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.conductVisiteSummary = '';
+        this.showConductVisiteDialog = true;
+    }
+
+    executeConductVisite(): void {
+        if (!this.inv || !this.actionVisite || !this.conductVisiteSummary.trim()) return;
+        this.conductingVisite = true;
+        this.visiteTerrainService.conduct(this.inv.id, this.actionVisite.id, { summary: this.conductVisiteSummary.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.conductingVisite = false;
+                    this.showConductVisiteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Visite tenue' });
+                },
+                error: (err: ApiError) => { this.conductingVisite = false; this.showError(err); }
+            });
+    }
+
+    openCancelVisiteDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.cancelVisiteReason = '';
+        this.showCancelVisiteDialog = true;
+    }
+
+    executeCancelVisite(): void {
+        if (!this.inv || !this.actionVisite || !this.cancelVisiteReason.trim()) return;
+        this.cancellingVisite = true;
+        this.visiteTerrainService.cancel(this.inv.id, this.actionVisite.id, this.cancelVisiteReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.cancellingVisite = false;
+                    this.showCancelVisiteDialog = false;
+                    this.messageService.add({ severity: 'info', summary: 'Visite annulée' });
+                },
+                error: (err: ApiError) => { this.cancellingVisite = false; this.showError(err); }
+            });
+    }
+
+    openCarenceDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.carenceReason = '';
+        this.showCarenceDialog = true;
+    }
+
+    executeMarkCarence(): void {
+        if (!this.inv || !this.actionVisite || !this.carenceReason.trim()) return;
+        this.markingCarence = true;
+        this.visiteTerrainService.markCarence(this.inv.id, this.actionVisite.id, this.carenceReason.trim())
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.visitesTerrain = this.visitesTerrain.map(x => x.id === updated.id ? updated : x);
+                    this.markingCarence = false;
+                    this.showCarenceDialog = false;
+                    this.messageService.add({ severity: 'warn', summary: 'Carence constatée' });
+                },
+                error: (err: ApiError) => { this.markingCarence = false; this.showError(err); }
+            });
+    }
+
+    openPvConstatCreateDialog(v: VisiteTerrainResponse): void {
+        this.actionVisite = v;
+        this.pvConstatContent = '';
+        this.showPvConstatCreateDialog = true;
+    }
+
+    executeCreatePvConstat(): void {
+        if (!this.inv || !this.actionVisite || !this.pvConstatContent.trim()) return;
+        this.creatingPvConstat = true;
+        this.visiteTerrainService.createPv(this.inv.id, this.actionVisite.id, { content: this.pvConstatContent.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: pv => {
+                    this.pvByVisite = { ...this.pvByVisite, [pv.visiteTerrainId]: pv };
+                    this.creatingPvConstat = false;
+                    this.showPvConstatCreateDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procès-verbal de constat enregistré' });
+                },
+                error: (err: ApiError) => { this.creatingPvConstat = false; this.showError(err); }
+            });
+    }
+
+    getVisiteStatusLabel(s: VisiteStatus): string {
+        return ({
+            SCHEDULED: 'Planifiée',
+            CONDUCTED: 'Tenue',
+            CANCELLED: 'Annulée',
+            CARENCE: 'Carence'
+        } as Record<string, string>)[s] ?? s;
+    }
+
+    // ── Check-list du dossier de travail ──────────────────────
+    private loadChecklist(investigationId: string): void {
+        this.loadingChecklist = true;
+        this.checklistDossierTravailService.getChecklist(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.checklistItems = list; this.loadingChecklist = false; });
+    }
+
+    getChecklistCheckedCount(): number {
+        return this.checklistItems.filter(i => i.coche).length;
+    }
+
+    isChecklistFullyChecked(): boolean {
+        return this.checklistItems.every(i => i.coche);
+    }
+
+    executeToggleChecklist(item: ChecklistDossierTravailItemResponse): void {
+        if (!this.inv) return;
+        this.savingChecklistCode = item.code;
+        this.checklistDossierTravailService.setCoche(this.inv.id, item.code, {
+            coche: !item.coche, commentaire: item.commentaire
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.checklistItems = this.checklistItems.map(x => x.pointId === updated.pointId ? updated : x);
+                    this.savingChecklistCode = null;
+                },
+                error: (err: ApiError) => { this.savingChecklistCode = null; this.showError(err); }
+            });
+    }
+
+    openChecklistCommentDialog(item: ChecklistDossierTravailItemResponse): void {
+        this.checklistItemBeingCommented = item;
+        this.checklistCommentValue = item.commentaire ?? '';
+        this.showChecklistCommentDialog = true;
+    }
+
+    executeSaveChecklistComment(): void {
+        if (!this.inv || !this.checklistItemBeingCommented) return;
+        const item = this.checklistItemBeingCommented;
+        this.checklistDossierTravailService.setCoche(this.inv.id, item.code, {
+            coche: item.coche, commentaire: this.checklistCommentValue.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: updated => {
+                    this.checklistItems = this.checklistItems.map(x => x.pointId === updated.pointId ? updated : x);
+                    this.showChecklistCommentDialog = false;
+                    this.checklistItemBeingCommented = null;
+                    this.messageService.add({ severity: 'success', summary: 'Commentaire enregistré' });
+                },
+                error: (err: ApiError) => this.showError(err)
+            });
+    }
+
+    // ── Rapport d'enquête officiel ─────────────────────────────
+    private loadRapportEnquete(investigationId: string): void {
+        this.loadingRapportEnquete = true;
+        this.rapportEnqueteService.getRapport(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(r => {
+                this.rapportEnquete = r;
+                this.loadingRapportEnquete = false;
+                if (r) {
+                    this.rapportEnqueteService.getNote(investigationId)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(n => { this.noteRecommandations = n; });
+                } else {
+                    this.noteRecommandations = null;
+                }
+            });
+    }
+
+    openRapportEnqueteDialog(): void {
+        this.rapportEnqueteForm = {
+            titre: this.rapportEnquete?.titre ?? '',
+            introduction: this.rapportEnquete?.introduction ?? '',
+            methodologie: this.rapportEnquete?.methodologie ?? '',
+            informationsCollectees: this.rapportEnquete?.informationsCollectees ?? '',
+            exposeFactuelAnomalies: this.rapportEnquete?.exposeFactuelAnomalies ?? '',
+            quantificationPrejudice: this.rapportEnquete?.quantificationPrejudice ?? '',
+            reserves: this.rapportEnquete?.reserves ?? '',
+            conclusions: this.rapportEnquete?.conclusions ?? ''
+        };
+        this.showRapportEnqueteDialog = true;
+    }
+
+    executeSaveRapportEnquete(): void {
+        if (!this.inv) return;
+        this.savingRapportEnquete = true;
+        const f = this.rapportEnqueteForm;
+        this.rapportEnqueteService.saveRapport(this.inv.id, {
+            titre: f.titre.trim() || undefined,
+            introduction: f.introduction.trim() || undefined,
+            methodologie: f.methodologie.trim() || undefined,
+            informationsCollectees: f.informationsCollectees.trim() || undefined,
+            exposeFactuelAnomalies: f.exposeFactuelAnomalies.trim() || undefined,
+            quantificationPrejudice: f.quantificationPrejudice.trim() || undefined,
+            reserves: f.reserves.trim() || undefined,
+            conclusions: f.conclusions.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.rapportEnquete = r;
+                    this.savingRapportEnquete = false;
+                    this.showRapportEnqueteDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Rapport enregistré' });
+                },
+                error: (err: ApiError) => { this.savingRapportEnquete = false; this.showError(err); }
+            });
+    }
+
+    openNoteRecommandationsDialog(): void {
+        this.noteRecommandationsContent = this.noteRecommandations?.contenu ?? '';
+        this.showNoteRecommandationsDialog = true;
+    }
+
+    executeSaveNoteRecommandations(): void {
+        if (!this.inv) return;
+        this.savingNoteRecommandations = true;
+        this.rapportEnqueteService.saveNote(this.inv.id, { contenu: this.noteRecommandationsContent.trim() || undefined })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: n => {
+                    this.noteRecommandations = n;
+                    this.savingNoteRecommandations = false;
+                    this.showNoteRecommandationsDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Note de recommandations enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingNoteRecommandations = false; this.showError(err); }
+            });
+    }
+
+    // ── Fiche RETEX & leçon à partager ──────────────────────────
+    private emptyFicheRetexForm(): FicheRetexRequest {
+        return {
+            typeInfractionId: undefined, lieu: '', difficultesRencontrees: '',
+            origineSoupcons: '', impactFinancier: undefined, originaliteSchemas: '',
+            collaborateursPlanifies: '', joursCharges: undefined, contexte: '',
+            strategieMethodes: '', syntheseResultats: '', enseignementsAxesAmelioration: ''
+        };
+    }
+
+    private loadFicheRetex(investigationId: string): void {
+        this.loadingFicheRetex = true;
+        this.ficheRetexService.getFicheRetex(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(f => {
+                this.ficheRetex = f;
+                this.loadingFicheRetex = false;
+            });
+    }
+
+    openFicheRetexDialog(): void {
+        this.ficheRetexForm = this.emptyFicheRetexForm();
+        if (!this.typesInfractionOptions.length) {
+            this.typeInfractionService.findAllActifs()
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(list => { this.typesInfractionOptions = list; });
+        }
+        this.showFicheRetexDialog = true;
+    }
+
+    executeSaveFicheRetex(): void {
+        if (!this.inv) return;
+        const f = this.ficheRetexForm;
+        if (!f.syntheseResultats.trim() || !f.enseignementsAxesAmelioration.trim()) return;
+        this.savingFicheRetex = true;
+        this.ficheRetexService.createFicheRetex(this.inv.id, {
+            typeInfractionId: f.typeInfractionId || undefined,
+            lieu: f.lieu?.trim() || undefined,
+            difficultesRencontrees: f.difficultesRencontrees?.trim() || undefined,
+            origineSoupcons: f.origineSoupcons?.trim() || undefined,
+            impactFinancier: f.impactFinancier ?? undefined,
+            originaliteSchemas: f.originaliteSchemas?.trim() || undefined,
+            collaborateursPlanifies: f.collaborateursPlanifies?.trim() || undefined,
+            joursCharges: f.joursCharges ?? undefined,
+            contexte: f.contexte?.trim() || undefined,
+            strategieMethodes: f.strategieMethodes?.trim() || undefined,
+            syntheseResultats: f.syntheseResultats.trim(),
+            enseignementsAxesAmelioration: f.enseignementsAxesAmelioration.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: r => {
+                    this.ficheRetex = r;
+                    this.savingFicheRetex = false;
+                    this.showFicheRetexDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Fiche RETEX rédigée' });
+                },
+                error: (err: ApiError) => { this.savingFicheRetex = false; this.showError(err); }
+            });
+    }
+
+    openPublierLeconDialog(): void {
+        this.publierLeconForm = {
+            titre: this.ficheRetex?.typeInfractionLibelle ?? '',
+            resume: this.ficheRetex?.enseignementsAxesAmelioration ?? ''
+        };
+        this.showPublierLeconDialog = true;
+    }
+
+    executeSavePublierLecon(): void {
+        if (!this.inv) return;
+        const f = this.publierLeconForm;
+        if (!f.titre.trim() || !f.resume.trim()) return;
+        this.savingPublierLecon = true;
+        this.ficheRetexService.publierLecon(this.inv.id, {
+            titre: f.titre.trim(),
+            resume: f.resume.trim()
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: () => {
+                    this.savingPublierLecon = false;
+                    this.showPublierLeconDialog = false;
+                    this.leconPubliee = true;
+                    this.messageService.add({ severity: 'success', summary: 'Leçon publiée', detail: 'Visible dans "Leçons à partager"' });
+                },
+                error: (err: ApiError) => { this.savingPublierLecon = false; this.showError(err); }
+            });
+    }
+
+    // ── Mandat ───────────────────────────────────────────────
+    private loadMandat(investigationId: string): void {
+        this.loadingMandat = true;
+        this.cadrageService.getMandat(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(m => { this.mandat = m; this.loadingMandat = false; });
+    }
+
+    executeDeliverMandat(): void {
+        if (!this.inv) return;
+        this.deliveringMandat = true;
+        this.cadrageService.deliverMandat(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: m => {
+                    this.mandat = m;
+                    this.deliveringMandat = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mandat délivré' });
+                },
+                error: (err: ApiError) => { this.deliveringMandat = false; this.showError(err); }
+            });
+    }
+
+    // ── Engagement préalable ────────────────────────────────
+    private loadMyEngagement(investigationId: string): void {
+        if (!this.currentAgentId) return;
+        this.loadingEngagement = true;
+        this.cadrageService.getEngagementPrealable(investigationId, this.currentAgentId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(e => { this.myEngagement = e; this.loadingEngagement = false; });
+    }
+
+    openEngagementDialog(): void {
+        this.engagementForm = { hasConflictOfInterest: null, conflictDetails: '' };
+        this.showEngagementDialog = true;
+    }
+
+    executeSaveEngagement(): void {
+        if (!this.inv || this.engagementForm.hasConflictOfInterest === null) return;
+        this.savingEngagement = true;
+        this.cadrageService.declareEngagementPrealable(this.inv.id, {
+            hasConflictOfInterest: this.engagementForm.hasConflictOfInterest,
+            conflictDetails: this.engagementForm.conflictDetails.trim() || undefined
+        }).pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: e => {
+                    this.myEngagement = e;
+                    this.savingEngagement = false;
+                    this.showEngagementDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Engagement enregistré' });
+                },
+                error: (err: ApiError) => { this.savingEngagement = false; this.showError(err); }
+            });
+    }
+
+    // ── Plan d'investigation ─────────────────────────────────
+    private loadPlan(investigationId: string): void {
+        this.loadingPlan = true;
+        this.cadrageService.getPlan(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(p => {
+                this.plan = p;
+                this.loadingPlan = false;
+                if (p) {
+                    this.cadrageService.getPlanRevisions(investigationId)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(r => { this.planRevisions = r; });
+                }
+            });
+    }
+
+    get planDialogHeader(): string {
+        return this.plan ? "Réviser le plan d'investigation" : "Soumettre le plan d'investigation";
+    }
+
+    openPlanDialog(): void {
+        this.planForm = this.plan
+            ? {
+                objectifs: this.plan.objectifs, methodologie: this.plan.methodologie,
+                moyensMobilises: this.plan.moyensMobilises ?? '', planningProcedures: this.plan.planningProcedures ?? '',
+                motifRevision: ''
+              }
+            : { objectifs: '', methodologie: '', moyensMobilises: '', planningProcedures: '', motifRevision: '' };
+        this.showPlanDialog = true;
+    }
+
+    executeSavePlan(): void {
+        if (!this.inv || !this.planForm.objectifs.trim() || !this.planForm.methodologie.trim()) return;
+        if (this.plan && !this.planForm.motifRevision.trim()) return;
+        this.savingPlan = true;
+        const base = {
+            objectifs: this.planForm.objectifs.trim(),
+            methodologie: this.planForm.methodologie.trim(),
+            moyensMobilises: this.planForm.moyensMobilises.trim() || undefined,
+            planningProcedures: this.planForm.planningProcedures.trim() || undefined
+        };
+        const obs = this.plan
+            ? this.cadrageService.revisePlan(this.inv.id, { ...base, motifRevision: this.planForm.motifRevision.trim() })
+            : this.cadrageService.submitPlan(this.inv.id, base);
+        obs.pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.plan = p;
+                    this.savingPlan = false;
+                    this.showPlanDialog = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'investigation enregistré" });
+                    this.cadrageService.getPlanRevisions(this.inv!.id)
+                        .pipe(takeUntil(this.destroy$))
+                        .subscribe(r => { this.planRevisions = r; });
+                },
+                error: (err: ApiError) => { this.savingPlan = false; this.showError(err); }
+            });
+    }
+
+    executeValidatePlan(): void {
+        if (!this.inv) return;
+        this.validatingPlan = true;
+        this.cadrageService.validatePlan(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.plan = p;
+                    this.validatingPlan = false;
+                    this.messageService.add({ severity: 'success', summary: "Plan d'investigation validé" });
+                },
+                error: (err: ApiError) => { this.validatingPlan = false; this.showError(err); }
+            });
+    }
+
+    // ── Incidents d'objectivité ──────────────────────────────
+    private loadIncidents(investigationId: string): void {
+        this.loadingIncidents = true;
+        this.cadrageService.getIncidents(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.incidents = list; this.loadingIncidents = false; });
+    }
+
+    openIncidentDialog(): void {
+        this.incidentDescription = '';
+        this.showIncidentDialog = true;
+    }
+
+    executeDeclareIncident(): void {
+        if (!this.inv || !this.incidentDescription.trim()) return;
+        this.savingIncident = true;
+        this.cadrageService.declareIncident(this.inv.id, { description: this.incidentDescription.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: i => {
+                    this.incidents = [...this.incidents, i];
+                    this.savingIncident = false;
+                    this.showIncidentDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Incident déclaré' });
+                },
+                error: (err: ApiError) => { this.savingIncident = false; this.showError(err); }
+            });
+    }
+
+    // ── Procédures d'urgence ─────────────────────────────────
+    private loadProcedures(investigationId: string): void {
+        this.loadingProcedures = true;
+        this.cadrageService.getProcedures(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.proceduresUrgence = list; this.loadingProcedures = false; });
+    }
+
+    openProcedureDialog(): void {
+        this.procedureJustification = '';
+        this.showProcedureDialog = true;
+    }
+
+    executeDemanderProcedure(): void {
+        if (!this.inv || !this.procedureJustification.trim()) return;
+        this.savingProcedure = true;
+        this.cadrageService.demanderProcedureUrgence(this.inv.id, { justification: this.procedureJustification.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.proceduresUrgence = [...this.proceduresUrgence, p];
+                    this.savingProcedure = false;
+                    this.showProcedureDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Procédure d\'urgence demandée' });
+                },
+                error: (err: ApiError) => { this.savingProcedure = false; this.showError(err); }
+            });
+    }
+
+    openProcedureDecisionDialog(procedureId: string, action: 'approuver' | 'rejeter'): void {
+        this.decidingProcedureId = procedureId;
+        this.procedureDecisionAction = action;
+        this.procedureDecisionMotif = '';
+        this.showProcedureDecisionDialog = true;
+    }
+
+    executeDecideProcedure(): void {
+        if (!this.inv || !this.decidingProcedureId || !this.procedureDecisionAction) return;
+        this.savingProcedure = true;
+        const req = { motifDecision: this.procedureDecisionMotif.trim() || undefined };
+        const obs = this.procedureDecisionAction === 'approuver'
+            ? this.cadrageService.approuverProcedureUrgence(this.inv.id, this.decidingProcedureId, req)
+            : this.cadrageService.rejeterProcedureUrgence(this.inv.id, this.decidingProcedureId, req);
+        obs.pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: p => {
+                    this.proceduresUrgence = this.proceduresUrgence.map(x => x.id === p.id ? p : x);
+                    this.savingProcedure = false;
+                    this.showProcedureDecisionDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Décision enregistrée' });
+                },
+                error: (err: ApiError) => { this.savingProcedure = false; this.showError(err); }
+            });
+    }
+
+    getProcedureStatusLabel(s: StatutProcedureUrgence): string {
+        return ({ EN_ATTENTE: 'En attente', APPROUVEE: 'Approuvée', REJETEE: 'Rejetée' } as Record<string, string>)[s] ?? s;
+    }
+
+    getProcedureStatusSeverity(s: StatutProcedureUrgence): TagSeverity {
+        return ({ EN_ATTENTE: 'warn', APPROUVEE: 'success', REJETEE: 'danger' } as Record<string, TagSeverity>)[s] ?? 'info';
+    }
+
+    // ── Mesures conservatoires ────────────────────────────────
+    private loadMesures(investigationId: string): void {
+        this.loadingMesures = true;
+        this.cadrageService.getMesures(investigationId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(list => { this.mesuresConservatoires = list; this.loadingMesures = false; });
+    }
+
+    openMesureDialog(): void {
+        this.mesureDescription = '';
+        this.showMesureDialog = true;
+    }
+
+    executeDeclarerMesure(): void {
+        if (!this.inv || !this.mesureDescription.trim()) return;
+        this.savingMesure = true;
+        this.cadrageService.declarerMesureConservatoire(this.inv.id, { description: this.mesureDescription.trim() })
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: m => {
+                    this.mesuresConservatoires = [...this.mesuresConservatoires, m];
+                    this.savingMesure = false;
+                    this.showMesureDialog = false;
+                    this.messageService.add({ severity: 'success', summary: 'Mesure conservatoire déclarée' });
+                },
+                error: (err: ApiError) => { this.savingMesure = false; this.showError(err); }
+            });
     }
 
     openReportDialog(): void {
@@ -1133,6 +4415,8 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
 
     canSubmitReport(): boolean {
         if (!this.reportRequest.outcome) return false;
+        if (!this.rapportEnquete?.complet || !this.noteRecommandations?.complet) return false;
+        if (!this.isChecklistFullyChecked()) return false;
         if (this.reportMode === 'ONLINE') {
             return !!(this.reportRequest.finalReport?.trim()
                 && this.reportRequest.conclusions?.trim());

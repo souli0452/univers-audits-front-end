@@ -56,3 +56,19 @@ export interface PublicStats {
     confidentiel:     string;
     delaiJours:       number;
 }
+
+export interface DepassementItem {
+    dossierId:      string;
+    numero:         string;
+    type:           string;
+    echeance:       string;
+    joursDeRetard:  number;
+}
+
+export interface ActeurDepassement {
+    agentId:               string;
+    matricule:             string;
+    nomComplet:             string;
+    departementLibelle:     string | null;
+    dossiersEnDepassement:  DepassementItem[];
+}

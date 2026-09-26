@@ -576,8 +576,12 @@ export class DossierAudio implements OnDestroy {
 
         const incidentDate = this.f['incidentDate'].value as Date | null;
 
+        const isAnonymous = this.f['type'].value === 'ANONYMOUS';
+        const quality = this.f['type'].value === 'COMPLAINT' ? 'VICTIME' : 'TEMOIN';
         const request = {
-            type:             this.f['type'].value as any,
+            type:             (isAnonymous ? 'DENUNCIATION' : this.f['type'].value) as any,
+            quality:          quality as any,
+            anonymous:        isAnonymous,
             submissionMode:   this.f['submissionMode'].value as any,
             object:           this.f['object'].value!,
             description:      this.f['description'].value || undefined,
@@ -585,12 +589,12 @@ export class DossierAudio implements OnDestroy {
             incidentDate:     incidentDate ? incidentDate.toISOString().split('T')[0] : undefined,
             estimatedLoss:    this.f['estimatedLoss'].value || undefined,
             declarantData: {
-                typeDeclarant:         'CITIZEN' as any,
-                firstName:             this.fd['firstName'].value  || undefined,
-                lastName:              this.fd['lastName'].value   || undefined,
-                phoneNumber:           this.fd['phoneNumber'].value || undefined,
-                commune:               this.fd['commune'].value    || undefined,
-                anonymous:             false,
+                typeDeclarant:         (isAnonymous ? 'ANONYMOUS' : 'CITIZEN') as any,
+                firstName:             isAnonymous ? undefined : this.fd['firstName'].value  || undefined,
+                lastName:              isAnonymous ? undefined : this.fd['lastName'].value   || undefined,
+                phoneNumber:           isAnonymous ? undefined : this.fd['phoneNumber'].value || undefined,
+                commune:               isAnonymous ? undefined : this.fd['commune'].value || undefined,
+                anonymous:             isAnonymous,
                 dataProcessingConsent: !!this.fd['dataProcessingConsent'].value,
                 notificationsAccepted: true,
                 protectionRequested:   false

@@ -1026,16 +1026,19 @@ export class PortailVocal {
         if (!this.audioBlob) return;
         this.submitting = true;
 
+        const isAnonymous = !this.phoneNumber && !this.email;
         const request = {
             type:           'DENUNCIATION' as any,
+            quality:        'TEMOIN' as any,
+            anonymous:      isAnonymous,
             submissionMode: 'AUDIO_COUNTER' as any,
             object:         'Témoignage vocal en attente de traitement',
             description:    'Témoignage audio soumis via le portail citoyen.',
             declarantData: {
-                typeDeclarant:          'CITIZEN' as any,
+                typeDeclarant:          (isAnonymous ? 'ANONYMOUS' : 'CITIZEN') as any,
                 phoneNumber:            this.phoneNumber || undefined,
                 email:                  this.email       || undefined,
-                anonymous:              !this.phoneNumber && !this.email,
+                anonymous:              isAnonymous,
                 dataProcessingConsent:  true,
                 notificationsAccepted:  true,
                 protectionRequested:    this.protectionRequested,

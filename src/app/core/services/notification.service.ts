@@ -39,4 +39,22 @@ export class NotificationService {
     markAllAsRead(): Observable<void> {
         return this.http.patch<void>(`${this.baseUrl}/read-all`, {});
     }
+
+    getPending(page = 0, size = 20): Observable<NotificationPage> {
+        const params = new HttpParams().set('page', page).set('size', size);
+        return this.http.get<NotificationPage>(`${this.baseUrl}/pending`, { params });
+    }
+
+    sendNow(id: string): Observable<NotificationItem> {
+        return this.http.patch<NotificationItem>(`${this.baseUrl}/${id}/send`, {});
+    }
+
+    cancel(id: string, reason: string): Observable<NotificationItem> {
+        const params = new HttpParams().set('reason', reason);
+        return this.http.patch<NotificationItem>(`${this.baseUrl}/${id}/cancel`, {}, { params });
+    }
+
+    retry(id: string): Observable<NotificationItem> {
+        return this.http.patch<NotificationItem>(`${this.baseUrl}/${id}/retry`, {});
+    }
 }
