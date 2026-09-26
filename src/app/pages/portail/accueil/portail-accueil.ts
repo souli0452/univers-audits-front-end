@@ -203,6 +203,12 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
             .footer-arms{right:1rem;top:2.4rem;padding:6px 8px}
             .footer-arms img{height:56px}
             .hero-grid{grid-template-columns:1fr}
+            /* Téléphone : boîte de dépôt plus étroite, choix empilés (sinon les cartes débordent des marges) */
+            .dialog{padding:1.75rem 1.25rem}
+            .dialog-choices{flex-direction:column}
+            .d-choice{max-width:none;min-width:0}
+            /* Zones de toucher confortables pour les liens du pied de page */
+            .footer-col a,.footer-phone{min-height:36px;padding:.4rem 0}
             .hero-title{font-size:2.1rem}
             .hero-left,.hero-title,.hero-subtitle,.hero-actions{text-align:left}
             .tc-grid{gap:2.5rem}

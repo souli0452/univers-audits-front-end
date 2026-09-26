@@ -351,7 +351,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
         </div>
         <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-            outlined size="small"
+            outlined
             (onClick)="router.navigate(['/portail/suivi'])" />
     </nav>
 

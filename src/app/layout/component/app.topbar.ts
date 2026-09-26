@@ -17,6 +17,13 @@ import { NotificationService, NotificationItem }
         RouterModule, CommonModule, StyleClassModule,
         AppConfigurator, Popover, ButtonModule
     ],
+    styles: [`
+        /* Petit écran : on garde l'emblème et on masque le texte « INTÉGRITÉ+ », sinon le bouton
+           des actions (notifications, profil, déconnexion) sort de l'écran. */
+        @media (max-width: 640px) {
+            .layout-topbar-logo span { display: none; }
+        }
+    `],
     template: `
 <div class="layout-topbar">
 

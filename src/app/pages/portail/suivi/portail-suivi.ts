@@ -395,7 +395,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
                 color:var(--ink-40);font-size:.75rem;">
         <p style="margin:0 0 3px;">ASCE-LC — Numéro vert</p>
         <a href="tel:80001157"
-            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;">
+            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;display:inline-block;padding:.6rem 1rem;">
             <i class="pi pi-phone" style="font-size:.7rem;margin-right:4px;"></i>
             80 00 11 57
         </a>

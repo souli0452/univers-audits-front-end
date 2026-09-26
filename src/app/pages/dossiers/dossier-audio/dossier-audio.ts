@@ -319,7 +319,7 @@ const MAX_DURATION_SECONDS = 600;
                 </div>
 
                 <!-- Lieu + Date des faits -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-semibold text-surface-600
                                       dark:text-surface-300 uppercase tracking-wide">

@@ -167,4 +167,35 @@ describe('PortailAccueil', () => {
             expect(colonnes.length).toBe(petitEcran ? 1 : 3);
         });
     });
+
+    describe('téléphone : boîte de dépôt et liens du pied de page', () => {
+        const petitEcran = () => window.matchMedia('(max-width: 860px)').matches;   // la fenêtre de Karma est étroite
+
+        it('les deux choix de la boîte de dépôt s’empilent et tiennent dans la boîte', () => {
+            (q('.hero-actions .btn-hero-primary') as HTMLButtonElement).click();
+            fixture.detectChanges();
+            const boite = q('.dialog')!.getBoundingClientRect();
+            const choix = qa('.d-choice').map(c => c.getBoundingClientRect());
+
+            expect(choix.length).toBe(2);
+            for (const c of choix) {
+                expect(c.left).toBeGreaterThanOrEqual(boite.left);
+                expect(c.right).toBeLessThanOrEqual(boite.right + 0.5);
+            }
+            if (petitEcran()) {
+                expect(getComputedStyle(q('.dialog-choices')!).flexDirection).toBe('column');
+                expect(parseFloat(getComputedStyle(q('.dialog')!).paddingLeft)).toBeLessThanOrEqual(24);
+            }
+        });
+
+        it('les liens du pied de page ont une zone de toucher d’au moins 36 px de haut', () => {
+            if (!petitEcran()) { return; }
+            const liens = qa('.footer-col a').filter(a => a.getBoundingClientRect().height > 0);
+
+            expect(liens.length).toBeGreaterThan(5);
+            for (const lien of liens) {
+                expect(lien.getBoundingClientRect().height).withContext(lien.textContent ?? '').toBeGreaterThanOrEqual(36);
+            }
+        });
+    });
 });

@@ -53,7 +53,7 @@ const GROUP_ICONS: Record<string, string> = {
 <div class="flex flex-col gap-6">
 
     <!-- En-tête -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">
                 Paramètres du portail

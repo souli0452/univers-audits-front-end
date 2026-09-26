@@ -62,7 +62,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             padding:6px 11px; box-shadow:0 2px 10px rgba(0,0,0,.15);
         }
         .nav-logo img { height:28px; width:auto; object-fit:contain; display:block; }
-        .nav-sub   { color:var(--yellow); font-size:.72rem; }
+        .nav-sub   { color:var(--yellow); font-size:.75rem; }
 
         .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
 
@@ -406,7 +406,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             <div class="nav-sub">Dépôt de plainte sécurisé</div>
         </div>
         <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-            outlined size="small"
+            outlined
             (onClick)="router.navigate(['/portail/suivi'])" />
     </nav>
 
