@@ -83,10 +83,10 @@ export default {
       data: [],
       expected: [
         'Le dossier reprend l’étude : statut « En étude opportunité »',
-        '« Soumettre au CTADP » et « Demander complément » sont de nouveau proposés'
+        '« Soumettre au CTADP » et « Demander complément » sont de nouveau proposés',
+        'Cette action manuelle sert aux compléments reçus hors portail (courrier, guichet, téléphone) : un complément déposé par le citoyen sur le portail fait déjà repasser le dossier en étude sans clic d’agent (voir P04-10)'
       ],
-      ui: ['Complément reçu'],
-      aConfirmer: 'Le complément du citoyen ne peut pas être déposé depuis le portail (voir P04-04) : la réception est aujourd’hui déclarée par un agent'
+      ui: ['Complément reçu']
     },
     {
       id: 'P07-05',

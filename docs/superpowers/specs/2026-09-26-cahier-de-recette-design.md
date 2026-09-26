@@ -69,7 +69,7 @@ Le cas **P01** inclut la vérification des icônes : les cercles « Faire un sig
 
 ## 6. Volume et sources
 
-144 cas (15 fichiers : P01 à P14 et un scénario de bout en bout). Les libellés, boutons, statuts et règles de rôle sont lus dans le code du front. Quand une règle métier n'est pas lisible côté front (par exemple un délai calculé par l'API), le cas est marqué **« à confirmer »**. Je ne l'invente pas.
+151 cas (15 fichiers : P01 à P14 et un scénario de bout en bout). Les libellés, boutons, statuts et règles de rôle sont lus dans le code du front. Quand une règle métier n'est pas lisible côté front (par exemple un délai calculé par l'API), le cas est marqué **« à confirmer »**. Je ne l'invente pas.
 
 ## 7. Hors périmètre
 
