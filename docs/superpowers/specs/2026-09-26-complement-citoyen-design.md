@@ -61,7 +61,7 @@ Réponse 200 :
 
 Corps `multipart/form-data` :
 - `message` : texte, 2 000 caractères maximum.
-- `files` : 0 à 5 fichiers, 25 Mo maximum chacun, mêmes types autorisés que `AttachmentStorageService` (`ALLOWED_MIME_TYPES`).
+- `files` : 0 à 5 fichiers, 25 Mo maximum chacun et 50 Mo au total (`spring.servlet.multipart.max-request-size`), mêmes types autorisés que `AttachmentStorageService` (`ALLOWED_MIME_TYPES`).
 
 Règles :
 - Le message **ou** au moins un fichier est obligatoire (le front exige en plus un message de 10 caractères minimum).
@@ -69,9 +69,9 @@ Règles :
 
 Effets, dans une seule transaction :
 1. Les fichiers sont enregistrés par `AttachmentStorageService` (source `INITIAL_SUBMISSION`, mode d'obtention `VOLONTAIRE`, comme un dépôt public).
-2. Une observation `COMPLEMENT_RESPONSE` (nouveau type) porte le message, non confidentielle. Si `deadline` est dépassée, le texte commence par « Reçu en retard (échéance du JJ/MM/AAAA) — ».
+2. Une observation `COMPLEMENT_RESPONSE` (nouveau type) porte le message, non confidentielle. Le champ auteur est obligatoire en base : il reçoit l'agent qui a émis la demande de complément, avec le nom affiché « Déclarant (via le portail) ». Si `deadline` est dépassée, le texte commence par « Reçu en retard (échéance du JJ/MM/AAAA) — ». Le nouveau type exige une migration Liquibase (contrainte SQL `observation_type_check`).
 3. Le dossier passe à `EN_ETUDE_OPPORTUNITE` (transition validée par `validateTransition`, version incrémentée).
-4. Une notification interne `COMPLEMENT_RECEIVED` (nouveau type) est envoyée à l'agent en charge par `NotificationDispatcher`.
+4. Une notification interne de type existant `INTERNAL_ALERT` (sujet « Complément reçu ») est créée pour le dossier, comme les autres alertes internes. Aucun nouveau type de notification : la contrainte SQL `notification_type_check` est déjà figée et chaque valeur ajoutée demande une migration.
 5. Une action d'audit `RECEVOIR_COMPLEMENT` est journalisée (avec la mention « en retard » le cas échéant).
 
 Réponse 200 :
@@ -107,7 +107,7 @@ Si l'enregistrement d'un fichier échoue, rien n'est enregistré (rollback) : le
 ### 5.3 Côté agent
 
 - Le type d'observation `COMPLEMENT_RESPONSE` est libellé « Réponse au complément » dans le détail du dossier (avec la liste des types d'observation existante) et s'affiche dans l'onglet « Observations ».
-- Le type de notification `COMPLEMENT_RECEIVED` est libellé « Complément reçu » dans `notifications.component.ts`.
+- Aucun changement pour les notifications : l'alerte interne `INTERNAL_ALERT` existe déjà dans l'écran des notifications.
 - L'action d'audit `RECEVOIR_COMPLEMENT` est ajoutée à la liste de filtre du journal d'audit.
 - Le bouton « Complément reçu » n'est pas modifié.
 
@@ -115,13 +115,13 @@ Si l'enregistrement d'un fichier échoue, rien n'est enregistré (rollback) : le
 
 - Le code de suivi (8 caractères) est la seule preuve. Aucune donnée d'identité n'est renvoyée : un dossier anonyme fonctionne.
 - Le motif est visible de toute personne détenant le code ; la fenêtre de demande côté agent prévient déjà que « ce motif sera transmis au déclarant ».
-- **Aucune limitation des essais n'existe côté back** (déjà relevé au cas P04-08). Elle est hors de ce lot mais devient plus importante avec une route publique qui écrit. À traiter juste après.
+- **Limitation des essais** : le back a déjà un `RateLimitFilter` (suivi 20 requêtes par minute, dépôt de fichiers 10 par 10 minutes, dépôt public 5 par 10 minutes). Les deux nouvelles routes y sont ajoutées : lecture 20 par minute, envoi 5 par 10 minutes. (Une version précédente de ce spec, et le cas P04-08 du cahier, affirmaient à tort qu'aucune limitation n'existait.)
 - Les fichiers reçus suivent les contrôles existants du dépôt (types autorisés, taille). Aucun fichier n'est exécuté ni servi sans authentification.
 
 ## 7. Déploiement et compatibilité
 
 - **Ordre** : back d'abord, front ensuite. Un front déployé sans son endpoint affichera l'erreur « Code introuvable » sur la page.
-- **Configuration serveur à vérifier** : la limite de taille d'envoi de nginx (`client_max_body_size`, 1 Mo par défaut) doit permettre au moins 5 × 25 Mo, et la limite multipart de Spring (`spring.servlet.multipart.max-file-size` et `max-request-size`) aussi. Sans cela, tout dépôt avec pièces jointes échoue aussi, complément ou non. À intégrer au spec du CI/CD (`deploy/nginx/denoncer.conf`).
+- **Configuration serveur à vérifier** : la limite de taille d'envoi de nginx (`client_max_body_size`, 1 Mo par défaut) doit permettre au moins 50 Mo, comme la limite multipart de Spring (`max-request-size=50MB`). Sans cela, tout dépôt avec pièces jointes échoue aussi, complément ou non. À intégrer au spec du CI/CD (`deploy/nginx/denoncer.conf`). Le front limite déjà chaque fichier à 25 Mo et le complément limitera aussi le total à 50 Mo.
 
 ## 8. Tests
 
@@ -141,5 +141,5 @@ Si l'enregistrement d'un fichier échoue, rien n'est enregistré (rollback) : le
 ## 10. Points à confirmer avant le plan
 
 1. Outillage de test du dépôt back (JUnit/MockMvc, base de test) : à lire avant d'écrire le plan back.
-2. Qui reçoit la notification `COMPLEMENT_RECEIVED` : l'agent en charge seulement, ou aussi les conseillers juridiques ? Le plan retient l'agent en charge, comme les autres notifications de dossier.
+2. Destinataires de l'alerte interne : elle est rattachée au dossier, comme les autres alertes internes (visible par les agents habilités sur ce dossier). Pas de notification nominative à l'agent en charge dans ce lot.
 3. Limites de taille de nginx et de Spring sur la VM (section 7).
