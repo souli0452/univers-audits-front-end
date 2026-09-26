@@ -49,3 +49,16 @@ test('en run complet, signale les processus manquants', () => {
   assert.match(errs.join('|'), /processus manquant: P01/);
   assert.equal(EXPECTED_PROCESSES.length, 15);
 });
+
+import { loadData } from '../lib/load.mjs';
+import { ROLES } from '../lib/schema.mjs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+test('00-meta déclare un compte pour chaque rôle interne', async () => {
+  const dataDir = resolve(dirname(fileURLToPath(import.meta.url)), '../data');
+  const { meta } = await loadData(dataDir, { only: [] });
+  const have = new Set(meta.accounts.map((a) => a.role));
+  for (const r of ROLES.filter((x) => x !== 'PUBLIC')) assert.ok(have.has(r), `compte manquant: ${r}`);
+  assert.equal(meta.startDossiers.length, 3);
+});
