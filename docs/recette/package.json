@@ -1,0 +1,16 @@
+{
+  "name": "recette-asce-lc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "validate": "node validate.mjs",
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "docx": "^9.7.2"
+  },
+  "devDependencies": {
+    "jszip": "^3.10.1"
+  }
+}

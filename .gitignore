@@ -41,3 +41,7 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Cahier de recette (outillage)
+docs/recette/node_modules/
+docs/recette/out/
