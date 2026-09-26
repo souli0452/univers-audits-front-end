@@ -7,6 +7,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
+import { NUMERO_VERT, lienTelephone } from '../../../core/constants/numero-vert';
+import { PdfService } from '../../../core/services/pdf.service';
 import { DossierResponse } from '../../../core/models/dossier.model';
 
 @Component({
@@ -375,8 +377,12 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             </span>
         </div>
 
-        <!-- Bouton nouvelle recherche -->
-        <div style="display:flex;justify-content:center;">
+        <!-- Boutons bas -->
+        <div style="display:flex;justify-content:center;gap:.75rem;flex-wrap:wrap;">
+            <button class="btn-reset" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
+                <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
+                Mon récépissé
+            </button>
             <button class="btn-reset" (click)="reset()">
                 <i class="pi pi-refresh"></i>
                 Nouvelle recherche
@@ -389,10 +395,10 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     <div style="text-align:center;margin-top:2rem;
                 color:var(--ink-40);font-size:.75rem;">
         <p style="margin:0 0 3px;">ASCE-LC — Numéro vert</p>
-        <a href="tel:80001157"
-            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;">
+        <a [href]="lienTel"
+            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;display:inline-block;padding:.6rem 1rem;">
             <i class="pi pi-phone" style="font-size:.7rem;margin-right:4px;"></i>
-            80 00 11 57
+            {{ numeroVert }}
         </a>
     </div>
 
@@ -402,7 +408,11 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 })
 export class PortailSuivi implements OnInit {
 
+    readonly numeroVert = NUMERO_VERT;
+    readonly lienTel = lienTelephone(NUMERO_VERT);
+
     private dossierService = inject(DossierService);
+    private pdfService     = inject(PdfService);
     private messageService = inject(MessageService);
     private route          = inject(ActivatedRoute);
 
@@ -410,6 +420,7 @@ export class PortailSuivi implements OnInit {
     loading    = false;
     notFound   = false;
     dossier: DossierResponse | null = null;
+    downloadingRecepisse = false;
 
     ngOnInit(): void {
         const code = this.route.snapshot.queryParamMap.get('code');
@@ -443,6 +454,24 @@ export class PortailSuivi implements OnInit {
     }
 
     reset(): void { this.dossier = null; this.accessCode = ''; this.notFound = false; }
+
+    downloadRecepisse(): void {
+        if (!this.dossier) return;
+        this.downloadingRecepisse = true;
+        this.pdfService.downloadPublicRecepisse(this.dossier.accessCode).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `recepisse-${this.dossier!.accessCode}.pdf`);
+                this.downloadingRecepisse = false;
+            },
+            error: () => {
+                this.downloadingRecepisse = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: 'Téléchargement du récépissé impossible'
+                });
+            }
+        });
+    }
 
     getStepNumber(status: string): number {
         const i = this.stepOrder.indexOf(status);

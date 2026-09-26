@@ -1,6 +1,7 @@
 export interface NotificationItem {
     id:             string;
     type:           string;
+    channel?:       string;
     subject:        string;
     content?:       string;
     createdAt:      string;
@@ -8,6 +9,11 @@ export interface NotificationItem {
     status:         string;
     dossierId?:     string;
     dossierNumber?: string;
+    formReference?: string;
+    scheduledAt?:   string;
+    sentAt?:        string;
+    overdue?:       boolean;
+    retryCount?:    number;
 }
 
 export interface NotificationPage {

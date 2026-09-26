@@ -29,6 +29,7 @@ export type SubmissionMode =
     | 'EMAIL'
     | 'SMS'
     | 'PHONE'
+    | 'FAX'
     | 'GREEN_NUMBER'
     | 'SOCIAL_MEDIA'
     | 'PRESS_MEDIA'
@@ -129,6 +130,7 @@ export interface DossierResponse {
     agentInCharge?: AgentSummaryResponse;
     notifications?: NotificationResponse[];
     investigation?: InvestigationSummaryResponse;
+    decisionCGE?: { decision?: string } | null;
     priority?:         'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
     priorityReason?:   string;
     priorityDeadline?: string;   
@@ -146,6 +148,8 @@ export interface DossierCreateRequest {
     incidentPeriod?: string;
     estimatedLoss?: number;
     isConfidential?: boolean;
+    anonymous?: boolean;
+    quality?: string;
     declarantId?: string;
     declarantData?: DeclarantCreateRequest;
 }

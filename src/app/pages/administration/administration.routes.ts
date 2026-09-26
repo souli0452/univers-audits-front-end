@@ -1,4 +1,5 @@
 ﻿import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/auth.guard';
  
 export default [
     {
@@ -37,6 +38,19 @@ export default [
       loadComponent: () =>
        import('./portal-settings/portal-settings')
          .then(m => m.PortalSettings)
+    },
+    {
+      path: 'parametres-metier',
+      loadComponent: () =>
+       import('./parametres-metier/parametres-metier')
+         .then(m => m.ParametresMetier)
+    },
+    {
+      path: 'notifications-queue',
+      canActivate: [roleGuard(['ADMIN_DDIC', 'CGEA'])],
+      loadComponent: () =>
+       import('./notifications-queue/notifications-queue')
+         .then(m => m.NotificationsQueue)
     }
-    
+
 ] as Routes;

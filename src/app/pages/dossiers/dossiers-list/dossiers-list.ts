@@ -130,7 +130,7 @@ type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
     <!-- ── Filtres ─────────────────────────────────────────── -->
     <div class="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100
                 dark:border-surface-700 overflow-hidden">
-        <div class="grid grid-cols-1 md:grid-cols-[1fr_180px_160px_160px_140px_auto]
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_160px_150px_150px_130px_130px_auto]
                     divide-y md:divide-y-0 md:divide-x
                     divide-surface-100 dark:divide-surface-700">
 
@@ -179,6 +179,14 @@ type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
                 <i class="pi pi-arrow-up text-surface-300 text-xs flex-shrink-0"></i>
                 <p-select [(ngModel)]="filterPriority" [options]="priorityOptions"
                     optionLabel="label" optionValue="value" placeholder="Priorité"
+                    [showClear]="true" styleClass="w-full" appendTo="body"
+                    (onChange)="applyFilters()" />
+            </div>
+
+            <div class="flex items-center gap-2 px-3 filter-select" style="height:48px;">
+                <i class="pi pi-user text-surface-300 text-xs flex-shrink-0"></i>
+                <p-select [(ngModel)]="selectedAnonymat" [options]="anonymatOptions"
+                    optionLabel="label" optionValue="value" placeholder="Déclarant"
                     [showClear]="true" styleClass="w-full" appendTo="body"
                     (onChange)="applyFilters()" />
             </div>
@@ -263,6 +271,17 @@ type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
                 {{ getPriorityLabel(filterPriority) }}
                 <button (click)="filterPriority=null; applyFilters()"
                     class="ml-0.5 opacity-60 hover:opacity-100">
+                    <i class="pi pi-times" style="font-size:8px;"></i>
+                </button>
+            </span>
+            <span *ngIf="selectedAnonymat"
+                class="inline-flex items-center gap-1 text-xs bg-slate-50
+                       text-slate-700 border border-slate-200
+                       px-2 py-0.5 rounded-full shadow-sm">
+                <i class="pi pi-user text-slate-400" style="font-size:9px;"></i>
+                {{ getAnonymatLabel(selectedAnonymat) }}
+                <button (click)="clearAnonymat()"
+                    class="ml-0.5 text-slate-400 hover:text-slate-700">
                     <i class="pi pi-times" style="font-size:8px;"></i>
                 </button>
             </span>
@@ -369,8 +388,9 @@ type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
                         <div *ngIf="d.declarant"
                             class="flex items-center gap-1 text-xs
                                    text-surface-400 mt-0.5">
-                            <i class="pi pi-user text-xs"></i>
-                            {{ d.declarant?.displayName }}
+                            <i [class]="d.declarant.anonymous ? 'pi pi-eye-slash' : 'pi pi-user'"
+                                class="text-xs"></i>
+                            {{ d.declarant.anonymous ? 'Anonyme' : d.declarant.displayName }}
                         </div>
                     </td>
 
@@ -471,6 +491,7 @@ export class DossiersList implements OnInit {
     selectedType:   string | null          = null;
     selectedMode:   string | null          = null;
     filterPriority: DossierPriority | null = null;
+    selectedAnonymat: 'ANONYME' | 'NOMME' | null = null;
 
     newDossierId: string | null = null;
 
@@ -512,6 +533,11 @@ export class DossiersList implements OnInit {
         { label: 'Dénonciation', value: 'DENUNCIATION'  },
         { label: 'Auto-saisine', value: 'AUTO_REFERRAL' },
         { label: 'Anonyme',      value: 'ANONYMOUS'     }
+    ];
+
+    readonly anonymatOptions = [
+        { label: 'Anonyme', value: 'ANONYME' },
+        { label: 'Nommé',   value: 'NOMME'   }
     ];
 
     readonly modeOptions = [
@@ -599,26 +625,37 @@ export class DossiersList implements OnInit {
             if (this.selectedMode   && d.submissionMode !== this.selectedMode) return false;
             if (this.filterPriority && (d.priority || 'NORMAL') !== this.filterPriority)
                 return false;
+            if (this.selectedAnonymat === 'ANONYME' && d.declarant?.anonymous !== true)
+                return false;
+            if (this.selectedAnonymat === 'NOMME'
+                && (!d.declarant || d.declarant.anonymous === true))
+                return false;
             return true;
         });
     }
 
     isFiltering(): boolean {
-        return !!(this.searchText || this.selectedStatus
-               || this.selectedType || this.selectedMode || this.filterPriority);
+        return !!(this.searchText || this.selectedStatus || this.selectedType
+               || this.selectedMode || this.filterPriority || this.selectedAnonymat);
     }
 
     isToday(dateStr?: string): boolean { return isTodayUtil(dateStr); }
 
-    clearSearch(): void { this.searchText     = '';   this.applyFilters(); }
-    clearStatus(): void { this.selectedStatus = null; this.applyFilters(); }
-    clearType():   void { this.selectedType   = null; this.applyFilters(); }
-    clearMode():   void { this.selectedMode   = null; this.applyFilters(); }
+    clearSearch():    void { this.searchText       = '';   this.applyFilters(); }
+    clearStatus():    void { this.selectedStatus   = null; this.applyFilters(); }
+    clearType():      void { this.selectedType     = null; this.applyFilters(); }
+    clearMode():      void { this.selectedMode     = null; this.applyFilters(); }
+    clearAnonymat():  void { this.selectedAnonymat = null; this.applyFilters(); }
 
     resetFilters(): void {
         this.searchText = ''; this.selectedStatus = null;
         this.selectedType = null; this.selectedMode = null;
-        this.filterPriority = null; this.applyFilters();
+        this.filterPriority = null; this.selectedAnonymat = null;
+        this.applyFilters();
+    }
+
+    getAnonymatLabel(v: string): string {
+        return { ANONYME: 'Anonyme', NOMME: 'Nommé' }[v] || v;
     }
 
 

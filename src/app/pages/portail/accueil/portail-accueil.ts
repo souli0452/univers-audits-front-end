@@ -7,6 +7,8 @@ import { trigger, style, animate, transition } from '@angular/animations';
 import { Subject, takeUntil } from 'rxjs';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
 import { PortalConfigService } from '../../../core/services/portal-config.service';
+import { preventIfEmptyLink } from '../../../core/utils/empty-link';
+import { NUMERO_VERT } from '../../../core/constants/numero-vert';
 
 @Component({
     selector: 'app-portail-accueil',
@@ -40,43 +42,13 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .navbar-brand{display:flex;align-items:center;gap:.75rem}
         .navbar-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:9px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .navbar-logo img{height:52px;width:auto;object-fit:contain;display:block}
-        .nav-actions{display:flex;align-items:center;gap:.75rem}
-        .btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.55);color:#fff;padding:9px 18px;border-radius:6px;font-weight:700;font-size:.825rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
-        .btn-ghost:hover{background:rgba(255,255,255,.12);border-color:#fff}
-        .btn-primary{background:var(--red);color:#fff;padding:10px 20px;border-radius:6px;border:none;font-weight:700;font-size:.825rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
-        .btn-primary:hover{background:#c00511;transform:translateY(-1px)}
+        .nav-hotline{display:flex;align-items:center;gap:.7rem;color:#fff}
+        .nav-hotline i{font-size:1.3rem;color:var(--yellow)}
+        .nav-hotline small{display:block;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.82)}
+        .nav-hotline strong{display:block;font-family:var(--mono);font-size:1.2rem;font-weight:700;line-height:1.2}
 
         /* ── Hero ───────────────────────────────────────────── */
         .hero{position:relative;background:var(--green);overflow:hidden;border-bottom:3px solid var(--yellow)}
-        .hero-rings{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-        .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
-        .ring1{width:640px;height:640px;top:-260px;right:-140px}
-
-        /* Signature : radar de vigilance — l'ASCE-LC en veille permanente,
-           un sweep lent + un point qui pulse, plutôt qu'une simple icône posée. */
-        .radar{position:absolute;bottom:-6px;left:-30px;width:260px;height:260px;border-radius:50%}
-        .radar-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.13)}
-        .radar-ring.r2{inset:34px;border-color:rgba(255,255,255,.11)}
-        .radar-ring.r3{inset:68px;border-color:rgba(255,255,255,.09)}
-        .radar-sweep{
-            position:absolute;inset:0;border-radius:50%;
-            background:conic-gradient(from 0deg, rgba(255,216,0,.24), transparent 32%);
-            animation:radar-spin 9s linear infinite;
-        }
-        .radar-dot{
-            position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
-            border-radius:50%;background:var(--yellow);
-            animation:radar-pulse 2.6s ease-out infinite;
-        }
-        @keyframes radar-spin{to{transform:rotate(360deg)}}
-        @keyframes radar-pulse{
-            0%{box-shadow:0 0 0 0 rgba(255,216,0,.45)}
-            70%{box-shadow:0 0 0 20px rgba(255,216,0,0)}
-            100%{box-shadow:0 0 0 0 rgba(255,216,0,0)}
-        }
-        @media (prefers-reduced-motion:reduce){
-            .radar-sweep,.radar-dot{animation:none}
-        }
         .hero-grid{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:3rem 2rem 4.5rem;display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
 
         .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
@@ -85,10 +57,11 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .hero-legal{font-size:.72rem;font-weight:700;letter-spacing:.5px;color:var(--yellow);text-transform:uppercase;margin-bottom:2rem}
 
         .hero-actions{display:flex;justify-content:flex-start;gap:1rem;flex-wrap:wrap}
+        .hero-trust{list-style:none;display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:1.5rem}
+        .hero-trust li{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700;color:rgba(255,255,255,.92)}
+        .hero-trust i{font-size:.75rem;color:var(--yellow)}
         .btn-hero-primary{background:var(--red);color:#fff;border:none;padding:0 1.85rem;height:52px;border-radius:8px;font-weight:800;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 6px 18px rgba(227,6,19,.35)}
         .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(227,6,19,.45)}
-        .btn-hero-secondary{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55);padding:0 1.85rem;height:52px;border-radius:8px;font-weight:700;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s}
-        .btn-hero-secondary:hover{background:rgba(255,255,255,.12);border-color:#fff}
 
         /* ── Carte de suivi (hero, colonne droite) ──────────── */
         .track-card{background:#fff;border-radius:14px;padding:2rem;box-shadow:0 24px 55px rgba(0,0,0,.22)}
@@ -176,16 +149,18 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .quick-item{display:flex;flex-direction:column;align-items:center;gap:1rem;cursor:pointer;background:none;border:none;font-family:inherit}
         .quick-circle{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;box-shadow:0 10px 26px rgba(0,0,0,.14)}
         .quick-item:hover .quick-circle{transform:translateY(-4px)}
-        .quick-circle.is-red{background:var(--red)} .quick-circle.is-green{background:var(--green)}
+        .quick-circle.is-red{background:var(--red)}
         .quick-circle i{font-size:2.1rem;color:#fff}
         .quick-item span{font-weight:800;font-size:.85rem;color:var(--ink);letter-spacing:.3px;text-transform:uppercase}
 
         /* ── Pied de page ───────────────────────────────────── */
-        .footer{background:var(--red);color:#fff;padding:4.5rem 2rem 1.5rem}
+        .footer{position:relative;background:var(--red);color:#fff;padding:4.5rem 2rem 1.5rem}
         .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:3rem;margin-bottom:2.5rem;align-items:start}
         .footer-brand{display:flex;flex-direction:column;align-items:flex-start;gap:1.1rem}
         .footer-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .footer-logo img{height:48px;width:auto;object-fit:contain;display:block}
+        .footer-arms{position:absolute;top:2.6rem;right:2rem;background:rgba(255,255,255,.94);border-radius:12px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+        .footer-arms img{height:76px;width:auto;display:block}
         .footer-brand p{color:rgba(255,255,255,.82);font-size:.8rem;line-height:1.7}
         .footer-col h4{font-size:.78rem;font-weight:800;color:var(--yellow);letter-spacing:1.5px;margin-bottom:1.15rem}
         .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.7rem}
@@ -223,10 +198,18 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
         .dialog-note{margin-top:1.5rem;padding:.85rem 1.1rem;background:var(--mist);border-radius:10px;border-left:3px solid var(--green);font-size:.78rem;color:var(--ink-60);text-align:left;line-height:1.5}
 
         @media (max-width:860px){
-            .steps-row,.tc-grid{grid-template-columns:1fr}
+            .steps-row,.tc-grid,.garanties-grid{grid-template-columns:1fr}
             .steps-row::before{display:none}
             .footer-inner{grid-template-columns:1fr 1fr;gap:2rem}
+            .footer-arms{right:1rem;top:2.4rem;padding:6px 8px}
+            .footer-arms img{height:56px}
             .hero-grid{grid-template-columns:1fr}
+            /* Téléphone : boîte de dépôt plus étroite, choix empilés (sinon les cartes débordent des marges) */
+            .dialog{padding:1.75rem 1.25rem}
+            .dialog-choices{flex-direction:column}
+            .d-choice{max-width:none;min-width:0}
+            /* Zones de toucher confortables pour les liens du pied de page */
+            .footer-col a,.footer-phone{min-height:36px;padding:.4rem 0}
             .hero-title{font-size:2.1rem}
             .hero-left,.hero-title,.hero-subtitle,.hero-actions{text-align:left}
             .tc-grid{gap:2.5rem}
@@ -237,26 +220,15 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
     template: `
 <div>
     <section class="hero">
-        <div class="hero-rings">
-            <div class="ring ring1"></div>
-            <div class="radar" aria-hidden="true">
-                <div class="radar-ring r1"></div>
-                <div class="radar-ring r2"></div>
-                <div class="radar-ring r3"></div>
-                <div class="radar-sweep"></div>
-                <div class="radar-dot"></div>
-            </div>
-        </div>
-
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
                 <div class="navbar-logo">
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
             </div>
-            <div class="nav-actions">
-                <button class="btn-ghost" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre mon dossier</button>
-                <button class="btn-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
+            <div class="nav-hotline">
+                <i class="pi pi-phone"></i>
+                <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || numeroVert }}</strong></div>
             </div>
         </div>
 
@@ -270,15 +242,17 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°010-2004/AN</p>
                 <div class="hero-actions" @fadeIn>
                     <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
-                    <button class="btn-hero-secondary" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre ma dénonciation</button>
                 </div>
+                <ul class="hero-trust">
+                    <li *ngFor="let t of trustItems"><i class="pi pi-check"></i>{{ t.title }}</li>
+                </ul>
             </div>
             <div class="track-card" @fadeIn>
                 <h3>Suivre mon dossier</h3>
                 <p>Entrez votre code de suivi pour connaître l'état d'avancement de votre dossier.</p>
                 <div class="track-input-row">
                     <input class="track-input" type="text" placeholder="Ex. A1B2C3D4"
-                        [(ngModel)]="trackingCode" (keyup.enter)="goToTracking()" maxlength="10" />
+                        [(ngModel)]="trackingCode" (keyup.enter)="goToTracking()" maxlength="8" />
                     <button class="track-btn" (click)="goToTracking()" aria-label="Suivre">
                         <i class="pi pi-arrow-right"></i>
                     </button>
@@ -367,14 +341,11 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <div class="quick-circle is-red"><i class="pi pi-megaphone"></i></div>
                 <span>Faire un signalement</span>
             </button>
-            <button class="quick-item" routerLink="/portail/suivi">
-                <div class="quick-circle is-green"><i class="pi pi-search"></i></div>
-                <span>Suivre mon dossier</span>
-            </button>
         </div>
     </section>
 
     <footer class="footer torn-top">
+        <div class="footer-arms"><img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" /></div>
         <div class="footer-inner">
             <div class="footer-brand">
                 <div class="footer-logo"><img src="/assets/logo-asce.png" alt="ASCE-LC" /></div>
@@ -385,34 +356,34 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <ul>
                     <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Nos missions</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>FAQ</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>FAQ</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>CONTACT</h4>
                 <ul>
-                    <li><div class="footer-phone">{{ c['hotline_number'] || '80 00 11 11' }}</div></li>
+                    <li><div class="footer-phone">{{ c['hotline_number'] || numeroVert }}</div></li>
                     <li><a [href]="'mailto:'+(c['email_contact']||'contact@asce-lc.bf')"><i class="pi pi-envelope"></i>{{ c['email_contact'] || 'contact@asce-lc.bf' }}</a></li>
                     <li><a [href]="c['website_url'] || 'https://www.asce-lc.bf'" target="_blank"><i class="pi pi-globe"></i>{{ c['website_url'] || 'www.asce-lc.bf' }}</a></li>
-                    <li><a href="#"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>INFORMATIONS</h4>
                 <ul>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
                 </ul>
             </div>
         </div>
         <div class="social-row">
             <a class="social-btn" [href]="c['facebook_url'] || 'https://www.facebook.com/ascelcbf'" target="_blank"><i class="pi pi-facebook"></i></a>
-            <a class="social-btn" [href]="c['twitter_url'] || '#'" target="_blank"><i class="pi pi-twitter"></i></a>
-            <a class="social-btn" [href]="c['linkedin_url'] || '#'" target="_blank"><i class="pi pi-linkedin"></i></a>
+            <a class="social-btn" [href]="c['twitter_url'] || '#'" (click)="noNav($event, c['twitter_url'])" target="_blank"><i class="pi pi-twitter"></i></a>
+            <a class="social-btn" [href]="c['linkedin_url'] || '#'" (click)="noNav($event, c['linkedin_url'])" target="_blank"><i class="pi pi-linkedin"></i></a>
             <a class="social-btn" [href]="c['youtube_url'] || 'https://www.youtube.com/@ascelcbf'" target="_blank"><i class="pi pi-youtube"></i></a>
         </div>
         <hr class="footer-hr" />
@@ -456,6 +427,12 @@ export class PortailAccueil implements OnInit, OnDestroy {
 
     c: Record<string, string> = {};
     private destroy$ = new Subject<void>();
+
+    /** Un lien sans adresse configurée ne doit mener à aucune autre page. */
+    readonly noNav = preventIfEmptyLink;
+
+    /** Numéro vert affiché tant que l'administration n'en a pas défini un autre (paramètre hotline_number). */
+    readonly numeroVert = NUMERO_VERT;
 
     showDialog   = false;
     scrolled     = false;
@@ -523,7 +500,7 @@ export class PortailAccueil implements OnInit, OnDestroy {
             { icon:'pi pi-microphone', name:'Témoignage Vocal',
               desc:'Enregistrez votre voix dans votre langue maternelle' },
             { icon:'pi pi-phone',      name:'Numéro Vert',
-              desc:'Appelez gratuitement le ' + (this.c['hotline_number'] || '80 00 11 11') },
+              desc:'Appelez gratuitement le ' + (this.c['hotline_number'] || this.numeroVert) },
             { icon:'pi pi-building',   name:'Guichet BRPD',
               desc:'Venez en personne au Bureau de Réception des Plaintes' },
             { icon:'pi pi-envelope',   name:'Email',

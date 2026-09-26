@@ -79,6 +79,25 @@ export class AppMenu {
         { separator: true },
 
         {
+            label: 'Bureau des plaintes',
+            items: [
+                {
+                    label: 'Séances CTADP',
+                    icon: 'pi pi-fw pi-users',
+                    routerLink: ['/app/seances-ctadp']
+                },
+                {
+                    label: 'Informations préoccupantes',
+                    icon: 'pi pi-fw pi-eye',
+                    visible: this.keycloakService.hasAnyRole(['AGENT_BRPD', 'ADMIN_DDIC']),
+                    routerLink: ['/app/informations-preoccupantes']
+                }
+            ]
+        },
+
+        { separator: true },
+
+        {
             label: 'Investigations',
             items: [
                 {
@@ -90,7 +109,12 @@ export class AppMenu {
             label: 'Rapport investigations',
             icon:  'pi pi-fw pi-chart-bar',
             routerLink: ['/app/rapports/investigations']
-        }
+        },
+                {
+                    label: 'Leçons à partager',
+                    icon: 'pi pi-fw pi-lightbulb',
+                    routerLink: ['/app/lecons-a-partager']
+                }
             ]
         },
 
@@ -102,6 +126,11 @@ export class AppMenu {
                 'ADMIN_DDIC', 'CGE', 'CGEA'
             ]),
             items: [
+                {
+                    label: 'Dépassements par acteur',
+                    icon: 'pi pi-fw pi-exclamation-triangle',
+                    routerLink: ['/app/statistiques/depassements-par-acteur']
+                },
                 {
                     label: 'Agents',
                     icon: 'pi pi-fw pi-users',
@@ -118,9 +147,26 @@ export class AppMenu {
                     routerLink: ['/app/administration/audit']
                 },
                 {
+                    label: 'Registre des auditions',
+                    icon: 'pi pi-fw pi-id-card',
+                    visible: this.keycloakService.hasAnyRole(['CGEA', 'ADMIN_DDIC']),
+                    routerLink: ['/app/registre-auditions']
+                },
+                {
                     label: 'Paramètres du portail',
                     icon: 'pi pi-fw pi-sliders-h',
                     routerLink: ['/app/administration/parametres-portail']
+                },
+                {
+                    label: 'Paramètres métier',
+                    icon: 'pi pi-fw pi-cog',
+                    routerLink: ['/app/administration/parametres-metier']
+                },
+                {
+                    label: 'File des notifications',
+                    icon: 'pi pi-fw pi-bell',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGEA']),
+                    routerLink: ['/app/administration/notifications-queue']
                 }
                             ]
         },
