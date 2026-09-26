@@ -158,4 +158,13 @@ describe('PortailAccueil', () => {
             expect(qa('.hero-actions button').length).toBe(1);
         });
     });
+
+    describe('petit écran', () => {
+        it('les cartes « Vos garanties » passent sur une seule colonne (sinon la page déborde à droite)', () => {
+            const petitEcran = window.matchMedia('(max-width: 860px)').matches;   // la fenêtre de Karma est étroite
+            const colonnes = getComputedStyle(q('.garanties-grid')!).gridTemplateColumns.trim().split(/\s+/);
+
+            expect(colonnes.length).toBe(petitEcran ? 1 : 3);
+        });
+    });
 });

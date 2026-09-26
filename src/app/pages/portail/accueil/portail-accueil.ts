@@ -197,7 +197,7 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .dialog-note{margin-top:1.5rem;padding:.85rem 1.1rem;background:var(--mist);border-radius:10px;border-left:3px solid var(--green);font-size:.78rem;color:var(--ink-60);text-align:left;line-height:1.5}
 
         @media (max-width:860px){
-            .steps-row,.tc-grid{grid-template-columns:1fr}
+            .steps-row,.tc-grid,.garanties-grid{grid-template-columns:1fr}
             .steps-row::before{display:none}
             .footer-inner{grid-template-columns:1fr 1fr;gap:2rem}
             .footer-arms{right:1rem;top:2.4rem;padding:6px 8px}
