@@ -7,6 +7,7 @@ import { trigger, style, animate, transition } from '@angular/animations';
 import { Subject, takeUntil } from 'rxjs';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
 import { PortalConfigService } from '../../../core/services/portal-config.service';
+import { preventIfEmptyLink } from '../../../core/utils/empty-link';
 
 @Component({
     selector: 'app-portail-accueil',
@@ -278,7 +279,7 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <p>Entrez votre code de suivi pour connaître l'état d'avancement de votre dossier.</p>
                 <div class="track-input-row">
                     <input class="track-input" type="text" placeholder="Ex. A1B2C3D4"
-                        [(ngModel)]="trackingCode" (keyup.enter)="goToTracking()" maxlength="10" />
+                        [(ngModel)]="trackingCode" (keyup.enter)="goToTracking()" maxlength="8" />
                     <button class="track-btn" (click)="goToTracking()" aria-label="Suivre">
                         <i class="pi pi-arrow-right"></i>
                     </button>
@@ -385,9 +386,9 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                 <ul>
                     <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Nos missions</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>FAQ</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>FAQ</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -396,23 +397,23 @@ import { PortalConfigService } from '../../../core/services/portal-config.servic
                     <li><div class="footer-phone">{{ c['hotline_number'] || '80 00 11 11' }}</div></li>
                     <li><a [href]="'mailto:'+(c['email_contact']||'contact@asce-lc.bf')"><i class="pi pi-envelope"></i>{{ c['email_contact'] || 'contact@asce-lc.bf' }}</a></li>
                     <li><a [href]="c['website_url'] || 'https://www.asce-lc.bf'" target="_blank"><i class="pi pi-globe"></i>{{ c['website_url'] || 'www.asce-lc.bf' }}</a></li>
-                    <li><a href="#"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>INFORMATIONS</h4>
                 <ul>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
-                    <li><a href="#"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
+                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
                 </ul>
             </div>
         </div>
         <div class="social-row">
             <a class="social-btn" [href]="c['facebook_url'] || 'https://www.facebook.com/ascelcbf'" target="_blank"><i class="pi pi-facebook"></i></a>
-            <a class="social-btn" [href]="c['twitter_url'] || '#'" target="_blank"><i class="pi pi-twitter"></i></a>
-            <a class="social-btn" [href]="c['linkedin_url'] || '#'" target="_blank"><i class="pi pi-linkedin"></i></a>
+            <a class="social-btn" [href]="c['twitter_url'] || '#'" (click)="noNav($event, c['twitter_url'])" target="_blank"><i class="pi pi-twitter"></i></a>
+            <a class="social-btn" [href]="c['linkedin_url'] || '#'" (click)="noNav($event, c['linkedin_url'])" target="_blank"><i class="pi pi-linkedin"></i></a>
             <a class="social-btn" [href]="c['youtube_url'] || 'https://www.youtube.com/@ascelcbf'" target="_blank"><i class="pi pi-youtube"></i></a>
         </div>
         <hr class="footer-hr" />
@@ -456,6 +457,9 @@ export class PortailAccueil implements OnInit, OnDestroy {
 
     c: Record<string, string> = {};
     private destroy$ = new Subject<void>();
+
+    /** Un lien sans adresse configurée ne doit mener à aucune autre page. */
+    readonly noNav = preventIfEmptyLink;
 
     showDialog   = false;
     scrolled     = false;

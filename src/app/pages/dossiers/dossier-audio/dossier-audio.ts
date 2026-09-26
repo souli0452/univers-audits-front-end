@@ -593,7 +593,7 @@ export class DossierAudio implements OnDestroy {
                 firstName:             isAnonymous ? undefined : this.fd['firstName'].value  || undefined,
                 lastName:              isAnonymous ? undefined : this.fd['lastName'].value   || undefined,
                 phoneNumber:           isAnonymous ? undefined : this.fd['phoneNumber'].value || undefined,
-                commune:               this.fd['commune'].value    || undefined,
+                commune:               isAnonymous ? undefined : this.fd['commune'].value || undefined,
                 anonymous:             isAnonymous,
                 dataProcessingConsent: !!this.fd['dataProcessingConsent'].value,
                 notificationsAccepted: true,

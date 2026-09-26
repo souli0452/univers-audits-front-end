@@ -1149,7 +1149,7 @@ export class DepotPlainte {
         organizationName:      [''],
         firstName:             [''],
         lastName:              [''],
-        email:                 [''],
+        email:                 ['', Validators.email],
         phoneNumber:           [''],
         commune:               [''],
         province:              [''],
@@ -1246,6 +1246,14 @@ export class DepotPlainte {
 
     goToStep3(): void {
         this.consentTouched = true;
+        if (!this.fd['anonymous'].value && this.fd['email'].invalid) {
+            this.fd['email'].markAsTouched();
+            this.messageService.add({
+                severity: 'warn', summary: 'E-mail invalide',
+                detail: 'Saisissez une adresse e-mail valide (ex. nom@exemple.bf) ou laissez le champ vide.'
+            });
+            return;
+        }
         if (!this.fd['dataProcessingConsent'].value) {
             this.messageService.add({
                 severity: 'warn', summary: 'Consentement requis',
@@ -1379,27 +1387,32 @@ export class DepotPlainte {
     submit(): void {
         this.submitting = true;
 
+        // Un dépôt anonyme n'envoie aucune donnée d'identité, même saisie avant le choix de l'anonymat.
+        const isAnonymous = this.fd['anonymous'].value || false;
+        const identity = (value: string | null): string | undefined =>
+            isAnonymous ? undefined : (value || undefined);
+
         const request = {
             type:             this.f['type'].value as any,
             quality:          this.f['quality'].value as any,
             submissionMode:   'WEB_FORM' as any,
-            anonymous:        this.fd['anonymous'].value || false,
+            anonymous:        isAnonymous,
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {
-                typeDeclarant:          this.fd['anonymous'].value
+                typeDeclarant:          isAnonymous
                                             ? 'ANONYMOUS' as any : this.fd['typeDeclarant'].value as any,
-                organizationName:       this.fd['organizationName'].value || undefined,
-                firstName:              this.fd['firstName'].value   || undefined,
-                lastName:               this.fd['lastName'].value    || undefined,
-                email:                  this.fd['email'].value       || undefined,
-                phoneNumber:            this.fd['phoneNumber'].value || undefined,
-                commune:                this.fd['commune'].value     || undefined,
-                province:               this.fd['province'].value    || undefined,
-                anonymous:              this.fd['anonymous'].value             || false,
+                organizationName:       identity(this.fd['organizationName'].value),
+                firstName:              identity(this.fd['firstName'].value),
+                lastName:               identity(this.fd['lastName'].value),
+                email:                  identity(this.fd['email'].value),
+                phoneNumber:            identity(this.fd['phoneNumber'].value),
+                commune:                identity(this.fd['commune'].value),
+                province:               identity(this.fd['province'].value),
+                anonymous:              isAnonymous,
                 dataProcessingConsent:  this.fd['dataProcessingConsent'].value || true,
                 notificationsAccepted:  this.fd['notificationsAccepted'].value || true,
                 protectionRequested:    this.fd['protectionRequested'].value   || false,
@@ -1424,7 +1437,14 @@ export class DepotPlainte {
                 if (allFiles.length > 0) {
                     this.attachmentService.upload(dossier.id, allFiles, true).subscribe({
                         next:  () => { this.submitting = false; this.showSuccess = true; },
-                        error: () => { this.submitting = false; this.showSuccess = true; }
+                        error: () => {
+                            this.submitting = false;
+                            this.showSuccess = true;
+                            this.messageService.add({
+                                severity: 'warn', summary: 'Dossier créé',
+                                detail:   "Les pièces jointes n'ont pas pu être envoyées. Conservez votre code de suivi et contactez l'ASCE-LC."
+                            });
+                        }
                     });
                 } else {
                     this.submitting = false;
