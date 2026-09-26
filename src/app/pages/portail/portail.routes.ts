@@ -24,5 +24,11 @@ export default [
         loadComponent: () =>
             import('./suivi/portail-suivi')
             .then(m => m.PortailSuivi)
+    },
+    {
+        path: 'complement',
+        loadComponent: () =>
+            import('./complement/portail-complement')
+            .then(m => m.PortailComplement)
     }
 ] as Routes;

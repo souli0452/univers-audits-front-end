@@ -17,10 +17,14 @@ export class AttachmentService {
      * @param anonymous à passer à true uniquement lors du dépôt public d'un
      * dossier (avant toute authentification) ; sinon le token de l'agent
      * connecté est joint à la requête, comme pour tout autre appel API.
+     * @param accessCode code de suivi du dossier : le back l'exige pour déposer une
+     * pièce tant que le dossier est SOUMIS ou EN_ATTENTE_COMPLEMENT (preuve que le
+     * déposant est bien le déclarant, y compris pour un agent au guichet).
      */
-    upload(dossierId: string, files: File[], anonymous = false): Observable<any> {
+    upload(dossierId: string, files: File[], anonymous = false, accessCode?: string): Observable<any> {
         const formData = new FormData();
         files.forEach(f => formData.append('files', f, f.name));
+        if (accessCode) formData.append('accessCode', accessCode);
         return this.http.post(`${this.baseUrl}/dossier/${dossierId}`, formData,
             anonymous ? { context: new HttpContext().set(SKIP_AUTH, true) } : {});
     }

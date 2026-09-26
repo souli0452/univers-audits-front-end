@@ -10,10 +10,11 @@ describe('DossierAudio', () => {
     let fixture: ComponentFixture<DossierAudio>;
     let component: DossierAudio;
     let dossierService: { create: jasmine.Spy };
+    let attachmentService: { upload: jasmine.Spy; uploadAudio: jasmine.Spy };
 
     beforeEach(() => {
         dossierService = { create: jasmine.createSpy('create').and.returnValue(of({ id: 'd1', accessCode: 'ABCD1234' })) };
-        const attachmentService = { upload: jasmine.createSpy('upload').and.returnValue(of({})), uploadAudio: jasmine.createSpy('uploadAudio').and.returnValue(of({})) };
+        attachmentService = { upload: jasmine.createSpy('upload').and.returnValue(of({})), uploadAudio: jasmine.createSpy('uploadAudio').and.returnValue(of({})) };
 
         TestBed.configureTestingModule({
             imports: [DossierAudio],
@@ -50,6 +51,18 @@ describe('DossierAudio', () => {
         for (const champ of ['firstName', 'lastName', 'phoneNumber', 'commune']) {
             expect(request.declarantData[champ]).withContext(champ).toBeUndefined();
         }
+    });
+
+    it('joint l’audio avec le code de suivi du dossier créé (le dossier est encore SOUMIS, le back exige le code)', () => {
+        component.f['type'].setValue('DENUNCIATION');
+
+        component.createDossier();
+
+        const [dossierId, files, anonymous, accessCode] = attachmentService.upload.calls.mostRecent().args;
+        expect(dossierId).toBe('d1');
+        expect(files.length).toBe(1);
+        expect(anonymous).toBeFalsy();
+        expect(accessCode).toBe('ABCD1234');
     });
 
     it('envoie les coordonnées saisies pour un dépôt identifié', () => {

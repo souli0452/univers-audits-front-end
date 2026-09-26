@@ -608,7 +608,7 @@ export class DossierAudio implements OnDestroy {
                     `temoignage_${Date.now()}.webm`,
                     { type: 'audio/webm' }
                 );
-                this.attachmentService.upload(dossier.id, [audioFile]).subscribe({
+                this.attachmentService.upload(dossier.id, [audioFile], false, dossier.accessCode).subscribe({
                     next: () => {
                         this.submitting     = false;
                         this.createdDossier = dossier;
