@@ -1060,7 +1060,7 @@ export class PortailVocal {
                 allFiles.push(...this.photos);
 
                 if (allFiles.length > 0) {
-                    this.attachmentService.upload(dossier.id, allFiles, true).subscribe({
+                    this.attachmentService.upload(dossier.id, allFiles, true, dossier.accessCode).subscribe({
                         next:  () => { this.submitting = false; this.showSuccess = true; },
                         error: () => {
                             this.submitting = false;

@@ -111,6 +111,18 @@ describe('DepotPlainte', () => {
             expect(request.declarantData.email).toBe('awa@example.com');
         });
 
+        it('envoie les pièces jointes avec le code de suivi du dossier créé (sans quoi le back refuse la pièce)', () => {
+            component.attachments = [new File(['contenu'], 'preuve.pdf', { type: 'application/pdf' })];
+
+            component.submit();
+
+            const [dossierId, files, anonymous, accessCode] = attachmentService.upload.calls.mostRecent().args;
+            expect(dossierId).toBe('d1');
+            expect(files.length).toBe(1);
+            expect(anonymous).toBeTrue();
+            expect(accessCode).toBe('ABCD1234');
+        });
+
         it('n’affiche aucun avertissement quand les pièces jointes sont bien envoyées', () => {
             component.attachments = [new File(['contenu'], 'preuve.pdf', { type: 'application/pdf' })];
 
