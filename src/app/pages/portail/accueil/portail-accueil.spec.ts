@@ -136,4 +136,26 @@ describe('PortailAccueil', () => {
             expect(q('footer .footer-brand .footer-logo img[alt="ASCE-LC"]')).not.toBeNull();
         });
     });
+
+    describe('garanties sous le bouton du hero', () => {
+        it('rappelle les trois garanties (les mêmes que la section « Vos garanties »), sous le bouton', () => {
+            const lignes = qa('.hero-trust li').map(li => (li.textContent ?? '').trim());
+
+            expect(lignes).toEqual(['Anonymat garanti', 'Plateforme sécurisée', 'Institution officielle']);
+            expect(lignes).toEqual(component.trustItems.map(t => t.title));
+        });
+
+        it('vient après le bouton « Faire un signalement » dans le hero', () => {
+            const bouton = q('.hero-actions')!;
+            const garanties = q('.hero-trust')!;
+
+            expect(bouton.compareDocumentPosition(garanties) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+            expect(garanties.closest('.hero')).not.toBeNull();
+        });
+
+        it('ne crée ni nouveau bouton ni nouveau lien dans le hero', () => {
+            expect(qa('.hero-trust button, .hero-trust a').length).toBe(0);
+            expect(qa('.hero-actions button').length).toBe(1);
+        });
+    });
 });

@@ -56,6 +56,9 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .hero-legal{font-size:.72rem;font-weight:700;letter-spacing:.5px;color:var(--yellow);text-transform:uppercase;margin-bottom:2rem}
 
         .hero-actions{display:flex;justify-content:flex-start;gap:1rem;flex-wrap:wrap}
+        .hero-trust{list-style:none;display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:1.5rem}
+        .hero-trust li{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700;color:rgba(255,255,255,.92)}
+        .hero-trust i{font-size:.75rem;color:var(--yellow)}
         .btn-hero-primary{background:var(--red);color:#fff;border:none;padding:0 1.85rem;height:52px;border-radius:8px;font-weight:800;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 6px 18px rgba(227,6,19,.35)}
         .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(227,6,19,.45)}
 
@@ -233,6 +236,9 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
                 <div class="hero-actions" @fadeIn>
                     <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
                 </div>
+                <ul class="hero-trust">
+                    <li *ngFor="let t of trustItems"><i class="pi pi-check"></i>{{ t.title }}</li>
+                </ul>
             </div>
             <div class="track-card" @fadeIn>
                 <h3>Suivre mon dossier</h3>
