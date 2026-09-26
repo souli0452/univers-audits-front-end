@@ -171,7 +171,7 @@ export default {
         'Aucune donnée personnelle superflue n’apparaît dans le détail des lignes'
       ],
       ui: ['Journal d\'audit'],
-      aConfirmer: 'Types d’actions journalisés pour les informations préoccupantes à confirmer dans la liste des actions du journal'
+      aConfirmer: 'La liste des actions filtrables du journal (Créer dossier, Modifier dossier, Clôturer dossier, Déclarer recevable, Soumettre CTADP, Ouvrir investigation, Soumettre rapport, Créer agent, etc.) ne contient aucune action « information préoccupante » : la traçabilité de ces actions est à confirmer, et le résultat attendu ci-dessus peut être en échec'
     }
   ]
 };
