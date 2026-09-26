@@ -349,7 +349,7 @@ export class PortalSettings implements OnInit {
 
     getPlaceholder(type: string): string {
         switch (type) {
-            case 'PHONE': return 'Ex: 80 00 11 11';
+            case 'PHONE': return 'Ex: 80 00 11 02';
             case 'URL':   return 'https://...';
             default:      return '';
         }

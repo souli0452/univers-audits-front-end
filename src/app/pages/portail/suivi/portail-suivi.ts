@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
+import { NUMERO_VERT, lienTelephone } from '../../../core/constants/numero-vert';
 import { PdfService } from '../../../core/services/pdf.service';
 import { DossierResponse } from '../../../core/models/dossier.model';
 
@@ -394,10 +395,10 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     <div style="text-align:center;margin-top:2rem;
                 color:var(--ink-40);font-size:.75rem;">
         <p style="margin:0 0 3px;">ASCE-LC — Numéro vert</p>
-        <a href="tel:80001157"
+        <a [href]="lienTel"
             style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;display:inline-block;padding:.6rem 1rem;">
             <i class="pi pi-phone" style="font-size:.7rem;margin-right:4px;"></i>
-            80 00 11 57
+            {{ numeroVert }}
         </a>
     </div>
 
@@ -406,6 +407,9 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     `
 })
 export class PortailSuivi implements OnInit {
+
+    readonly numeroVert = NUMERO_VERT;
+    readonly lienTel = lienTelephone(NUMERO_VERT);
 
     private dossierService = inject(DossierService);
     private pdfService     = inject(PdfService);

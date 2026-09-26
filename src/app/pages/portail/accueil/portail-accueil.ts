@@ -8,6 +8,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
 import { PortalConfigService } from '../../../core/services/portal-config.service';
 import { preventIfEmptyLink } from '../../../core/utils/empty-link';
+import { NUMERO_VERT } from '../../../core/constants/numero-vert';
 
 @Component({
     selector: 'app-portail-accueil',
@@ -227,7 +228,7 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
             </div>
             <div class="nav-hotline">
                 <i class="pi pi-phone"></i>
-                <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || '80 00 11 11' }}</strong></div>
+                <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || numeroVert }}</strong></div>
             </div>
         </div>
 
@@ -363,7 +364,7 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
             <div class="footer-col">
                 <h4>CONTACT</h4>
                 <ul>
-                    <li><div class="footer-phone">{{ c['hotline_number'] || '80 00 11 11' }}</div></li>
+                    <li><div class="footer-phone">{{ c['hotline_number'] || numeroVert }}</div></li>
                     <li><a [href]="'mailto:'+(c['email_contact']||'contact@asce-lc.bf')"><i class="pi pi-envelope"></i>{{ c['email_contact'] || 'contact@asce-lc.bf' }}</a></li>
                     <li><a [href]="c['website_url'] || 'https://www.asce-lc.bf'" target="_blank"><i class="pi pi-globe"></i>{{ c['website_url'] || 'www.asce-lc.bf' }}</a></li>
                     <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
@@ -429,6 +430,9 @@ export class PortailAccueil implements OnInit, OnDestroy {
 
     /** Un lien sans adresse configurée ne doit mener à aucune autre page. */
     readonly noNav = preventIfEmptyLink;
+
+    /** Numéro vert affiché tant que l'administration n'en a pas défini un autre (paramètre hotline_number). */
+    readonly numeroVert = NUMERO_VERT;
 
     showDialog   = false;
     scrolled     = false;
@@ -496,7 +500,7 @@ export class PortailAccueil implements OnInit, OnDestroy {
             { icon:'pi pi-microphone', name:'Témoignage Vocal',
               desc:'Enregistrez votre voix dans votre langue maternelle' },
             { icon:'pi pi-phone',      name:'Numéro Vert',
-              desc:'Appelez gratuitement le ' + (this.c['hotline_number'] || '80 00 11 11') },
+              desc:'Appelez gratuitement le ' + (this.c['hotline_number'] || this.numeroVert) },
             { icon:'pi pi-building',   name:'Guichet BRPD',
               desc:'Venez en personne au Bureau de Réception des Plaintes' },
             { icon:'pi pi-envelope',   name:'Email',

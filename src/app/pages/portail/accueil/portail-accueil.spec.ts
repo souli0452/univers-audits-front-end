@@ -85,7 +85,7 @@ describe('PortailAccueil', () => {
             expect(q('.hero-topbar img[alt="ASCE-LC"]')).not.toBeNull();
             expect(qa('.hero-topbar button').length).toBe(0);
             expect(texte('.hero-topbar')).toContain('Numéro vert');
-            expect(texte('.hero-topbar')).toContain('80 00 11 11');
+            expect(texte('.hero-topbar')).toContain('80 00 11 02');
         });
 
         it('le numéro vert du haut de page suit le paramètre hotline_number de l’administration', () => {
@@ -93,7 +93,13 @@ describe('PortailAccueil', () => {
             creer({ hotline_number: '80 00 22 22' });
 
             expect(texte('.hero-topbar')).toContain('80 00 22 22');
-            expect(texte('.hero-topbar')).not.toContain('80 00 11 11');
+            expect(texte('.hero-topbar')).not.toContain('80 00 11 02');
+        });
+
+        it('sans paramètre, le numéro vert est 80 00 11 02 partout : haut de page, pied de page, canaux de contact', () => {
+            expect(texte('.footer-phone')).toBe('80 00 11 02');
+            expect(qa('.channels-list .channel, .channel-row').map(c => c.textContent ?? '').join(' ')).toContain('Appelez gratuitement le 80 00 11 02');
+            expect(el.textContent).not.toMatch(/80 00 11 (11|57)/);
         });
 
         it('« Accès rapide » ne propose plus qu’un bouton : « Faire un signalement »', () => {
