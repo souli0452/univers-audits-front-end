@@ -53,3 +53,8 @@ test('contient le registre des anomalies et le PV', async () => {
   assert.ok(xml.includes('PV de recette'));
   assert.ok(xml.includes('Validé avec réserves'));
 });
+
+test('le mode d’emploi explique les adresses à routage par hash', async () => {
+  const xml = await xmlOf([proc([kase()])]);
+  assert.ok(xml.includes('/#/portail/deposer'));
+});

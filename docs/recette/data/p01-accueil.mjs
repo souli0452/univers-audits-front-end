@@ -144,12 +144,12 @@ export default {
       role: 'PUBLIC',
       preconditions: ['Navigateur ouvert'],
       steps: [
-        'Ouvrir https://denoncer.asce-lc.bf/page-qui-nexiste-pas',
+        'Ouvrir https://denoncer.asce-lc.bf/#/page-qui-nexiste-pas (avec le « # »)',
         'Lire la page affichée et l’adresse dans la barre du navigateur'
       ],
-      data: ['Adresse : /page-qui-nexiste-pas'],
+      data: ['Adresse : /#/page-qui-nexiste-pas'],
       expected: [
-        'L’adresse devient /notfound',
+        'L’adresse devient /#/notfound',
         'Une page d’erreur 404 s’affiche avec un lien de retour, sans écran blanc'
       ]
     },

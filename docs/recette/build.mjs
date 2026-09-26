@@ -84,6 +84,7 @@ function modeEmploi() {
   return [
     h1('Mode d’emploi'),
     body('Pour chaque cas, suivre les étapes dans l’ordre avec le rôle indiqué, comparer au résultat attendu, puis cocher un statut.'),
+    body('Adresses : l’application utilise un routage par « # ». Une adresse citée dans un cas comme /portail/deposer se saisit https://denoncer.asce-lc.bf/#/portail/deposer (idem /#/app, /#/app/dossiers, etc.).'),
     h2('Statuts d’un cas'),
     ...['OK : le résultat observé correspond au résultat attendu.',
       'KO : le résultat observé diffère. Consigner l’anomalie dans le registre.',
