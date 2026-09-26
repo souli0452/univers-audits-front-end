@@ -41,7 +41,14 @@
                     "configurations": {
                         "production": {
                             "outputHashing": "all",
-                            "optimization": true,
+                            "optimization": {
+                                "scripts": true,
+                                "styles": {
+                                    "minify": true,
+                                    "inlineCritical": false
+                                },
+                                "fonts": false
+                            },
                             "fileReplacements": [
                                 {
                                     "replace": "src/environments/environment.ts",
