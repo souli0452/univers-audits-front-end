@@ -1,4 +1,5 @@
 ﻿import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/auth.guard';
  
 export default [
     {
@@ -46,6 +47,7 @@ export default [
     },
     {
       path: 'notifications-queue',
+      canActivate: [roleGuard(['ADMIN_DDIC', 'CGEA'])],
       loadComponent: () =>
        import('./notifications-queue/notifications-queue')
          .then(m => m.NotificationsQueue)
