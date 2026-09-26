@@ -70,4 +70,18 @@ describe('PortailAccueil', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/portail/vocal']);
         });
     });
+
+    describe('armoiries du Burkina Faso', () => {
+        const ARMOIRIES = 'img[src="/assets/armoiries.png"][alt="Armoiries du Burkina Faso"]';
+
+        it('figurent à côté du logo ASCE-LC en haut de page', () => {
+            expect(q('.hero-topbar ' + ARMOIRIES)).not.toBeNull();
+            expect(q('.hero-topbar img[alt="ASCE-LC"]')).not.toBeNull();
+        });
+
+        it('figurent aussi dans le pied de page, à côté du logo', () => {
+            expect(q('footer ' + ARMOIRIES)).not.toBeNull();
+            expect(q('footer img[alt="ASCE-LC"]')).not.toBeNull();
+        });
+    });
 });

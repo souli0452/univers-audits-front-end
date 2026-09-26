@@ -158,6 +158,7 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .footer-brand{display:flex;flex-direction:column;align-items:flex-start;gap:1.1rem}
         .footer-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .footer-logo img{height:48px;width:auto;object-fit:contain;display:block}
+        .footer-emblems{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
         .footer-brand p{color:rgba(255,255,255,.82);font-size:.8rem;line-height:1.7}
         .footer-col h4{font-size:.78rem;font-weight:800;color:var(--yellow);letter-spacing:1.5px;margin-bottom:1.15rem}
         .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.7rem}
@@ -211,6 +212,9 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
     <section class="hero">
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
+                <div class="navbar-logo">
+                    <img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" />
+                </div>
                 <div class="navbar-logo">
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
@@ -338,7 +342,10 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
     <footer class="footer torn-top">
         <div class="footer-inner">
             <div class="footer-brand">
-                <div class="footer-logo"><img src="/assets/logo-asce.png" alt="ASCE-LC" /></div>
+                <div class="footer-emblems">
+                    <div class="footer-logo"><img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" /></div>
+                    <div class="footer-logo"><img src="/assets/logo-asce.png" alt="ASCE-LC" /></div>
+                </div>
                 <p>{{ footerAbout }}</p>
             </div>
             <div class="footer-col">
