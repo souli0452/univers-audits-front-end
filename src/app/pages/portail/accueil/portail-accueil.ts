@@ -49,35 +49,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
 
         /* ── Hero ───────────────────────────────────────────── */
         .hero{position:relative;background:var(--green);overflow:hidden;border-bottom:3px solid var(--yellow)}
-        .hero-rings{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-        .ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
-        .ring1{width:640px;height:640px;top:-260px;right:-140px}
-
-        /* Signature : radar de vigilance — l'ASCE-LC en veille permanente,
-           un sweep lent + un point qui pulse, plutôt qu'une simple icône posée. */
-        .radar{position:absolute;bottom:-6px;left:-30px;width:260px;height:260px;border-radius:50%}
-        .radar-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.13)}
-        .radar-ring.r2{inset:34px;border-color:rgba(255,255,255,.11)}
-        .radar-ring.r3{inset:68px;border-color:rgba(255,255,255,.09)}
-        .radar-sweep{
-            position:absolute;inset:0;border-radius:50%;
-            background:conic-gradient(from 0deg, rgba(255,216,0,.24), transparent 32%);
-            animation:radar-spin 9s linear infinite;
-        }
-        .radar-dot{
-            position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
-            border-radius:50%;background:var(--yellow);
-            animation:radar-pulse 2.6s ease-out infinite;
-        }
-        @keyframes radar-spin{to{transform:rotate(360deg)}}
-        @keyframes radar-pulse{
-            0%{box-shadow:0 0 0 0 rgba(255,216,0,.45)}
-            70%{box-shadow:0 0 0 20px rgba(255,216,0,0)}
-            100%{box-shadow:0 0 0 0 rgba(255,216,0,0)}
-        }
-        @media (prefers-reduced-motion:reduce){
-            .radar-sweep,.radar-dot{animation:none}
-        }
         .hero-grid{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:3rem 2rem 4.5rem;display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
 
         .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
@@ -238,17 +209,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
     template: `
 <div>
     <section class="hero">
-        <div class="hero-rings">
-            <div class="ring ring1"></div>
-            <div class="radar" aria-hidden="true">
-                <div class="radar-ring r1"></div>
-                <div class="radar-ring r2"></div>
-                <div class="radar-ring r3"></div>
-                <div class="radar-sweep"></div>
-                <div class="radar-dot"></div>
-            </div>
-        </div>
-
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
                 <div class="navbar-logo">
