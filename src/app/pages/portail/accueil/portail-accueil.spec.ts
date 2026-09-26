@@ -74,14 +74,25 @@ describe('PortailAccueil', () => {
     describe('armoiries du Burkina Faso', () => {
         const ARMOIRIES = 'img[src="/assets/armoiries.png"][alt="Armoiries du Burkina Faso"]';
 
-        it('figurent à côté du logo ASCE-LC en haut de page', () => {
-            expect(q('.hero-topbar ' + ARMOIRIES)).not.toBeNull();
+        it('n’apparaissent pas en haut de page : seul le logo ASCE-LC y figure', () => {
+            expect(q('.hero-topbar ' + ARMOIRIES)).toBeNull();
             expect(q('.hero-topbar img[alt="ASCE-LC"]')).not.toBeNull();
         });
 
-        it('figurent aussi dans le pied de page, à côté du logo', () => {
-            expect(q('footer ' + ARMOIRIES)).not.toBeNull();
-            expect(q('footer img[alt="ASCE-LC"]')).not.toBeNull();
+        it('figurent dans le pied de page, dans le coin de droite', () => {
+            const coin = q('footer .footer-arms') as HTMLElement;
+
+            expect(coin.querySelector(ARMOIRIES)).not.toBeNull();
+            expect(getComputedStyle(coin).position).toBe('absolute');
+            const pied = q('footer')!.getBoundingClientRect();
+            const boite = coin.getBoundingClientRect();
+            expect(boite.left).toBeGreaterThan(pied.left + pied.width / 2);   // moitié droite
+            expect(pied.right - boite.right).toBeLessThan(64);                // près du bord droit
+            expect(boite.top - pied.top).toBeLessThan(120);                   // en haut : le coin, pas le milieu
+        });
+
+        it('le logo ASCE-LC reste dans le pied de page, à sa place', () => {
+            expect(q('footer .footer-brand .footer-logo img[alt="ASCE-LC"]')).not.toBeNull();
         });
     });
 });

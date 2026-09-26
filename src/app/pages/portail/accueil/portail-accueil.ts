@@ -153,12 +153,13 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .quick-item span{font-weight:800;font-size:.85rem;color:var(--ink);letter-spacing:.3px;text-transform:uppercase}
 
         /* ── Pied de page ───────────────────────────────────── */
-        .footer{background:var(--red);color:#fff;padding:4.5rem 2rem 1.5rem}
+        .footer{position:relative;background:var(--red);color:#fff;padding:4.5rem 2rem 1.5rem}
         .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:3rem;margin-bottom:2.5rem;align-items:start}
         .footer-brand{display:flex;flex-direction:column;align-items:flex-start;gap:1.1rem}
         .footer-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .footer-logo img{height:48px;width:auto;object-fit:contain;display:block}
-        .footer-emblems{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+        .footer-arms{position:absolute;top:2.6rem;right:2rem;background:rgba(255,255,255,.94);border-radius:12px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+        .footer-arms img{height:76px;width:auto;display:block}
         .footer-brand p{color:rgba(255,255,255,.82);font-size:.8rem;line-height:1.7}
         .footer-col h4{font-size:.78rem;font-weight:800;color:var(--yellow);letter-spacing:1.5px;margin-bottom:1.15rem}
         .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.7rem}
@@ -199,6 +200,8 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
             .steps-row,.tc-grid{grid-template-columns:1fr}
             .steps-row::before{display:none}
             .footer-inner{grid-template-columns:1fr 1fr;gap:2rem}
+            .footer-arms{right:1rem;top:2.4rem;padding:6px 8px}
+            .footer-arms img{height:56px}
             .hero-grid{grid-template-columns:1fr}
             .hero-title{font-size:2.1rem}
             .hero-left,.hero-title,.hero-subtitle,.hero-actions{text-align:left}
@@ -212,9 +215,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
     <section class="hero">
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
-                <div class="navbar-logo">
-                    <img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" />
-                </div>
                 <div class="navbar-logo">
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
@@ -340,12 +340,10 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
     </section>
 
     <footer class="footer torn-top">
+        <div class="footer-arms"><img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" /></div>
         <div class="footer-inner">
             <div class="footer-brand">
-                <div class="footer-emblems">
-                    <div class="footer-logo"><img src="/assets/armoiries.png" alt="Armoiries du Burkina Faso" /></div>
-                    <div class="footer-logo"><img src="/assets/logo-asce.png" alt="ASCE-LC" /></div>
-                </div>
+                <div class="footer-logo"><img src="/assets/logo-asce.png" alt="ASCE-LC" /></div>
                 <p>{{ footerAbout }}</p>
             </div>
             <div class="footer-col">
