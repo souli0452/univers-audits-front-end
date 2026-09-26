@@ -41,11 +41,10 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .navbar-brand{display:flex;align-items:center;gap:.75rem}
         .navbar-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:9px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .navbar-logo img{height:52px;width:auto;object-fit:contain;display:block}
-        .nav-actions{display:flex;align-items:center;gap:.75rem}
-        .btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.55);color:#fff;padding:9px 18px;border-radius:6px;font-weight:700;font-size:.825rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
-        .btn-ghost:hover{background:rgba(255,255,255,.12);border-color:#fff}
-        .btn-primary{background:var(--red);color:#fff;padding:10px 20px;border-radius:6px;border:none;font-weight:700;font-size:.825rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s}
-        .btn-primary:hover{background:#c00511;transform:translateY(-1px)}
+        .nav-hotline{display:flex;align-items:center;gap:.7rem;color:#fff}
+        .nav-hotline i{font-size:1.3rem;color:var(--yellow)}
+        .nav-hotline small{display:block;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.82)}
+        .nav-hotline strong{display:block;font-family:var(--mono);font-size:1.2rem;font-weight:700;line-height:1.2}
 
         /* ── Hero ───────────────────────────────────────────── */
         .hero{position:relative;background:var(--green);overflow:hidden;border-bottom:3px solid var(--yellow)}
@@ -59,8 +58,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .hero-actions{display:flex;justify-content:flex-start;gap:1rem;flex-wrap:wrap}
         .btn-hero-primary{background:var(--red);color:#fff;border:none;padding:0 1.85rem;height:52px;border-radius:8px;font-weight:800;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 6px 18px rgba(227,6,19,.35)}
         .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(227,6,19,.45)}
-        .btn-hero-secondary{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55);padding:0 1.85rem;height:52px;border-radius:8px;font-weight:700;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s}
-        .btn-hero-secondary:hover{background:rgba(255,255,255,.12);border-color:#fff}
 
         /* ── Carte de suivi (hero, colonne droite) ──────────── */
         .track-card{background:#fff;border-radius:14px;padding:2rem;box-shadow:0 24px 55px rgba(0,0,0,.22)}
@@ -148,7 +145,7 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
         .quick-item{display:flex;flex-direction:column;align-items:center;gap:1rem;cursor:pointer;background:none;border:none;font-family:inherit}
         .quick-circle{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;box-shadow:0 10px 26px rgba(0,0,0,.14)}
         .quick-item:hover .quick-circle{transform:translateY(-4px)}
-        .quick-circle.is-red{background:var(--red)} .quick-circle.is-green{background:var(--green)}
+        .quick-circle.is-red{background:var(--red)}
         .quick-circle i{font-size:2.1rem;color:#fff}
         .quick-item span{font-weight:800;font-size:.85rem;color:var(--ink);letter-spacing:.3px;text-transform:uppercase}
 
@@ -219,9 +216,9 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
             </div>
-            <div class="nav-actions">
-                <button class="btn-ghost" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre mon dossier</button>
-                <button class="btn-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
+            <div class="nav-hotline">
+                <i class="pi pi-phone"></i>
+                <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || '80 00 11 11' }}</strong></div>
             </div>
         </div>
 
@@ -235,7 +232,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
                 <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°010-2004/AN</p>
                 <div class="hero-actions" @fadeIn>
                     <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
-                    <button class="btn-hero-secondary" routerLink="/portail/suivi"><i class="pi pi-search"></i> Suivre ma dénonciation</button>
                 </div>
             </div>
             <div class="track-card" @fadeIn>
@@ -331,10 +327,6 @@ import { preventIfEmptyLink } from '../../../core/utils/empty-link';
             <button class="quick-item" (click)="showDialog=true">
                 <div class="quick-circle is-red"><i class="pi pi-megaphone"></i></div>
                 <span>Faire un signalement</span>
-            </button>
-            <button class="quick-item" routerLink="/portail/suivi">
-                <div class="quick-circle is-green"><i class="pi pi-search"></i></div>
-                <span>Suivre mon dossier</span>
             </button>
         </div>
     </section>

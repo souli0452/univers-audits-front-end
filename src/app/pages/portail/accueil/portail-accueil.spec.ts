@@ -14,14 +14,14 @@ describe('PortailAccueil', () => {
     let el: HTMLElement;
     let router: Router;
 
-    beforeEach(() => {
+    function creer(config: Record<string, string> = {}) {
         TestBed.configureTestingModule({
             imports: [PortailAccueil],
             providers: [
                 provideRouter([]),
                 provideNoopAnimations(),
                 { provide: StatistiqueService, useValue: { getPublicStats: () => of(STATS) } },
-                { provide: PortalConfigService, useValue: { config$: new BehaviorSubject({}), loadPublicConfig: () => {} } }
+                { provide: PortalConfigService, useValue: { config$: new BehaviorSubject(config), loadPublicConfig: () => {} } }
             ]
         });
         router = TestBed.inject(Router);
@@ -30,9 +30,12 @@ describe('PortailAccueil', () => {
         component = fixture.componentInstance;
         el = fixture.nativeElement as HTMLElement;
         fixture.detectChanges();
-    });
+    }
+
+    beforeEach(() => creer());
 
     const q = (sel: string) => el.querySelector(sel) as HTMLElement | null;
+    const qa = (sel: string) => Array.from(el.querySelectorAll(sel)) as HTMLElement[];
     const texte = (sel: string) => (q(sel)?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
     describe('décor du hero', () => {
@@ -44,10 +47,8 @@ describe('PortailAccueil', () => {
     });
 
     describe('reste de l’accueil inchangé', () => {
-        it('garde le titre, les deux actions et la carte de suivi dans le hero', () => {
+        it('garde le titre et la carte de suivi dans le hero', () => {
             expect(texte('.hero-title')).toContain('ACTES DE CORRUPTI');
-            expect(texte('.hero-actions')).toContain('Faire un signalement');
-            expect(texte('.hero-actions')).toContain('Suivre ma dénonciation');
             expect(q('.track-card .track-input')).not.toBeNull();
         });
 
@@ -68,6 +69,46 @@ describe('PortailAccueil', () => {
             expect(q('.overlay')).not.toBeNull();
             (q('.c-audio') as HTMLElement).click();
             expect(router.navigate).toHaveBeenCalledWith(['/portail/vocal']);
+        });
+    });
+
+    describe('une seule action par intention (plus de doublons de boutons)', () => {
+        it('le hero ne propose que « Faire un signalement » ; le suivi passe par la carte', () => {
+            const boutons = qa('.hero-actions button');
+
+            expect(boutons.length).toBe(1);
+            expect(boutons[0].textContent).toContain('Faire un signalement');
+            expect(texte('.hero-actions')).not.toContain('Suivre ma dénonciation');
+        });
+
+        it('le haut de page ne garde que le logo ASCE-LC et le numéro vert, sans bouton', () => {
+            expect(q('.hero-topbar img[alt="ASCE-LC"]')).not.toBeNull();
+            expect(qa('.hero-topbar button').length).toBe(0);
+            expect(texte('.hero-topbar')).toContain('Numéro vert');
+            expect(texte('.hero-topbar')).toContain('80 00 11 11');
+        });
+
+        it('le numéro vert du haut de page suit le paramètre hotline_number de l’administration', () => {
+            TestBed.resetTestingModule();
+            creer({ hotline_number: '80 00 22 22' });
+
+            expect(texte('.hero-topbar')).toContain('80 00 22 22');
+            expect(texte('.hero-topbar')).not.toContain('80 00 11 11');
+        });
+
+        it('« Accès rapide » ne propose plus qu’un bouton : « Faire un signalement »', () => {
+            const boutons = qa('.quick-item');
+
+            expect(boutons.length).toBe(1);
+            expect(boutons[0].textContent).toContain('Faire un signalement');
+            expect(q('.quick-circle.is-green')).toBeNull();
+        });
+
+        it('le bouton d’« Accès rapide » ouvre le choix de dépôt', () => {
+            (q('.quick-item') as HTMLButtonElement).click();
+            fixture.detectChanges();
+
+            expect(q('.overlay')).not.toBeNull();
         });
     });
 
