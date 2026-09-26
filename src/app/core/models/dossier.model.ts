@@ -29,6 +29,7 @@ export type SubmissionMode =
     | 'EMAIL'
     | 'SMS'
     | 'PHONE'
+    | 'FAX'
     | 'GREEN_NUMBER'
     | 'SOCIAL_MEDIA'
     | 'PRESS_MEDIA'

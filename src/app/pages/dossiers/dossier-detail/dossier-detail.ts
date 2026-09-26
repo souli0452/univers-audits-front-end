@@ -174,6 +174,9 @@ export class DossierDetail implements OnInit {
     savingConfidential            = false;
 
     showComplementDialog  = false;
+    showTransferDialog    = false;
+    transferInstitution   = '';
+    transferReason        = '';
     complementMotif       = '';
     complementMotifError  = false;
 
@@ -629,6 +632,49 @@ export class DossierDetail implements OnInit {
             NORMAL:   'Normal',
             FAIBLE:   'Faible'
         }[p || 'NORMAL'] || 'Normal';
+    }
+
+    /** Le back n'autorise le transfert que depuis « En revue CTADP » (validateTransition). */
+    canTransfer(): boolean {
+        return this.dossier?.status === 'EN_REVUE_CTADP'
+            && this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
+    }
+
+    openTransfer(): void {
+        this.transferInstitution = '';
+        this.transferReason      = '';
+        this.showTransferDialog  = true;
+    }
+
+    executeTransfer(): void {
+        if (!this.dossier) return;
+        const institution = this.transferInstitution.trim();
+        if (!institution) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Institution requise',
+                detail: "Indiquez l'institution destinataire du transfert."
+            });
+            return;
+        }
+        this.transitioning = true;
+        this.dossierService.transfer(this.dossier.id, {
+            version:             this.dossier.version,
+            reason:              this.transferReason.trim() || undefined,
+            transferInstitution: institution
+        }).subscribe({
+            next: (updated: DossierResponse) => {
+                this.dossier             = updated;
+                this.buildWorkflowSteps(updated);
+                this.transitioning       = false;
+                this.showTransferDialog  = false;
+                this.messageService.add({
+                    severity: 'success',
+                    summary:  'Statut mis à jour',
+                    detail:   this.getStatusLabel(updated.status)
+                });
+            },
+            error: (err: any) => this.handleTransitionError(err)
+        });
     }
 
     openComplementDialog(): void {
