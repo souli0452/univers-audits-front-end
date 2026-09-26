@@ -108,7 +108,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                         [loading]="triggeringAutoSaisine" (onClick)="confirmAutoSaisine()" styleClass="w-full"/>
                     <p-button *ngIf="info.statut==='NOUVELLE' || info.statut==='RATTACHEE'"
                         label="Classer sans suite" icon="pi pi-times" severity="secondary" outlined
-                        [loading]="classingSansSuite" (onClick)="executeClasserSansSuite()" styleClass="w-full"/>
+                        [loading]="classingSansSuite" (onClick)="confirmClasserSansSuite()" styleClass="w-full"/>
                     <p *ngIf="info.statut==='AUTO_SAISINE_DECLENCHEE'" class="text-xs text-green-600">
                         Une auto-saisine a déjà été déclenchée pour cette information.
                     </p>
@@ -179,6 +179,22 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
             [loading]="triggeringAutoSaisine" (onClick)="executeDeclencherAutoSaisine()"/>
     </ng-template>
 </p-dialog>
+<!-- ── Dialog confirmation classement sans suite ───────────────── -->
+<p-dialog [(visible)]="showClasserDialog" header="Classer sans suite"
+    [modal]="true" [style]="{width:'480px'}" [draggable]="false">
+    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+        <i class="pi pi-exclamation-triangle text-amber-600 mt-0.5 flex-shrink-0"></i>
+        <p class="text-sm text-amber-700 leading-relaxed">
+            Cette information ne donnera lieu à aucun dossier et ne pourra plus être rattachée
+            ni déclencher d'auto-saisine. Cette action est irréversible.
+        </p>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showClasserDialog=false"/>
+        <p-button label="Confirmer le classement" icon="pi pi-times" severity="secondary"
+            [loading]="classingSansSuite" (onClick)="executeClasserSansSuite()"/>
+    </ng-template>
+</p-dialog>
     `
 })
 export class InformationPreoccupanteDetail implements OnInit {
@@ -204,6 +220,7 @@ export class InformationPreoccupanteDetail implements OnInit {
     showAutoSaisineDialog = false;
     triggeringAutoSaisine = false;
     classingSansSuite = false;
+    showClasserDialog = false;
 
     readonly sourceOptions: { label: string; value: AutoReferralSource }[] = [
         { label: 'Presse écrite', value: 'WRITTEN_PRESS' },
@@ -300,6 +317,8 @@ export class InformationPreoccupanteDetail implements OnInit {
         });
     }
 
+    confirmClasserSansSuite(): void { this.showClasserDialog = true; }
+
     executeClasserSansSuite(): void {
         if (!this.info) return;
         this.classingSansSuite = true;
@@ -307,6 +326,7 @@ export class InformationPreoccupanteDetail implements OnInit {
             next: i => {
                 this.info = i;
                 this.classingSansSuite = false;
+                this.showClasserDialog = false;
                 this.messageService.add({ severity: 'info', summary: 'Classée sans suite' });
             },
             error: err => {
