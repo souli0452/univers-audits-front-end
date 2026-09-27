@@ -132,4 +132,22 @@ describe('DepotPlainte', () => {
             expect(messages.add).not.toHaveBeenCalled();
         });
     });
+
+    describe('étape « Décrivez les faits »', () => {
+        it('la description de « Plainte » n’annonce plus, mot pour mot, la question « Vous êtes » qui la suit', () => {
+            const plainte = component.typeOptions.find(t => t.value === 'COMPLAINT')!;
+
+            expect(plainte.description).not.toBe('Je suis la victime ou son représentant');
+            for (const q of component.qualityOptions) {
+                expect(plainte.description).not.toBe(q.label);
+            }
+        });
+
+        it('« Dénonciation » et les deux choix de « Vous êtes » sont inchangés', () => {
+            const denonciation = component.typeOptions.find(t => t.value === 'DENUNCIATION')!;
+
+            expect(denonciation.description).toBe('Je signale des faits en tant que témoin');
+            expect(component.qualityOptions.map(q => q.label)).toEqual(['Je suis la victime', 'Je représente la victime']);
+        });
+    });
 });

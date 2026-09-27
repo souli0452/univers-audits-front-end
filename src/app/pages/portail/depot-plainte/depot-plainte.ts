@@ -1164,7 +1164,7 @@ export class DepotPlainte {
 
     typeOptions = [
         { label: 'Plainte',      value: 'COMPLAINT',
-          description: 'Je suis la victime ou son représentant', icon: 'pi pi-exclamation-circle' },
+          description: 'Vous demandez réparation pour un préjudice subi', icon: 'pi pi-exclamation-circle' },
         { label: 'Dénonciation', value: 'DENUNCIATION',
           description: 'Je signale des faits en tant que témoin', icon: 'pi pi-megaphone'          }
     ];
