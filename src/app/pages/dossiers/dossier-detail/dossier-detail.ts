@@ -1642,7 +1642,8 @@ export class DossierDetail implements OnInit {
             INTERNAL_NOTE: 'Note interne', ADMISSIBILITY_ANALYSIS: 'Analyse recevabilité',
             CTADP_OPINION: 'Avis CTADP', COMPLEMENT_REQUEST: 'Demande complément',
             CGE_DECISION: 'Décision CGE', FIELD_FINDING: 'Constat terrain',
-            TRANSFER_NOTE: 'Note transfert'
+            TRANSFER_NOTE: 'Note transfert',
+            COMPLEMENT_RESPONSE: 'Réponse au complément'
         };
         return l[type] || type;
     }
