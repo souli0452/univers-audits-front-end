@@ -33,6 +33,24 @@ export class PdfService {
         return this.http.get(`${this.baseUrl}/resume-cloture/${dossierId}`, { responseType: 'blob' });
     }
 
+    downloadConvocationCtadp(seanceId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/convocation-ctadp/${seanceId}`, { responseType: 'blob' });
+    }
+
+    /**
+     * Message d'erreur d'une requête dont la réponse était attendue en Blob : le corps d'erreur
+     * est alors lui-même un Blob JSON qu'il faut lire pour retrouver le message du back.
+     */
+    async messageErreur(err: any, parDefaut: string): Promise<string> {
+        try {
+            const corps = err?.error;
+            const texte = corps instanceof Blob ? await corps.text() : null;
+            return (texte ? JSON.parse(texte)?.message : corps?.message) || parDefaut;
+        } catch {
+            return parDefaut;
+        }
+    }
+
     /** Déclenche le téléchargement d'un blob PDF avec le nom de fichier donné. */
     triggerDownload(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
