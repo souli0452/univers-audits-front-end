@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(new URL('../recette/package.json', import.meta.url));
 const d = require('docx');
 
-const src = fs.readFileSync(new URL('./decisions-a-valider.md', import.meta.url), 'utf8').split(/\r?\n/);
+const src = fs.readFileSync(new URL('./' + (process.argv[2] ?? 'decisions-a-valider.md'), import.meta.url), 'utf8').split(/\r?\n/);
 const kids = [];
 const runs = (t, extra = {}) => t.split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(s =>
   s.startsWith('**') ? new d.TextRun({ text: s.slice(2, -2), bold: true, ...extra }) : new d.TextRun({ text: s, ...extra }));
@@ -42,5 +42,5 @@ const doc = new d.Document({
   sections: [{ properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } } }, children: kids }]
 });
 fs.mkdirSync(new URL('./out/', import.meta.url), { recursive: true });
-fs.writeFileSync(new URL('./out/Decisions-a-valider-ASCE-LC.docx', import.meta.url), await d.Packer.toBuffer(doc));
+fs.writeFileSync(new URL('./out/' + (process.argv[3] ?? 'Decisions-a-valider-ASCE-LC.docx'), import.meta.url), await d.Packer.toBuffer(doc));
 console.log('ok');
