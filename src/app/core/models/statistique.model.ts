@@ -72,3 +72,19 @@ export interface ActeurDepassement {
     departementLibelle:     string | null;
     dossiersEnDepassement:  DepassementItem[];
 }
+
+/** Étape du circuit de traitement dont l'échéance est dépassée, pour un dossier. */
+export interface EtapeDepassement {
+    dossierId:      string;
+    numero:         string;
+    code:           string;
+    libelle:        string;
+    echeance:       string;
+    heuresDeRetard: number;
+}
+
+/** Étapes en retard regroupées par acteur du circuit (CGEA, CGE). */
+export interface ActeurEtapeDepassement {
+    acteur: string;
+    etapes: EtapeDepassement[];
+}
