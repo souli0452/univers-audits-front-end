@@ -937,6 +937,12 @@
                     [loading]="downloadingRecepisse"
                     pTooltip="Télécharger le récépissé de dépôt" (onClick)="downloadRecepisse()"/>
 
+                <p-button *ngIf="dossier.decisionCGE && hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                    label="Quitus du CGE" icon="pi pi-verified"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingQuitus"
+                    pTooltip="Télécharger le quitus du CGE (décision sur l'avis du comité)" (onClick)="downloadQuitus()"/>
+
                 <p-button *ngIf="dossier.decisionCGE && dossier.decisionCGE.decision !== 'CLASSEMENT'"
                     label="Accusé de réception" icon="pi pi-envelope"
                     severity="secondary" outlined size="small"

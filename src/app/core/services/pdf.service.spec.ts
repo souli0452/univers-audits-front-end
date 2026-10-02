@@ -24,6 +24,15 @@ describe('PdfService — convocation CTADP', () => {
         req.flush(new Blob(['%PDF-']));
     });
 
+    it('demande le quitus du dossier en fichier', () => {
+        service.downloadQuitus('d-1').subscribe();
+
+        const req = http.expectOne(r => r.url.endsWith('/pdf/quitus/d-1'));
+        expect(req.request.method).toBe('GET');
+        expect(req.request.responseType).toBe('blob');
+        req.flush(new Blob(['%PDF-']));
+    });
+
     it('lit le message du back dans un corps d\'erreur de type fichier', async () => {
         const corps = new Blob([JSON.stringify({ message: 'Ajoutez au moins un dossier' })], { type: 'application/json' });
 

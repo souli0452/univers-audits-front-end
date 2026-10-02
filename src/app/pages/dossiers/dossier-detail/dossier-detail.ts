@@ -142,6 +142,7 @@ export class DossierDetail implements OnInit {
     downloadingOfficialPdf = false;
     downloadingRecepisse   = false;
     downloadingAccuse      = false;
+    downloadingQuitus      = false;
     downloadingReponse     = false;
     downloadingResume      = false;
     openDays              = 90;
@@ -1884,6 +1885,25 @@ export class DossierDetail implements OnInit {
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
                     detail: err.error?.message || 'Téléchargement du récépissé impossible'
+                });
+            }
+        });
+    }
+
+    downloadQuitus(): void {
+        if (!this.dossier) return;
+        const dossier = this.dossier;
+        this.downloadingQuitus = true;
+        this.pdfService.downloadQuitus(dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `quitus-cge-${dossier.number || dossier.id}.pdf`);
+                this.downloadingQuitus = false;
+            },
+            error: async err => {
+                this.downloadingQuitus = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Quitus impossible',
+                    detail: await this.pdfService.messageErreur(err, 'Téléchargement du quitus impossible')
                 });
             }
         });
