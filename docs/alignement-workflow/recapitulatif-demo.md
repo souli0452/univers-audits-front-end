@@ -12,7 +12,7 @@ Suite à la fiche « Description du workflow PGPD_GU V3 » et aux décisions des
 | Quitus du CGE | Bouton « Quitus du CGE » sur le dossier, une fois la décision du CGE enregistrée. | CGE, CGEA |
 | Lettre au plaignant | Bouton « Lettre au plaignant » sur un dossier clos, sans détail d'enquête. | CGE, CGEA, BRPD |
 | Transmission à une autorité | Le destinataire se choisit dans une liste : Procureur du Faso, Cour des comptes, institution partenaire, autre. | Équipe d'enquête |
-| Délais du circuit | Une carte « Délais du circuit de traitement » sur le dossier : échéance, temps restant ou retard, pour 5 étapes. | Tous les agents |
+| Délais du circuit | Une carte « Délais du circuit de traitement » sur le dossier : échéance, temps restant ou retard, pour 5 étapes. Une notification part au CGEA et au CGE quand une étape dépasse son échéance. | Tous les agents ; alerte : CGEA, CGE |
 | Communication (DCP) | Nouveau rôle qui ne voit que les statistiques globales, sans aucun dossier. | DCP |
 | Statistiques et rapports | Année en cours par défaut ; année précédente, année en cours et précédente, ou période libre au calendrier. | Agents habilités |
 
@@ -44,7 +44,7 @@ Ne sont pas suivis, faute de date enregistrée dans l'application : les 48 h du 
 
 1. **Modèles Word :** les trois documents (convocation, quitus, lettre au plaignant) ont un texte provisoire. Merci de transmettre les modèles actuels.
 2. **Délais :** les cinq étapes suivies et leur point de départ correspondent-ils à leur pratique ?
-3. **Alertes :** souhaitent-ils être **prévenus** automatiquement d'un retard (notification ou message au CGEA / CGE), ou la carte sur le dossier leur suffit-elle ?
+3. **Alertes :** une notification dans l'application part au CGEA et au CGE dès qu'une étape dépasse son échéance (une seule fois par dossier et par étape, vérification toutes les heures les jours ouvrés). Faut-il aussi prévenir l'agent concerné, ou ajouter un envoi par courriel (aujourd'hui les alertes de l'application sont des notifications internes) ?
 4. **Page « Dépassements par acteur » :** doit-elle aussi lister ces nouveaux retards ?
 5. **Lettre au plaignant :** le texte (clôture sans détail d'enquête) leur convient-il ?
 
