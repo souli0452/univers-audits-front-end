@@ -1016,6 +1016,10 @@
                             <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Canal</div>
                             <div class="font-semibold text-sm">{{ getModeLabel(dossier?.submissionMode||'') }}</div>
                         </div>
+                        <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl" *ngIf="dossier?.numeroCourrier">
+                            <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">N° courrier</div>
+                            <div class="font-semibold text-sm">{{ dossier?.numeroCourrier }}</div>
+                        </div>
                         <div class="p-3 bg-surface-50 dark:bg-surface-700 rounded-xl">
                             <div class="text-xs text-surface-400 uppercase tracking-wide mb-1">Créé le</div>
                             <div class="font-semibold text-sm">{{ dossier?.createdAt | date:'dd/MM/yyyy' }}</div>

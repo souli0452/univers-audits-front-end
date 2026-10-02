@@ -104,6 +104,7 @@ export interface NotificationResponse {
 export interface DossierResponse {
     id: string;
     number?: string;
+    numeroCourrier?: string;
     accessCode: string;
     version: number;
     status: DossierStatus;
@@ -145,6 +146,7 @@ export interface DossierCreateRequest {
     object: string;
     description?: string;
     incidentLocation?: string;
+    numeroCourrier?: string;
     incidentPeriod?: string;
     estimatedLoss?: number;
     isConfidential?: boolean;
