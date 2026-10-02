@@ -143,6 +143,7 @@ export class DossierDetail implements OnInit {
     downloadingRecepisse   = false;
     downloadingAccuse      = false;
     downloadingQuitus      = false;
+    downloadingLettre      = false;
     downloadingReponse     = false;
     downloadingResume      = false;
     openDays              = 90;
@@ -1885,6 +1886,25 @@ export class DossierDetail implements OnInit {
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
                     detail: err.error?.message || 'Téléchargement du récépissé impossible'
+                });
+            }
+        });
+    }
+
+    downloadLettreInformation(): void {
+        if (!this.dossier) return;
+        const dossier = this.dossier;
+        this.downloadingLettre = true;
+        this.pdfService.downloadLettreInformation(dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `lettre-information-${dossier.number || dossier.id}.pdf`);
+                this.downloadingLettre = false;
+            },
+            error: async err => {
+                this.downloadingLettre = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Lettre impossible',
+                    detail: await this.pdfService.messageErreur(err, "Téléchargement de la lettre d'information impossible")
                 });
             }
         });

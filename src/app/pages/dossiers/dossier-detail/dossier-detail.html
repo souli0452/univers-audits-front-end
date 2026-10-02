@@ -955,6 +955,12 @@
                     [loading]="downloadingReponse"
                     pTooltip="Télécharger la réponse motivée (dossier classé)" (onClick)="downloadReponseMotivee()"/>
 
+                <p-button *ngIf="(dossier.status === 'CLOS' || dossier.status === 'DECISION_RENDUE') && hasRole(['CGE','CGEA','AGENT_BRPD','ADMIN_DDIC'])"
+                    label="Lettre au plaignant" icon="pi pi-send"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingLettre"
+                    pTooltip="Lettre d'information sur la suite donnée (fin de traitement)" (onClick)="downloadLettreInformation()"/>
+
                 <p-button *ngIf="dossier.status === 'CLOS' || dossier.status === 'CLASSE'"
                     label="Résumé de clôture" icon="pi pi-book"
                     severity="secondary" outlined size="small"

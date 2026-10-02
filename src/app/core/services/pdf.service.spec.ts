@@ -33,6 +33,15 @@ describe('PdfService — convocation CTADP', () => {
         req.flush(new Blob(['%PDF-']));
     });
 
+    it('demande la lettre d\'information du dossier en fichier', () => {
+        service.downloadLettreInformation('d-2').subscribe();
+
+        const req = http.expectOne(r => r.url.endsWith('/pdf/lettre-information/d-2'));
+        expect(req.request.method).toBe('GET');
+        expect(req.request.responseType).toBe('blob');
+        req.flush(new Blob(['%PDF-']));
+    });
+
     it('lit le message du back dans un corps d\'erreur de type fichier', async () => {
         const corps = new Blob([JSON.stringify({ message: 'Ajoutez au moins un dossier' })], { type: 'application/json' });
 

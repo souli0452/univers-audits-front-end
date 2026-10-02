@@ -33,6 +33,10 @@ export class PdfService {
         return this.http.get(`${this.baseUrl}/resume-cloture/${dossierId}`, { responseType: 'blob' });
     }
 
+    downloadLettreInformation(dossierId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/lettre-information/${dossierId}`, { responseType: 'blob' });
+    }
+
     downloadQuitus(dossierId: string): Observable<Blob> {
         return this.http.get(`${this.baseUrl}/quitus/${dossierId}`, { responseType: 'blob' });
     }
