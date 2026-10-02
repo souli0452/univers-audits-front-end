@@ -51,3 +51,27 @@ Non suivis, car hors application : 48 h courrier (1), 72 h CGE à la réception 
 2. A, K.
 3. C, D, E (même mécanisme PDF).
 4. B.
+
+## État au 2026-10-02
+
+| # | Écart | État |
+|---|---|---|
+| F | Destinataires de transmission en liste | Fait (front) |
+| H | Canaux presse et rapport d'audit à la saisie | Fait (front) |
+| A | N° d'enregistrement du courrier | Fait (back migration 020 + front) |
+| K | Rôle DCP, espace restreint aux statistiques | Fait (back migration 021 + front) ; rôle Keycloak `DCP` à créer à la main |
+| C | Convocation du comité (PDF) | Fait (back + front), modèle provisoire |
+| D | Quitus du CGE (PDF) | Fait (back + front) : formalise la décision du CGE existante, pas de nouvel état |
+| E | Lettre d'information du plaignant (PDF) | Fait (back + front), dossiers clos ou à décision rendue |
+| B | Délais des étapes | **Phase 1 faite** (back migration 022 + front) : 5 étapes calculées par dossier, carte « Délais du circuit de traitement ». **Phase 2 non faite** : alertes et escalade automatiques. |
+| — | Statistiques et rapports | Année en cours par défaut, année précédente, période libre (front) |
+
+### Délais suivis (phase 1)
+Analyse du CGEA (72 h), convocation du comité (3 j), quitus du CGE (15 j), imputation du CGE (72 h), affectation du CGEA (3 j), en jours ouvrables, modifiables dans « Paramètres métier » (codes `ETAPE_*`).
+Non suivis, faute de date enregistrée : 24 h BRPD (étape 4), tenue de la séance (étape 8), accusé et lettre de suite (étapes 10-11).
+
+### Reste à faire
+- Phase 2 des délais, si les utilisateurs veulent être prévenus (un seul type de notification générique, grâce propre aux délais courts).
+- Intégration des 5 étapes à la page « Dépassements par acteur ».
+- Modèles Word des utilisateurs pour les trois documents.
+- Pousser les branches, ouvrir les pull requests, déployer le back puis le front.
