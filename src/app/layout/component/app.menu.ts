@@ -30,6 +30,7 @@ export class AppMenu {
     model: MenuItem[] = [];
 
     ngOnInit() {
+    const dcpSeul = this.keycloakService.estDcpSeul();
     this.model = [
 
         {
@@ -38,6 +39,7 @@ export class AppMenu {
                 {
                     label: 'Tableau de bord',
                     icon: 'pi pi-fw pi-home',
+                    visible: !dcpSeul,
                     routerLink: ['/app']
                 },
                 {
@@ -52,6 +54,7 @@ export class AppMenu {
 
         {
             label: 'Dossiers',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Tous les dossiers',
@@ -80,6 +83,7 @@ export class AppMenu {
 
         {
             label: 'Bureau des plaintes',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Séances CTADP',
@@ -99,6 +103,7 @@ export class AppMenu {
 
         {
             label: 'Investigations',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Toutes les enquêtes',
