@@ -194,5 +194,20 @@ export class AppMenu {
             ]
         }
     ];
+    this.model = AppMenu.sansSeparateursOrphelins(this.model);
 }
+
+    /**
+     * Retire les groupes masqués puis les séparateurs qui n'encadrent plus rien : en tête, en queue,
+     * ou consécutifs (un agent DCP, par exemple, ne voit que deux groupes).
+     */
+    static sansSeparateursOrphelins(items: MenuItem[]): MenuItem[] {
+        const visibles = items.filter(item => item.visible !== false);
+        return visibles.filter((item, i) => {
+            if (!item.separator) return true;
+            const precedent = visibles[i - 1];
+            const suivant = visibles[i + 1];
+            return !!precedent && !precedent.separator && !!suivant;
+        });
+    }
 }

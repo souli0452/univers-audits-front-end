@@ -37,7 +37,7 @@ export const roleGuard = (roles: string[]): CanActivateFn => {
 /** Pages accessibles à un agent DCP seul : statistiques globales, profil, notifications. */
 export function urlAutoriseePourDcpSeul(url: string): boolean {
     const chemin = url.split(/[?#]/)[0];
-    if (chemin.startsWith('/app/statistiques/depassements')) return false;
+    if (chemin === '/app/statistiques/depassements-par-acteur') return false;
     return ['/app/statistiques', '/app/profil', '/app/notifications'].some(p => chemin === p || chemin.startsWith(p + '/'));
 }
 

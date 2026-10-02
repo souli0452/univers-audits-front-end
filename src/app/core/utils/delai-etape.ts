@@ -12,11 +12,15 @@ export function formaterDuree(heures: number): string {
 
 /** Texte de l'état d'une étape : temps restant, retard, ou issue d'une étape terminée. */
 export function libelleEtatDelai(etape: DelaiEtapeResponse): string {
-    const heures = etape.heuresRestantes ?? 0;
+    const heures = etape.heuresRestantes;
+    // Étape ouverte sans temps restant connu : mieux vaut « En cours » qu'un faux « moins d'1 h ».
+    if (heures == null && (etape.statut === 'EN_COURS' || etape.statut === 'PROCHE' || etape.statut === 'DEPASSE')) {
+        return etape.statut === 'DEPASSE' ? 'En retard' : 'En cours';
+    }
     switch (etape.statut) {
         case 'EN_COURS':
-        case 'PROCHE':           return `Reste ${formaterDuree(heures)}`;
-        case 'DEPASSE':          return `En retard de ${formaterDuree(heures)}`;
+        case 'PROCHE':           return `Reste ${formaterDuree(heures ?? 0)}`;
+        case 'DEPASSE':          return `En retard de ${formaterDuree(heures ?? 0)}`;
         case 'RESPECTE':         return 'Dans le délai';
         case 'TERMINE_EN_RETARD': return 'Terminé en retard';
     }

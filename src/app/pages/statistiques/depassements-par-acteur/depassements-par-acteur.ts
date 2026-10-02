@@ -100,7 +100,19 @@ const TYPE_LABELS: Record<string, string> = {
         <p-skeleton *ngFor="let i of [1,2,3,4]" height="120px" borderRadius="16px"/>
     </div>
 
-    <div *ngIf="!loading && acteurs.length === 0 && etapesActeurs.length === 0"
+    <div *ngIf="!loading && erreurChargement"
+        class="bg-white dark:bg-surface-800 rounded-2xl p-10
+               border border-red-200 text-center">
+        <i class="pi pi-exclamation-triangle text-2xl text-red-500 mb-3"></i>
+        <p class="font-semibold text-surface-700">Chargement incomplet</p>
+        <p class="text-xs text-surface-400 mt-1">
+            Une partie des retards n'a pas pu être chargée : les chiffres affichés peuvent être incomplets.
+        </p>
+        <p-button label="Réessayer" icon="pi pi-refresh" severity="secondary" outlined
+            size="small" styleClass="mt-3" (onClick)="load()"/>
+    </div>
+
+    <div *ngIf="!loading && !erreurChargement && acteurs.length === 0 && etapesActeurs.length === 0"
         class="bg-white dark:bg-surface-800 rounded-2xl p-16
                border border-surface-100 text-center">
         <div class="w-16 h-16 rounded-2xl bg-green-100
@@ -253,6 +265,8 @@ export class DepassementsParActeur implements OnInit {
     private messageService     = inject(MessageService);
 
     loading = true;
+    /** Vrai si l'un des deux chargements a échoué : on n'affiche alors pas « aucun dépassement ». */
+    erreurChargement = false;
     acteurs: ActeurDepassement[] = [];
     etapesActeurs: ActeurEtapeDepassement[] = [];
     readonly formaterDuree = formaterDuree;
@@ -269,12 +283,14 @@ export class DepassementsParActeur implements OnInit {
 
     load(): void {
         this.loading = true;
+        this.erreurChargement = false;
         let enAttente = 2;
         const termine = () => { if (--enAttente === 0) this.loading = false; };
 
         this.statistiqueService.getDepassementsParActeur().subscribe({
             next: acteurs => { this.acteurs = acteurs; termine(); },
             error: () => {
+                this.erreurChargement = true;
                 this.messageService.add({
                     severity: 'warn', summary: 'Dépassements',
                     detail: 'Impossible de charger le tableau des dépassements'
@@ -287,6 +303,7 @@ export class DepassementsParActeur implements OnInit {
         this.statistiqueService.getDepassementsEtapes().subscribe({
             next: etapes => { this.etapesActeurs = etapes; termine(); },
             error: () => {
+                this.erreurChargement = true;
                 this.messageService.add({
                     severity: 'warn', summary: 'Étapes du circuit',
                     detail: 'Impossible de charger les étapes en retard'

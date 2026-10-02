@@ -78,8 +78,10 @@ export class KeycloakService {
      * il ne consulte que les statistiques globales, sans accès aux dossiers.
      */
     estDcpSeul(): boolean {
-        const rolesMetier = this.getUserInfo().roles.filter((r: string) =>
-            !r.startsWith('default-roles-') && r !== 'offline_access' && r !== 'uma_authorization');
-        return rolesMetier.length > 0 && rolesMetier.every((r: string) => r === 'DCP');
+        // Liste des rôles métier du royaume : un rôle technique du jeton (default-roles-*, offline_access…)
+        // ne doit pas faire perdre la restriction à un agent DCP.
+        const autresRolesMetier = ['ADMIN_DDIC', 'CGE', 'CGEA', 'AGENT_BRPD', 'CONSEILLER_JURIDIQUE',
+                                   'CONTROLEUR_ETAT', 'MEMBRE_CTADP'];
+        return this.hasRole('DCP') && !this.hasAnyRole(autresRolesMetier);
     }
 }

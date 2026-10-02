@@ -596,6 +596,7 @@ interface ApiError { error?: { message?: string }; }
             </label>
             <p-select [(ngModel)]="transmissionForm.autorite" [options]="autoritesOptions"
                 optionLabel="label" optionValue="value" placeholder="Choisir l'autorité"
+                (onChange)="transmissionForm.precision = ''"
                 appendTo="body" styleClass="w-full"/>
         </div>
         <div *ngIf="autoriteChoisie?.precisionLabel">
@@ -3239,7 +3240,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     private get autoriteDestinataire(): string {
-        const precision = this.transmissionForm.precision.trim();
+        // La précision n'est reprise que si l'autorité choisie en propose une : une valeur tapée pour une
+        // autre autorité (champ masqué depuis) ne doit pas être enregistrée.
+        const precision = this.autoriteChoisie?.precisionLabel ? this.transmissionForm.precision.trim() : '';
         const base = this.transmissionForm.autorite ?? '';
         return precision ? `${base} — ${precision}` : base;
     }

@@ -699,7 +699,7 @@ export class DossierForm {
         object:           ['',           [Validators.required, Validators.minLength(10)]],
         description:      ['',           Validators.required],
         incidentLocation: [''],
-        numeroCourrier:   [''],
+        numeroCourrier:   ['', Validators.maxLength(50)],
         incidentPeriod:   [''],
         estimatedLoss:    [null as number | null],
         isConfidential:   [false]

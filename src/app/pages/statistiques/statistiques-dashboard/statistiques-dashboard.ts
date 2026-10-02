@@ -51,7 +51,7 @@ import { TypePeriode, calculerPeriode, libellePeriode } from '../../../core/util
                 [(ngModel)]="plage" selectionMode="range" [readonlyInput]="true"
                 dateFormat="dd/mm/yy" [maxDate]="aujourdhui" [showButtonBar]="true"
                 placeholder="Choisir du … au …" appendTo="body" inputStyleClass="text-sm"
-                (onSelect)="onPlageChange()" (onClear)="plage = null"/>
+                (onSelect)="onPlageChange()" (onClear)="onPlageEffacee()"/>
             <p-button icon="pi pi-refresh" severity="secondary" outlined
                 pTooltip="Actualiser" (onClick)="loadStats()"/>
         </div>
@@ -495,8 +495,15 @@ export class StatistiquesDashboard implements OnInit {
     onPeriodChange(): void {
         this.selectedPeriodLabel = this.periodOptions
             .find(p => p.value === this.selectedPeriod)?.label || '';
-        // Période personnalisée : on attend que l'utilisateur choisisse ses dates.
-        if (this.selectedPeriod !== 'custom') this.loadStats();
+        // Période personnalisée : on recharge si des dates sont déjà choisies, sinon on attend qu'elles le soient.
+        if (this.selectedPeriod !== 'custom' || this.plage?.[0]) this.loadStats();
+    }
+
+    onPlageEffacee(): void {
+        // Plus de dates : on revient à la période par défaut plutôt que de laisser des chiffres sous un faux libellé.
+        this.plage = null;
+        this.selectedPeriod = 'year';
+        this.onPeriodChange();
     }
 
     onPlageChange(): void {

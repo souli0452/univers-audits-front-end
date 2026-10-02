@@ -19,6 +19,10 @@ describe('libelleEtatDelai', () => {
     it('étape en cours : temps restant', () => expect(libelleEtatDelai(etape('EN_COURS', 52))).toBe('Reste 2 j 4 h'));
     it('étape proche : temps restant', () => expect(libelleEtatDelai(etape('PROCHE', 6))).toBe('Reste 6 h'));
     it('étape dépassée : retard', () => expect(libelleEtatDelai(etape('DEPASSE', -24))).toBe('En retard de 1 j'));
+    it('étape ouverte sans temps restant connu : pas de faux « moins d\'1 h »', () => {
+        expect(libelleEtatDelai(etape('EN_COURS'))).toBe('En cours');
+        expect(libelleEtatDelai(etape('DEPASSE'))).toBe('En retard');
+    });
     it('étape terminée dans le délai', () => expect(libelleEtatDelai(etape('RESPECTE'))).toBe('Dans le délai'));
     it('étape terminée en retard', () => expect(libelleEtatDelai(etape('TERMINE_EN_RETARD'))).toBe('Terminé en retard'));
 });
