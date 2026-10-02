@@ -1007,6 +1007,36 @@
 
         <div class="lg:col-span-2 flex flex-col gap-4">
 
+            <div *ngIf="delaisEtapes.length" class="bg-white dark:bg-surface-800 rounded-2xl border
+                        border-surface-100 dark:border-surface-700 overflow-hidden">
+                <div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700
+                            flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center">
+                        <i class="pi pi-clock text-primary-600 text-xs"></i>
+                    </div>
+                    <h3 class="font-semibold text-sm text-surface-900 dark:text-surface-0">
+                        Délais du circuit de traitement
+                    </h3>
+                </div>
+                <ul class="divide-y divide-surface-100 dark:divide-surface-700">
+                    <li *ngFor="let e of delaisEtapes"
+                        class="px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ e.libelle }}</div>
+                            <div class="text-xs text-surface-400">
+                                {{ e.acteur }} · {{ e.delaiJours }} {{ e.joursOuvrables ? 'jours ouvrables' : 'jours' }} ·
+                                échéance le {{ e.echeance | date:'dd/MM/yyyy HH:mm' }}
+                                <span *ngIf="e.fin"> · terminé le {{ e.fin | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                            [ngClass]="classeEtatDelai(e.statut)">
+                            {{ libelleEtatDelai(e) }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
             <div class="bg-white dark:bg-surface-800 rounded-2xl border
                         border-surface-100 dark:border-surface-700 overflow-hidden">
                 <div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700

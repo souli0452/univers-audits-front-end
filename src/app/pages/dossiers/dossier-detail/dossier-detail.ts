@@ -14,7 +14,8 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
-import { DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
+import { DelaiEtapeResponse, DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
+import { classeEtatDelai, libelleEtatDelai } from '../../../core/utils/delai-etape';
 import { KeycloakService } from '../../../core/auth/keycloak.service';
 import { AttachmentService, AttachmentResponse } from '../../../core/services/attachment.service';
 import {
@@ -152,6 +153,9 @@ export class DossierDetail implements OnInit {
     witnesses:            WitnessResponse[]       = [];
     observations:         ObservationResponse[]   = [];
     ficheAffectation:     FicheAffectationResponse | null = null;
+    delaisEtapes:         DelaiEtapeResponse[] = [];
+    readonly libelleEtatDelai = libelleEtatDelai;
+    readonly classeEtatDelai  = classeEtatDelai;
     departements:         DepartementOption[]      = [];
     conseillers:          AgentSummary[]           = [];
     habilitations:        DossierHabilitationResponse[] = [];
@@ -387,6 +391,9 @@ export class DossierDetail implements OnInit {
         });
         this.etudeOpportuniteService.get(id).subscribe({
             next: e => { this.etudeOpportunite = e; }
+        });
+        this.dossierService.getDelaisEtapes(id).subscribe({
+            next: d => { this.delaisEtapes = d; }, error: () => {}
         });
         this.loadSectionsDossierTravail(id);
         if (this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC'])) {
