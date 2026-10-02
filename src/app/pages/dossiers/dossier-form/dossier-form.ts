@@ -728,6 +728,8 @@ export class DossierForm {
         { label: 'Téléphone',         value: 'PHONE'         },
         { label: 'Numéro Vert',       value: 'GREEN_NUMBER'  },
         { label: 'Réseaux Sociaux',   value: 'SOCIAL_MEDIA'  },
+        { label: 'Presse / médias',   value: 'PRESS_MEDIA'   },
+        { label: "Rapport d'audit",   value: 'AUDIT_REPORT'  },
         { label: 'Comptoir Audio',    value: 'AUDIO_COUNTER' },
         { label: 'Formulaire Papier', value: 'PAPER_FORM'    },
         { label: 'Courrier Postal',   value: 'POSTAL_MAIL'   },
