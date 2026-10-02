@@ -343,6 +343,7 @@ export class NotificationsComponent implements OnInit {
             ESCALADE_COMPLEMENT:         'Escalade — Complément',
             ESCALADE_INVESTIGATION:      'Escalade — Investigation',
             ESCALADE_DEMANDE_DOCUMENTS:  'Escalade — Demande de documents',
+            ALERTE_DELAI_ETAPE:          'Délai d\'étape dépassé',
         };
         return labels[type] ?? type;
     }

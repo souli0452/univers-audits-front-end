@@ -597,6 +597,8 @@ export class RapportInvestigationComponent implements OnInit {
         { key:'quarter',  label:'Ce trimestre'     },
         { key:'semester', label:'Ce semestre'      },
         { key:'year',     label:'Cette année'      },
+        { key:'lastYear', label:'Année précédente' },
+        { key:'twoYears', label:'Cette année et la précédente' },
         { key:'last12',   label:'12 derniers mois' },
     ];
 
@@ -629,20 +631,23 @@ export class RapportInvestigationComponent implements OnInit {
         this.activePeriod = p.key;
         const now = new Date();
         let start: Date;
+        let end: Date = now;
         switch (p.key) {
             case 'month':    start = new Date(now.getFullYear(), now.getMonth(), 1); break;
             case 'quarter':  start = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1); break;
             case 'semester': start = new Date(now.getFullYear(), now.getMonth()<6?0:6, 1); break;
             case 'last12':   start = new Date(now.getTime()-365*24*60*60*1000); break;
+            case 'lastYear': start = new Date(now.getFullYear()-1, 0, 1); end = new Date(now.getFullYear()-1, 11, 31, 23, 59, 59, 999); break;
+            case 'twoYears': start = new Date(now.getFullYear()-1, 0, 1); break;
             default:         start = new Date(now.getFullYear(), 0, 1);
         }
         this.dateDebut   = start;
-        this.dateFin     = now;
+        this.dateFin     = end;
         this.periodLabel = p.label + ' ('
             + start.toLocaleDateString('fr-FR')
-            + ' – ' + now.toLocaleDateString('fr-FR') + ')';
+            + ' – ' + end.toLocaleDateString('fr-FR') + ')';
         this.resetFiltresSilent();
-        this.load(start, now);
+        this.load(start, end);
     }
 
     generateCustom(): void {

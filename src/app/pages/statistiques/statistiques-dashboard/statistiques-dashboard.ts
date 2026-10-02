@@ -9,7 +9,9 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
+import { DatePickerModule } from 'primeng/datepicker';
 import { StatistiqueService, StatistiqueResponse } from '../../../core/services/statistique.service';
+import { TypePeriode, calculerPeriode, libellePeriode } from '../../../core/utils/periode-statistiques';
 
 @Component({
     selector: 'app-statistiques-dashboard',
@@ -17,7 +19,7 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
     imports: [
         CommonModule, FormsModule, ButtonModule,
         ChartModule, SelectModule, SkeletonModule,
-        TagModule, ToastModule, TooltipModule
+        TagModule, ToastModule, TooltipModule, DatePickerModule
     ],
     providers: [MessageService],
     template: `
@@ -39,12 +41,17 @@ import { StatistiqueService, StatistiqueResponse } from '../../../core/services/
                 </span>
             </p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap items-center">
             <p-select [(ngModel)]="selectedPeriod"
                 [options]="periodOptions"
                 optionLabel="label" optionValue="value"
                 (onChange)="onPeriodChange()"
                 styleClass="text-sm"/>
+            <p-datepicker *ngIf="selectedPeriod === 'custom'"
+                [(ngModel)]="plage" selectionMode="range" [readonlyInput]="true"
+                dateFormat="dd/mm/yy" [maxDate]="aujourdhui" [showButtonBar]="true"
+                placeholder="Choisir du … au …" appendTo="body" inputStyleClass="text-sm"
+                (onSelect)="onPlageChange()" (onClear)="onPlageEffacee()"/>
             <p-button icon="pi pi-refresh" severity="secondary" outlined
                 pTooltip="Actualiser" (onClick)="loadStats()"/>
         </div>
@@ -432,8 +439,10 @@ export class StatistiquesDashboard implements OnInit {
 
     loading             = true;
     stats: StatistiqueResponse | null = null;
-    selectedPeriod      = 'year';
+    selectedPeriod: TypePeriode = 'year';
     selectedPeriodLabel = 'Cette année';
+    plage: (Date | null)[] | null = null;
+    readonly aujourdhui = new Date();
 
     statusChartData: any = null;
     modeChartData:   any = null;
@@ -464,11 +473,14 @@ export class StatistiquesDashboard implements OnInit {
         elements: { line: { tension: 0.4 }, point: { radius: 3 } }
     };
 
-    readonly periodOptions = [
-        { label: 'Cette année',       value: 'year'    },
-        { label: 'Ce trimestre',      value: 'quarter' },
-        { label: 'Ce mois',           value: 'month'   },
-        { label: '30 derniers jours', value: '30days'  }
+    readonly periodOptions: { label: string; value: TypePeriode }[] = [
+        { label: 'Cette année',                    value: 'year'     },
+        { label: 'Année précédente',               value: 'lastYear' },
+        { label: 'Cette année et la précédente',   value: 'twoYears' },
+        { label: 'Ce trimestre',                   value: 'quarter'  },
+        { label: 'Ce mois',                        value: 'month'    },
+        { label: '30 derniers jours',              value: '30days'   },
+        { label: 'Période personnalisée…',         value: 'custom'   }
     ];
 
     get hasAlerts():   boolean { return this.totalAlerts > 0; }
@@ -483,14 +495,31 @@ export class StatistiquesDashboard implements OnInit {
     onPeriodChange(): void {
         this.selectedPeriodLabel = this.periodOptions
             .find(p => p.value === this.selectedPeriod)?.label || '';
-        this.loadStats();
+        // Période personnalisée : on recharge si des dates sont déjà choisies, sinon on attend qu'elles le soient.
+        if (this.selectedPeriod !== 'custom' || this.plage?.[0]) this.loadStats();
+    }
+
+    onPlageEffacee(): void {
+        // Plus de dates : on revient à la période par défaut plutôt que de laisser des chiffres sous un faux libellé.
+        this.plage = null;
+        this.selectedPeriod = 'year';
+        this.onPeriodChange();
+    }
+
+    onPlageChange(): void {
+        // Le calendrier d'intervalle renvoie d'abord la seule date de début : on charge dès que la fin est choisie.
+        if (this.plage?.[0] && this.plage?.[1]) this.loadStats();
     }
 
     loadStats(): void {
+        const periode = calculerPeriode(this.selectedPeriod, new Date(), this.plage);
+        if (!periode) return;
+        this.selectedPeriodLabel = this.selectedPeriod === 'custom'
+            ? libellePeriode(periode)
+            : this.periodOptions.find(p => p.value === this.selectedPeriod)?.label || '';
         this.loading = true;
-        const { start, end } = this.getPeriodDates();
 
-        this.statistiqueService.getDashboard(start, end).subscribe({
+        this.statistiqueService.getDashboard(periode.debut.toISOString(), periode.fin.toISOString()).subscribe({
             next: stats => {
                 this.stats = stats;
                 this.buildCharts(stats);
@@ -505,25 +534,6 @@ export class StatistiquesDashboard implements OnInit {
                 });
             }
         });
-    }
-
-    private getPeriodDates(): { start: string; end: string } {
-        const now = new Date();
-        let start: Date;
-        switch (this.selectedPeriod) {
-            case 'month':
-                start = new Date(now.getFullYear(), now.getMonth(), 1);
-                break;
-            case 'quarter':
-                start = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-                break;
-            case '30days':
-                start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                break;
-            default:
-                start = new Date(now.getFullYear(), 0, 1);
-        }
-        return { start: start.toISOString(), end: now.toISOString() };
     }
 
     private buildCharts(stats: StatistiqueResponse): void {

@@ -3,9 +3,14 @@ import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_AUTH } from '../interceptors/skip-auth.context';
-import { MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement } from '../models/statistique.model';
+import {
+    MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, ActeurEtapeDepassement
+} from '../models/statistique.model';
 
-export type { MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, DepassementItem } from '../models/statistique.model';
+export type {
+    MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, DepassementItem,
+    ActeurEtapeDepassement, EtapeDepassement
+} from '../models/statistique.model';
 
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +52,11 @@ export class StatistiqueService {
 
     getDepassementsParActeur(): Observable<ActeurDepassement[]> {
         return this.http.get<ActeurDepassement[]>(`${this.baseUrl}/depassements-par-acteur`);
+    }
+
+    /** Étapes du circuit de traitement en retard, regroupées par acteur (CGEA, CGE). */
+    getDepassementsEtapes(): Observable<ActeurEtapeDepassement[]> {
+        return this.http.get<ActeurEtapeDepassement[]>(`${this.baseUrl}/depassements-etapes`);
     }
 
     exportAnnualReport(year: number): Observable<Blob> {

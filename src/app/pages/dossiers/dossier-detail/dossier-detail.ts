@@ -14,7 +14,8 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
-import { DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
+import { DelaiEtapeResponse, DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
+import { classeEtatDelai, libelleEtatDelai } from '../../../core/utils/delai-etape';
 import { KeycloakService } from '../../../core/auth/keycloak.service';
 import { AttachmentService, AttachmentResponse } from '../../../core/services/attachment.service';
 import {
@@ -142,6 +143,8 @@ export class DossierDetail implements OnInit {
     downloadingOfficialPdf = false;
     downloadingRecepisse   = false;
     downloadingAccuse      = false;
+    downloadingQuitus      = false;
+    downloadingLettre      = false;
     downloadingReponse     = false;
     downloadingResume      = false;
     openDays              = 90;
@@ -150,6 +153,9 @@ export class DossierDetail implements OnInit {
     witnesses:            WitnessResponse[]       = [];
     observations:         ObservationResponse[]   = [];
     ficheAffectation:     FicheAffectationResponse | null = null;
+    delaisEtapes:         DelaiEtapeResponse[] = [];
+    readonly libelleEtatDelai = libelleEtatDelai;
+    readonly classeEtatDelai  = classeEtatDelai;
     departements:         DepartementOption[]      = [];
     conseillers:          AgentSummary[]           = [];
     habilitations:        DossierHabilitationResponse[] = [];
@@ -385,6 +391,9 @@ export class DossierDetail implements OnInit {
         });
         this.etudeOpportuniteService.get(id).subscribe({
             next: e => { this.etudeOpportunite = e; }
+        });
+        this.dossierService.getDelaisEtapes(id).subscribe({
+            next: d => { this.delaisEtapes = d; }, error: () => {}
         });
         this.loadSectionsDossierTravail(id);
         if (this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC'])) {
@@ -1884,6 +1893,44 @@ export class DossierDetail implements OnInit {
                 this.messageService.add({
                     severity: 'error', summary: 'Erreur',
                     detail: err.error?.message || 'Téléchargement du récépissé impossible'
+                });
+            }
+        });
+    }
+
+    downloadLettreInformation(): void {
+        if (!this.dossier) return;
+        const dossier = this.dossier;
+        this.downloadingLettre = true;
+        this.pdfService.downloadLettreInformation(dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `lettre-information-${dossier.number || dossier.id}.pdf`);
+                this.downloadingLettre = false;
+            },
+            error: async err => {
+                this.downloadingLettre = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Lettre impossible',
+                    detail: await this.pdfService.messageErreur(err, "Téléchargement de la lettre d'information impossible")
+                });
+            }
+        });
+    }
+
+    downloadQuitus(): void {
+        if (!this.dossier) return;
+        const dossier = this.dossier;
+        this.downloadingQuitus = true;
+        this.pdfService.downloadQuitus(dossier.id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `quitus-cge-${dossier.number || dossier.id}.pdf`);
+                this.downloadingQuitus = false;
+            },
+            error: async err => {
+                this.downloadingQuitus = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Quitus impossible',
+                    detail: await this.pdfService.messageErreur(err, 'Téléchargement du quitus impossible')
                 });
             }
         });

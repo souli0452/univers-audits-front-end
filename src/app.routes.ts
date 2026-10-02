@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { AppLayout } from './app/layout/component/app.layout';
 import { Dashboard } from './app/pages/dashboard/dashboard';
 import { Notfound } from './app/pages/notfound/notfound';
-import { authGuard, roleGuard } from './app/core/guards/auth.guard';
+import { authGuard, dcpSeulGuard, roleGuard } from './app/core/guards/auth.guard';
 
 export const appRoutes: Routes = [
 
@@ -22,6 +22,7 @@ export const appRoutes: Routes = [
         path: 'app',
         component: AppLayout,
         canActivate: [authGuard],
+        canActivateChild: [dcpSeulGuard],
         children: [
             { path: '', component: Dashboard },
             {

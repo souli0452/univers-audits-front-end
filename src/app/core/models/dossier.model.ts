@@ -104,6 +104,7 @@ export interface NotificationResponse {
 export interface DossierResponse {
     id: string;
     number?: string;
+    numeroCourrier?: string;
     accessCode: string;
     version: number;
     status: DossierStatus;
@@ -145,6 +146,7 @@ export interface DossierCreateRequest {
     object: string;
     description?: string;
     incidentLocation?: string;
+    numeroCourrier?: string;
     incidentPeriod?: string;
     estimatedLoss?: number;
     isConfidential?: boolean;
@@ -234,4 +236,19 @@ export interface StatistiqueResponse {
     referredToJustice?:            number;
     period:                        string;
     generatedAt:                   string;
+}
+export type StatutDelaiEtape = 'EN_COURS' | 'PROCHE' | 'DEPASSE' | 'RESPECTE' | 'TERMINE_EN_RETARD';
+
+/** Délai d'une étape du circuit de traitement d'un dossier (calculé par le back). */
+export interface DelaiEtapeResponse {
+    code: string;
+    libelle: string;
+    acteur: string;
+    debut: string;
+    echeance: string;
+    fin?: string | null;
+    delaiJours: number;
+    joursOuvrables: boolean;
+    statut: StatutDelaiEtape;
+    heuresRestantes?: number | null;
 }

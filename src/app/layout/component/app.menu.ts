@@ -30,6 +30,7 @@ export class AppMenu {
     model: MenuItem[] = [];
 
     ngOnInit() {
+    const dcpSeul = this.keycloakService.estDcpSeul();
     this.model = [
 
         {
@@ -38,6 +39,7 @@ export class AppMenu {
                 {
                     label: 'Tableau de bord',
                     icon: 'pi pi-fw pi-home',
+                    visible: !dcpSeul,
                     routerLink: ['/app']
                 },
                 {
@@ -52,6 +54,7 @@ export class AppMenu {
 
         {
             label: 'Dossiers',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Tous les dossiers',
@@ -80,6 +83,7 @@ export class AppMenu {
 
         {
             label: 'Bureau des plaintes',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Séances CTADP',
@@ -99,6 +103,7 @@ export class AppMenu {
 
         {
             label: 'Investigations',
+            visible: !dcpSeul,
             items: [
                 {
                     label: 'Toutes les enquêtes',
@@ -189,5 +194,20 @@ export class AppMenu {
             ]
         }
     ];
+    this.model = AppMenu.sansSeparateursOrphelins(this.model);
 }
+
+    /**
+     * Retire les groupes masqués puis les séparateurs qui n'encadrent plus rien : en tête, en queue,
+     * ou consécutifs (un agent DCP, par exemple, ne voit que deux groupes).
+     */
+    static sansSeparateursOrphelins(items: MenuItem[]): MenuItem[] {
+        const visibles = items.filter(item => item.visible !== false);
+        return visibles.filter((item, i) => {
+            if (!item.separator) return true;
+            const precedent = visibles[i - 1];
+            const suivant = visibles[i + 1];
+            return !!precedent && !precedent.separator && !!suivant;
+        });
+    }
 }

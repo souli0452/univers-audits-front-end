@@ -13,7 +13,8 @@ import {
     TransferExternalRequest,
     ReassignAgentRequest,
     DossierSearchParams,
-    DossierStatsResponse
+    DossierStatsResponse,
+    DelaiEtapeResponse
 } from '../models/dossier.model';
 
 export type {
@@ -73,6 +74,11 @@ export class DossierService {
 
     findById(id: string): Observable<DossierResponse> {
         return this.http.get<DossierResponse>(`${this.baseUrl}/${id}`);
+    }
+
+    /** Délais des étapes du circuit de traitement, calculés par le back. */
+    getDelaisEtapes(id: string): Observable<DelaiEtapeResponse[]> {
+        return this.http.get<DelaiEtapeResponse[]>(`${this.baseUrl}/${id}/delais-etapes`);
     }
 
     refreshById(id: string): Observable<DossierResponse> {

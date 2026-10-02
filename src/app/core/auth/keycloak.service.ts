@@ -72,4 +72,16 @@ export class KeycloakService {
     hasAnyRole(roles: string[]): boolean {
         return roles.some(r => this.keycloak.hasRealmRole(r));
     }
+
+    /**
+     * Vrai pour un agent de la communication (DCP) qui n'a aucun autre rôle métier :
+     * il ne consulte que les statistiques globales, sans accès aux dossiers.
+     */
+    estDcpSeul(): boolean {
+        // Liste des rôles métier du royaume : un rôle technique du jeton (default-roles-*, offline_access…)
+        // ne doit pas faire perdre la restriction à un agent DCP.
+        const autresRolesMetier = ['ADMIN_DDIC', 'CGE', 'CGEA', 'AGENT_BRPD', 'CONSEILLER_JURIDIQUE',
+                                   'CONTROLEUR_ETAT', 'MEMBRE_CTADP'];
+        return this.hasRole('DCP') && !this.hasAnyRole(autresRolesMetier);
+    }
 }

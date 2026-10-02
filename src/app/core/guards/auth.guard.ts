@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { KeycloakService } from '../auth/keycloak.service';
 
 /**
@@ -32,4 +32,26 @@ export const roleGuard = (roles: string[]): CanActivateFn => {
         router.navigate(['/notfound']);
         return false;
     };
+};
+
+/** Pages accessibles à un agent DCP seul : statistiques globales, profil, notifications. */
+export function urlAutoriseePourDcpSeul(url: string): boolean {
+    const chemin = url.split(/[?#]/)[0];
+    if (chemin === '/app/statistiques/depassements-par-acteur') return false;
+    return ['/app/statistiques', '/app/profil', '/app/notifications'].some(p => chemin === p || chemin.startsWith(p + '/'));
+}
+
+/**
+ * Renvoie un agent DCP seul vers les statistiques dès qu'il tente d'ouvrir une autre page de l'espace agent.
+ * Les autres rôles ne sont pas concernés.
+ */
+export const dcpSeulGuard: CanActivateChildFn = (_route, state) => {
+    const keycloakService = inject(KeycloakService);
+    const router = inject(Router);
+
+    if (!keycloakService.estDcpSeul() || urlAutoriseePourDcpSeul(state.url)) {
+        return true;
+    }
+
+    return router.createUrlTree(['/app/statistiques']);
 };
