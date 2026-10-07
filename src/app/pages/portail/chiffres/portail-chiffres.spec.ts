@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { PortailChiffres, versBarres } from './portail-chiffres';
 import { StatistiqueService } from '../../../core/services/statistique.service';
 import { PublicStats } from '../../../core/models/statistique.model';
-import { ApercuChiffres, tauxTraitement } from '../shared/apercu-chiffres';
+import { ApercuChiffres, SEUIL_TAUX_TRAITEMENT, tauxTraitement } from '../shared/apercu-chiffres';
 
 const STATS: PublicStats = {
     totalDossiers: 120, dossiersNouveaux: 10, dossiersEnCours: 30, dossiersTraites: 80, confidentiel: '100%',
@@ -49,6 +49,15 @@ describe('PortailChiffres', () => {
         expect(texte).toContain('Reçus en 2026');
     });
 
+    it('masque le taux de traitement sous le seuil et montre les nouveaux dossiers à la place', () => {
+        const el = creer(of({ ...STATS, totalDossiers: 3, dossiersNouveaux: 3, dossiersEnCours: 0, dossiersTraites: 0 }));
+        const texte = el.textContent ?? '';
+
+        expect(texte).not.toContain('Taux de traitement');
+        expect(texte).not.toContain('0 %');
+        expect(texte).toContain('Nouveaux dossiers');
+    });
+
     it('calcule le taux de traitement et affiche les canaux de dépôt', () => {
         const el = creer(of(STATS));
         const texte = el.textContent ?? '';
@@ -73,7 +82,8 @@ describe('PortailChiffres', () => {
 
     it('n’affiche pas de taux tant qu’aucun dossier n’est reçu', () => {
         expect(tauxTraitement({ totalDossiers: 0, dossiersTraites: 0 })).toBeNull();
-        expect(tauxTraitement({ totalDossiers: 3, dossiersTraites: 1 })).toBe(33);
+        expect(tauxTraitement({ totalDossiers: SEUIL_TAUX_TRAITEMENT - 1, dossiersTraites: 5 })).toBeNull();
+        expect(tauxTraitement({ totalDossiers: SEUIL_TAUX_TRAITEMENT, dossiersTraites: 5 })).toBe(25);
     });
 
     it('reste lisible avec un back plus ancien (sans tendance ni répartition)', () => {
