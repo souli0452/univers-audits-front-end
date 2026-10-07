@@ -45,6 +45,8 @@ describe('PortailInfo', () => {
         expect(el.querySelector('a[href="mailto:info@asce-lc.bf"]')).not.toBeNull();
         expect(el.textContent).toContain('Avenue Pascal Zagré');
         expect(el.textContent).toContain('01 BP 617');
+        expect(el.textContent).toContain('Dénoncer un fait de corruption : (+226) 25 37 40 60');
+        expect(el.textContent).toContain('Standard : (+226) 25 37 40 56');
     });
 
     it('les mentions légales donnent le numéro vert et le courriel configurés', () => {
