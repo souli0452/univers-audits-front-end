@@ -594,15 +594,23 @@ interface ApiError { error?: { message?: string }; }
             <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
                 Autorité destinataire <span class="text-red-500">*</span>
             </label>
-            <input pInputText [(ngModel)]="transmissionForm.autoriteDestinataire"
-                placeholder="Ex : Procureur du Faso près le tribunal de..."
-                class="w-full"/>
+            <p-select [(ngModel)]="transmissionForm.autorite" [options]="autoritesOptions"
+                optionLabel="label" optionValue="value" placeholder="Choisir l'autorité"
+                (onChange)="transmissionForm.precision = ''"
+                appendTo="body" styleClass="w-full"/>
+        </div>
+        <div *ngIf="autoriteChoisie?.precisionLabel">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                {{ autoriteChoisie?.precisionLabel }}
+                <span *ngIf="autoriteChoisie?.precisionRequise" class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="transmissionForm.precision" maxlength="200" class="w-full"/>
         </div>
     </div>
     <ng-template pTemplate="footer">
         <p-button label="Annuler" severity="secondary" outlined (onClick)="showTransmissionDialog=false"/>
         <p-button label="Transmettre" icon="pi pi-send"
-            [loading]="creatingTransmission" [disabled]="!transmissionForm.autoriteDestinataire.trim()"
+            [loading]="creatingTransmission" [disabled]="!transmissionValide"
             (onClick)="executeCreerTransmission()"/>
     </ng-template>
 </p-dialog>
@@ -2758,7 +2766,13 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     loadingTransmission  = false;
     showTransmissionDialog = false;
     creatingTransmission = false;
-    transmissionForm: { autoriteDestinataire: string } = { autoriteDestinataire: '' };
+    transmissionForm: { autorite: string | null; precision: string } = { autorite: null, precision: '' };
+    readonly autoritesOptions = [
+        { label: 'Procureur du Faso',      value: 'Procureur du Faso',      precisionLabel: 'Tribunal (ex : près le tribunal de grande instance de Ouagadougou)', precisionRequise: false },
+        { label: 'Cour des comptes',       value: 'Cour des comptes',       precisionLabel: '',                       precisionRequise: false },
+        { label: 'Institution partenaire', value: 'Institution partenaire', precisionLabel: "Nom de l'institution",   precisionRequise: true },
+        { label: 'Autre autorité',         value: 'Autre autorité',         precisionLabel: "Nom de l'autorité",      precisionRequise: true }
+    ];
     showRelanceDialog = false;
     addingRelance     = false;
     relanceContenu    = '';
@@ -3212,15 +3226,32 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     openTransmissionDialog(): void {
-        this.transmissionForm = { autoriteDestinataire: '' };
+        this.transmissionForm = { autorite: null, precision: '' };
         this.showTransmissionDialog = true;
     }
 
+    get autoriteChoisie() {
+        return this.autoritesOptions.find(o => o.value === this.transmissionForm.autorite);
+    }
+
+    get transmissionValide(): boolean {
+        const a = this.autoriteChoisie;
+        return !!a && (!a.precisionRequise || !!this.transmissionForm.precision.trim());
+    }
+
+    private get autoriteDestinataire(): string {
+        // La précision n'est reprise que si l'autorité choisie en propose une : une valeur tapée pour une
+        // autre autorité (champ masqué depuis) ne doit pas être enregistrée.
+        const precision = this.autoriteChoisie?.precisionLabel ? this.transmissionForm.precision.trim() : '';
+        const base = this.transmissionForm.autorite ?? '';
+        return precision ? `${base} — ${precision}` : base;
+    }
+
     executeCreerTransmission(): void {
-        if (!this.inv || !this.transmissionForm.autoriteDestinataire.trim()) return;
+        if (!this.inv || !this.transmissionValide) return;
         this.creatingTransmission = true;
         this.transmissionAutoriteService
-            .creer(this.inv.id, { autoriteDestinataire: this.transmissionForm.autoriteDestinataire.trim() })
+            .creer(this.inv.id, { autoriteDestinataire: this.autoriteDestinataire })
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: t => {

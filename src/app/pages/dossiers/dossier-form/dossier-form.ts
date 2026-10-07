@@ -127,6 +127,16 @@ import { environment } from '../../../../environments/environment';
                                         Sélection obligatoire
                                     </small>
                                 </div>
+
+                                <div class="flex flex-col gap-1.5"
+                                    *ngIf="f['submissionMode'].value === 'POSTAL_MAIL' || f['submissionMode'].value === 'PAPER_FORM'">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                        N° d'enregistrement du courrier
+                                        <span class="text-xs font-normal text-surface-400">(facultatif)</span>
+                                    </label>
+                                    <input pInputText [formControl]="f['numeroCourrier']" maxlength="50"
+                                        placeholder="Référence dans l'application courrier" class="w-full" />
+                                </div>
                             </div>
 
                             <div class="flex flex-col gap-1.5">
@@ -689,6 +699,7 @@ export class DossierForm {
         object:           ['',           [Validators.required, Validators.minLength(10)]],
         description:      ['',           Validators.required],
         incidentLocation: [''],
+        numeroCourrier:   ['', Validators.maxLength(50)],
         incidentPeriod:   [''],
         estimatedLoss:    [null as number | null],
         isConfidential:   [false]
@@ -728,6 +739,8 @@ export class DossierForm {
         { label: 'Téléphone',         value: 'PHONE'         },
         { label: 'Numéro Vert',       value: 'GREEN_NUMBER'  },
         { label: 'Réseaux Sociaux',   value: 'SOCIAL_MEDIA'  },
+        { label: 'Presse / médias',   value: 'PRESS_MEDIA'   },
+        { label: "Rapport d'audit",   value: 'AUDIT_REPORT'  },
         { label: 'Comptoir Audio',    value: 'AUDIO_COUNTER' },
         { label: 'Formulaire Papier', value: 'PAPER_FORM'    },
         { label: 'Courrier Postal',   value: 'POSTAL_MAIL'   },
@@ -856,6 +869,10 @@ export class DossierForm {
         const per = cleanStr(this.f['incidentPeriod'].value);
         const loss = this.f['estimatedLoss'].value;
 
+        const courrier = ['POSTAL_MAIL', 'PAPER_FORM'].includes(this.f['submissionMode'].value ?? '')
+            ? cleanStr(this.f['numeroCourrier'].value) : undefined;
+
+        if (courrier) request.numeroCourrier = courrier;
         if (loc)  request.incidentLocation = loc;
         if (per)  request.incidentPeriod   = per;
         if (loss) request.estimatedLoss    = loss;

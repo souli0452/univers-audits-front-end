@@ -18,6 +18,7 @@ import {
 } from '../../../core/services/seance-ctadp.service';
 import { DossierService } from '../../../core/services/dossier.service';
 import { KeycloakService } from '../../../core/auth/keycloak.service';
+import { PdfService } from '../../../core/services/pdf.service';
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 
@@ -60,6 +61,11 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 severity="secondary" outlined size="small" (onClick)="openAddDossierDialog()"/>
             <p-button *ngIf="seance.statut === 'PLANIFIEE'" label="Tenir la séance" icon="pi pi-check-circle"
                 size="small" (onClick)="openTenirDialog()"/>
+        </div>
+        <div class="flex gap-2 mt-2" *ngIf="canConvoquer() && seance.statut === 'PLANIFIEE'">
+            <p-button label="Convocation (PDF)" icon="pi pi-file-pdf"
+                severity="secondary" outlined size="small"
+                [loading]="downloadingConvocation" (onClick)="telechargerConvocation()"/>
         </div>
 
         <div *ngIf="seance.procesVerbal" class="mt-4 p-4 rounded-xl bg-surface-50 dark:bg-surface-700">
@@ -183,6 +189,7 @@ export class SeanceCtadpDetail implements OnInit {
     private seanceCtadpService = inject(SeanceCtadpService);
     private dossierService     = inject(DossierService);
     private keycloakService    = inject(KeycloakService);
+    private pdfService         = inject(PdfService);
     private messageService     = inject(MessageService);
 
     seance:  SeanceCtadpResponse | null = null;
@@ -230,6 +237,31 @@ export class SeanceCtadpDetail implements OnInit {
 
     canManage(): boolean {
         return this.keycloakService.hasAnyRole(['CGEA', 'CONSEILLER_JURIDIQUE', 'ADMIN_DDIC']);
+    }
+
+    canConvoquer(): boolean {
+        return this.keycloakService.hasAnyRole(['CGEA', 'CGE', 'ADMIN_DDIC']);
+    }
+
+    downloadingConvocation = false;
+
+    telechargerConvocation(): void {
+        if (!this.seance) return;
+        const id = this.seance.id;
+        this.downloadingConvocation = true;
+        this.pdfService.downloadConvocationCtadp(id).subscribe({
+            next: blob => {
+                this.pdfService.triggerDownload(blob, `convocation-ctadp-${id}.pdf`);
+                this.downloadingConvocation = false;
+            },
+            error: async err => {
+                this.downloadingConvocation = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Convocation impossible',
+                    detail: await this.pdfService.messageErreur(err, 'Téléchargement de la convocation impossible')
+                });
+            }
+        });
     }
 
     openAddDossierDialog(): void {
