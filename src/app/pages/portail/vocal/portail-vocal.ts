@@ -569,7 +569,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 Je demande une protection lanceur d'alerte
                             </div>
                             <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                Loi N°010-2004/AN — Protection garantie par l'État
+                                Protection prévue par la loi
                             </div>
                         </div>
                         <div style="width:32px;height:32px;border-radius:8px;
@@ -604,7 +604,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
                                 <strong>Attention :</strong> invoquer cette protection de manière
                                 abusive est passible de <strong>sanctions pénales</strong>
-                                en vertu de la Loi N°010-2004/AN.
+                                en vertu de la loi.
                             </p>
                         </div>
                     </div>
@@ -667,7 +667,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             Protection lanceur d'alerte confirmée
                         </div>
                         <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
-                            Votre identité sera strictement protégée — Loi N°010-2004/AN
+                            Votre identité sera strictement protégée
                         </div>
                     </div>
                     <p-button icon="pi pi-times" severity="secondary" text size="small"
@@ -752,7 +752,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                         <div class="recap-title">Protection lanceur d'alerte</div>
                         <div class="recap-sub">
                             {{ protectionAcknowledged
-                                ? 'Demandée et confirmée — Loi N°010-2004/AN'
+                                ? 'Demandée et confirmée'
                                 : 'Non demandée (optionnel)' }}
                         </div>
                     </div>
@@ -922,8 +922,7 @@ export class PortailVocal {
         this.confirmationService.confirm({
             header:       'Confirmation sur l\'honneur',
             message:      'En confirmant, vous attestez sur l\'honneur que votre demande '
-                        + 'de protection lanceur d\'alerte est justifiée '
-                        + '(Loi N°010-2004/AN).',
+                        + 'de protection lanceur d\'alerte est justifiée.',
             acceptLabel:  'Je confirme sur l\'honneur',
             rejectLabel:  'Annuler',
             acceptIcon:   'pi pi-shield',

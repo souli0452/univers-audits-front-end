@@ -710,7 +710,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
             </p>
             <p class="id-conseil">
                 <b>Pour choisir :</b> avec vos coordonnées, un agent peut vous poser des questions et vous informer de la suite.
-                Sans coordonnées (possible en tant que témoin seulement), nous ne pouvons pas vous contacter : vous suivez le dossier avec votre <b>code de suivi</b>
+                Sans coordonnées, votre signalement est traité comme une dénonciation et nous ne pouvons pas vous contacter : vous suivez le dossier avec votre <b>code de suivi</b>
                 et pouvez répondre à une demande de précision depuis la page de suivi. Notez bien ce code à la fin du dépôt.
             </p>
 
@@ -846,7 +846,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                                     Je demande une protection lanceur d'alerte
                                 </div>
                                 <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                    Loi N°010-2004/AN — Protection garantie par l'État
+                                    Protection prévue par la loi
                                 </div>
                             </div>
                             <div style="width:32px;height:32px;border-radius:8px;
@@ -886,7 +886,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                                 <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
                                     <strong>Attention :</strong> invoquer cette protection
                                     de manière abusive est passible de
-                                    <strong>sanctions pénales</strong> (Loi N°010-2004/AN).
+                                    <strong>sanctions pénales</strong>.
                                 </p>
                             </div>
                         </div>
@@ -950,7 +950,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                                 Protection lanceur d'alerte confirmée
                             </div>
                             <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
-                                Votre identité sera strictement protégée — Loi N°010-2004/AN
+                                Votre identité sera strictement protégée
                             </div>
                         </div>
                         <p-button icon="pi pi-times" severity="secondary" text size="small"
@@ -1230,7 +1230,7 @@ export class DepotPlainte {
         this.confirmationService.confirm({
             header:      "Confirmation sur l'honneur",
             message:     "En confirmant, vous attestez sur l'honneur que votre demande "
-                       + "de protection lanceur d'alerte est justifiée (Loi N°010-2004/AN).",
+                       + "de protection lanceur d'alerte est justifiée.",
             acceptLabel: "Je confirme sur l'honneur",
             rejectLabel: 'Annuler',
             acceptIcon:  'pi pi-shield',
@@ -1255,7 +1255,7 @@ export class DepotPlainte {
             this.f['quality'].setValue('TEMOIN');
             this.messageService.add({
                 severity: 'info', summary: 'Signalement basculé en dénonciation',
-                detail: 'L\'anonymat n\'est possible qu\'en tant que témoin, conformément à la loi.'
+                detail: 'Sans identité, votre signalement est traité comme une dénonciation. Pour déposer une plainte, indiquez vos coordonnées.'
             });
         }
     }

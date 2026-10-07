@@ -497,7 +497,7 @@ export class PortailAccueil implements OnInit, OnDestroy {
 
     readonly trustItems = [
         { icon:'pi pi-lock',         title:'Anonymat possible',
-          desc:"En tant que témoin, vous pouvez déposer sans révéler qui vous êtes. Si vous donnez vos coordonnées, elles restent réservées aux agents habilités." },
+          desc:"Vous pouvez déposer sans révéler qui vous êtes. Si vous donnez vos coordonnées, elles restent réservées aux agents habilités." },
         { icon:'pi pi-shield',       title:'Plateforme sécurisée',
           desc:'Les échanges sont chiffrés et l\'accès aux dossiers est réservé aux agents habilités.' },
         { icon:'pi pi-check-circle', title:'Institution officielle',

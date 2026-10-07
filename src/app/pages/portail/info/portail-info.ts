@@ -64,7 +64,7 @@ export const PAGES_INFO: Record<string, PageInfo> = {
         sections: [
             { titre: 'Ce que nous collectons', paragraphes: [
                 "Ce que vous renseignez : la nature et la description des faits, le lieu, un montant estimé, les pièces jointes et l'éventuel enregistrement audio.",
-                "Vos coordonnées si vous choisissez de les fournir (obligatoires pour une victime). Vous pouvez rester anonyme si vous signalez en tant que témoin." ] },
+                "Vos coordonnées si vous choisissez de les fournir. Vous pouvez rester anonyme : le signalement est alors traité comme une dénonciation (une plainte est nominative)." ] },
             { titre: 'Pourquoi', paragraphes: ["Ces informations servent à instruire votre signalement et, si vous avez fourni vos coordonnées, à vous contacter ou à vous informer de la suite."] },
             { titre: 'Qui y a accès', paragraphes: [
                 "Les agents habilités à traiter les dossiers. Vos informations ne sont pas affichées publiquement, ni dans les chiffres du portail.",
@@ -79,7 +79,7 @@ export const PAGES_INFO: Record<string, PageInfo> = {
         titre: "Conditions d'utilisation",
         intro: "Ce que nous attendons de vous et ce que le portail permet.",
         sections: [
-            { titre: 'Qui peut signaler', paragraphes: ["Les citoyens, groupes, personnes morales, usagers de l'administration et institutions partenaires peuvent déposer une plainte ou une dénonciation. Un témoin peut rester anonyme ; une victime, ou son représentant, doit s'identifier."] },
+            { titre: 'Qui peut signaler', paragraphes: ["Les citoyens, groupes, personnes morales, usagers de l'administration et institutions partenaires peuvent déposer une plainte ou une dénonciation. Chacun peut rester anonyme : sans identité, le signalement est traité comme une dénonciation (une plainte est nominative)."] },
             { titre: 'Bonne foi', paragraphes: ["Signalez des faits que vous soupçonnez ou connaissez, de bonne foi. Accuser quelqu'un en sachant que c'est faux peut engager votre responsabilité."] },
             { titre: 'Ce que le portail ne remplace pas', paragraphes: ["Le portail n'est pas un service d'urgence. En cas de danger immédiat, contactez les secours, la police ou la gendarmerie."] },
             { titre: 'Contenu transmis', paragraphes: ["Ne transmettez que les informations utiles à l'instruction. Les fichiers joints doivent être ceux que vous avez le droit de communiquer."] },
