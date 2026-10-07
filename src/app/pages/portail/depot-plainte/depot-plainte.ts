@@ -13,6 +13,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
+import { TailleTexte } from '../shared/taille-texte';
+import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { AideNumeroVert } from '../shared/aide-numero-vert';
+import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
 @Component({
     selector: 'app-depot-plainte',
@@ -21,7 +25,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
-        ToastModule, DialogModule, ConfirmDialogModule
+        ToastModule, DialogModule, ConfirmDialogModule,
+        TailleTexte, AideNumeroVert, AvantDeSignaler
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -63,6 +68,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         }
         .nav-logo img { height:28px; width:auto; object-fit:contain; display:block; }
         .nav-sub   { color:var(--yellow); font-size:.75rem; }
+        .nav-right { display:flex; align-items:center; gap:.75rem; color:#fff; flex-wrap:wrap; justify-content:flex-end; }
+        .skip { position:absolute; left:-9999px; top:0; background:#fff; color:var(--ink); padding:.6rem 1rem; z-index:10000; font-weight:700; }
+        .skip:focus { left:.5rem; top:.5rem; }
+        .id-conseil { margin:-.5rem 0 1.25rem; padding:.85rem 1.1rem; background:var(--mist); border-left:3px solid var(--green); border-radius:10px; font-size:.8rem; line-height:1.6; color:var(--ink-60); }
+        .id-conseil b { color:var(--ink); }
 
         .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
 
@@ -342,7 +352,11 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         @media (max-width:520px) {
             .grid2 { grid-template-columns:1fr; }
             .type-grid { grid-template-columns:1fr; }
-            .step-label { display:none; }
+            .step-label:not(.active) { display:none; }
+            /* barre du haut sur deux lignes : le texte agrandi ne doit pas déborder */
+            .navbar { height:auto; flex-wrap:wrap; padding:.5rem 1rem; gap:.5rem; }
+            .nav-right { width:100%; justify-content:space-between; }
+            .step-line { width:20px; }
         }
     `],
     template: `
@@ -396,6 +410,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
 <div class="page">
 
+    <a class="skip" href="#contenu">Aller au contenu</a>
     <nav class="navbar">
         <div class="nav-left">
             <p-button icon="pi pi-arrow-left" severity="contrast"
@@ -405,12 +420,16 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             </div>
             <div class="nav-sub">Dépôt de plainte sécurisé</div>
         </div>
-        <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-            outlined
-            (onClick)="router.navigate(['/portail/suivi'])" />
+        <div class="nav-right">
+            <app-aide-numero-vert />
+            <app-taille-texte />
+            <p-button label="Suivre" icon="pi pi-search" severity="contrast"
+                outlined
+                (onClick)="router.navigate(['/portail/suivi'])" />
+        </div>
     </nav>
 
-    <div class="content">
+    <div class="content" id="contenu">
 
         <div class="hero">
             <div class="hero-icon"><i class="pi pi-file-edit"></i></div>
@@ -438,6 +457,8 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     [class.done]="currentStep > s.id"></div>
             </div>
         </div>
+
+        <app-avant-de-signaler *ngIf="currentStep === 1" style="margin-bottom:1.25rem;" />
 
         <div *ngIf="currentStep === 1" class="card">
 
@@ -629,7 +650,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                             Cliquez ou glissez vos fichiers ici
                         </p>
                         <p style="font-size:.75rem;color:var(--ink-40);">
-                            PDF, Word, Images, Audio, Vidéo
+                            Formats acceptés : {{ extensionsLibelle }}
                         </p>
                     </div>
                     <div *ngIf="attachments.length > 0"
@@ -684,8 +705,13 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                 <span class="req">*</span> Champs obligatoires
             </p>
 
-            <p style="font-size:.875rem;color:var(--ink-60);margin-bottom:1.5rem;margin-top:-.5rem;">
-                Informations strictement confidentielles. Vous pouvez rester anonyme.
+            <p style="font-size:.875rem;color:var(--ink-60);margin-bottom:1rem;margin-top:-.5rem;">
+                Vos coordonnées sont réservées aux agents habilités. Vous pouvez aussi rester anonyme : le choix vous appartient.
+            </p>
+            <p class="id-conseil">
+                <b>Pour choisir :</b> avec vos coordonnées, un agent peut vous poser des questions et vous informer de la suite.
+                Sans coordonnées, votre signalement est traité comme une dénonciation et nous ne pouvons pas vous contacter : vous suivez le dossier avec votre <b>code de suivi</b>
+                et pouvez répondre à une demande de précision depuis la page de suivi. Notez bien ce code à la fin du dépôt.
             </p>
 
             <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
@@ -820,7 +846,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                     Je demande une protection lanceur d'alerte
                                 </div>
                                 <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                    Loi N°010-2004/AN — Protection garantie par l'État
+                                    Protection prévue par la loi
                                 </div>
                             </div>
                             <div style="width:32px;height:32px;border-radius:8px;
@@ -860,7 +886,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
                                     <strong>Attention :</strong> invoquer cette protection
                                     de manière abusive est passible de
-                                    <strong>sanctions pénales</strong> (Loi N°010-2004/AN).
+                                    <strong>sanctions pénales</strong>.
                                 </p>
                             </div>
                         </div>
@@ -924,7 +950,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                                 Protection lanceur d'alerte confirmée
                             </div>
                             <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
-                                Votre identité sera strictement protégée — Loi N°010-2004/AN
+                                Votre identité sera strictement protégée
                             </div>
                         </div>
                         <p-button icon="pi pi-times" severity="secondary" text size="small"
@@ -1133,6 +1159,7 @@ export class DepotPlainte {
     attachments: File[] = [];
     maxFiles  = 5;
     maxSizeMB = 25;
+    readonly extensionsLibelle = LIBELLE_EXTENSIONS;
 
     dossierForm = this.fb.group({
         type:             ['COMPLAINT'],
@@ -1203,7 +1230,7 @@ export class DepotPlainte {
         this.confirmationService.confirm({
             header:      "Confirmation sur l'honneur",
             message:     "En confirmant, vous attestez sur l'honneur que votre demande "
-                       + "de protection lanceur d'alerte est justifiée (Loi N°010-2004/AN).",
+                       + "de protection lanceur d'alerte est justifiée.",
             acceptLabel: "Je confirme sur l'honneur",
             rejectLabel: 'Annuler',
             acceptIcon:  'pi pi-shield',
@@ -1228,7 +1255,7 @@ export class DepotPlainte {
             this.f['quality'].setValue('TEMOIN');
             this.messageService.add({
                 severity: 'info', summary: 'Signalement basculé en dénonciation',
-                detail: 'L\'anonymat n\'est possible qu\'en tant que témoin, conformément à la loi.'
+                detail: 'Sans identité, votre signalement est traité comme une dénonciation. Pour déposer une plainte, indiquez vos coordonnées.'
             });
         }
     }
@@ -1337,6 +1364,13 @@ export class DepotPlainte {
 
     private addFiles(files: File[]): void {
         const valid = files.filter(f => {
+            if (!isAllowedExtension(f.name)) {
+                this.messageService.add({
+                    severity: 'warn', summary: 'Format non accepté',
+                    detail: `${f.name} : formats acceptés ${this.extensionsLibelle}`
+                });
+                return false;
+            }
             if (f.size > this.maxSizeMB * 1024 * 1024) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Fichier trop volumineux',
@@ -1346,7 +1380,14 @@ export class DepotPlainte {
             }
             return true;
         });
-        this.attachments = [...this.attachments, ...valid].slice(0, this.maxFiles);
+        const total = [...this.attachments, ...valid];
+        if (total.length > this.maxFiles) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Nombre de fichiers limité',
+                detail: `${this.maxFiles} pièces jointes au maximum : les fichiers en trop n'ont pas été ajoutés.`
+            });
+        }
+        this.attachments = total.slice(0, this.maxFiles);
     }
 
     removeAttachment(index: number): void { this.attachments.splice(index, 1); }

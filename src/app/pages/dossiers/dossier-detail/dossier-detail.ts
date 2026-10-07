@@ -1302,7 +1302,7 @@ export class DossierDetail implements OnInit {
                             'Province', dec.province || '—']] : []),
                         ['Protection lanceur d\'alerte',
                             dec.protectionRequested
-                                ? '✓ DEMANDÉE — Loi N°010-2004/AN'
+                                ? '✓ DEMANDÉE'
                                 : 'Non demandée',
                             '', '']
                     ],

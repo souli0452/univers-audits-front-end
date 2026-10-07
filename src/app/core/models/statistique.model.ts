@@ -54,7 +54,14 @@ export interface PublicStats {
     dossiersEnCours:  number;
     dossiersTraites:  number;
     confidentiel:     string;
-    delaiJours:       number;
+    /** Année en cours, base de la répartition par nature (absent d'un back plus ancien). */
+    anneeCourante?:   number;
+    /** Signalements reçus par année, de la plus ancienne à l'année en cours. */
+    parAnnee?:        { annee: number; total: number }[];
+    /** Signalements reçus dans l'année en cours, par nature (clé = type du dossier). */
+    parType?:         Record<string, number>;
+    /** Signalements reçus dans l'année en cours, par canal de dépôt (clé = mode de dépôt du dossier). */
+    parCanal?:        Record<string, number>;
 }
 
 export interface DepassementItem {

@@ -8,6 +8,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { NUMERO_VERT, lienTelephone } from '../../../core/constants/numero-vert';
+import { TailleTexte } from '../shared/taille-texte';
 import { PdfService } from '../../../core/services/pdf.service';
 import { DossierResponse } from '../../../core/models/dossier.model';
 
@@ -16,7 +17,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     standalone: true,
     imports: [
         CommonModule, RouterModule, FormsModule,
-        ButtonModule, InputTextModule, ToastModule
+        ButtonModule, InputTextModule, ToastModule, TailleTexte
     ],
     providers: [MessageService],
     styles: [`
@@ -244,6 +245,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 
 <div class="page">
 <div class="wrap">
+
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;color:var(--ink);"><app-taille-texte /></div>
 
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:1.75rem;animation:slide-up .3s ease;">

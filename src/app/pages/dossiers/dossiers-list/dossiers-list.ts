@@ -498,7 +498,7 @@ export class DossiersList implements OnInit {
     stats: PublicStats = {
         totalDossiers: 0, dossiersNouveaux: 0,
         dossiersEnCours: 0, dossiersTraites: 0,
-        confidentiel: '100%', delaiJours: 7
+        confidentiel: '100%'
     };
 
     private readonly PRIORITY_ORDER: Record<string, number> = {

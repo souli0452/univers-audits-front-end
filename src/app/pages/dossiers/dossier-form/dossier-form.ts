@@ -395,7 +395,7 @@ import { environment } from '../../../../environments/environment';
                                             <label for="protectionAck"
                                                 class="text-sm text-surface-700 dark:text-surface-200 cursor-pointer leading-relaxed">
                                                 J'ai pris connaissance des conditions de protection
-                                                prévues par la <strong>Loi N°010-2004/AN</strong>
+                                                prévues par la loi
                                                 sur la protection des lanceurs d'alerte
                                                 <span class="req">*</span>
                                             </label>
@@ -403,7 +403,7 @@ import { environment } from '../../../../environments/environment';
                                         <small class="error-msg"
                                             *ngIf="consentTouched && fd['protectionRequested'].value && !fd['protectionAcknowledged'].value">
                                             <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                                            Vous devez confirmer avoir pris connaissance de la loi N°010-2004/AN
+                                            Vous devez confirmer avoir pris connaissance des conditions de protection
                                         </small>
                                     </div>
 
@@ -655,8 +655,7 @@ import { environment } from '../../../../environments/environment';
                     Confidentialité garantie
                 </h4>
                 <p class="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
-                    Toutes les informations sont protégées conformément à la loi
-                    N°010-2004/AN sur la protection des lanceurs d'alerte.
+                    Toutes les informations sont protégées conformément à la loi sur la protection des lanceurs d'alerte.
                 </p>
             </div>
 
@@ -789,7 +788,7 @@ export class DossierForm {
             if (!isAnon && wantsProtec && !hasAck) {
                 this.messageService.add({
                     severity: 'warn', summary: 'Consentement requis',
-                    detail: 'Vous devez confirmer avoir pris connaissance de la Loi N°010-2004/AN.'
+                    detail: 'Vous devez confirmer avoir pris connaissance des conditions de protection.'
                 });
                 return;
             }
