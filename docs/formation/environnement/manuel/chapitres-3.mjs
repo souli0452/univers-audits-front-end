@@ -51,7 +51,7 @@ export async function chapitres3() {
         "**Rapport d'enquête officiel** : le rapport final."
     ]));
     c.push(p("La colonne de droite rappelle le **dossier associé** (un clic ouvre la fiche) et l'**équipe** : chef de mission, investigateurs, personnes ressources."));
-    c.push(...aConfirmer("Les 22 points de la check-list affichent le texte provisoire « contenu à confirmer avec le manuel de procédures ASCE-LC ». Leur libellé définitif doit être saisi (menu Administration > Paramètres métier > Check-list dossier) avant la formation."));
+    c.push(p("Les 22 points reprennent la « Liste de vérification du dossier de travail » du manuel des procédures de l'ASCE-LC (rencontre des témoins, théorie de l'infraction, PV d'audition signés, contrôle qualité interne du rapport, etc.). Le rapport ne peut pas être soumis tant qu'un point actif n'est pas coché."));
     c.push(h2('10.4 L\'équipe d\'enquête'));
     c.push(...puces([
         "Exactement **un chef de mission**, qui coordonne et signe le rapport final.",
@@ -185,6 +185,7 @@ export async function chapitres3() {
     c.push(tableau(['Terme', 'Définition'], [
         ['ASCE-LC', 'Autorité Supérieure de Contrôle d\'État et de Lutte contre la Corruption'],
         ['BRPD', 'Bureau de Réception des Plaintes et des Dénonciations'],
+        ['DEI', "Département d'Enquête et d'Investigation : il fait l'analyse finale de fond et de forme des rapports d'enquête (15 jours ouvrables)"],
         ['B4 (code de suivi)', 'Code de 8 caractères remis au déclarant pour suivre son dossier'],
         ['CGE / CGEA', 'Contrôleur Général d\'État / Contrôleur Général d\'État Adjoint'],
         ['CTADP', 'Comité de Traitement et d\'Analyse des Dossiers de Plaintes'],
@@ -219,9 +220,9 @@ export async function chapitres3() {
     c.push(tableau(['#', 'Point', 'Pourquoi'], [
         ['1', 'Accès du BRPD aux dépôts en ligne « Soumis »', 'Corrigé dans la plateforme (correctif du back, PR n° 6) : le BRPD voit et ouvre les dépôts « Soumis ». À vérifier en production après le déploiement, avec un vrai compte BRPD.'],
         ['2', 'Boutons visibles et droits réels', 'Corrigé dans le front (PR n° 6) : le CGEA ne voit plus les boutons que le serveur lui refuse. À vérifier après le déploiement du front.'],
-        ['3', 'Check-list du dossier de travail', 'Les 22 points affichent un texte provisoire à remplacer par ceux du manuel de procédures.'],
-        ['4', 'Abréviation « DEI »', 'Le circuit de validation d\'une enquête cite une étape « DEI ». Préciser son intitulé complet dans le glossaire.'],
-        ['5', 'Délais', 'Les valeurs de l\'annexe sont celles de l\'installation décrite ; confirmer qu\'elles correspondent au manuel de procédures.'],
+        ['3', 'Check-list du dossier de travail', "Les 22 libellés du manuel des procédures sont repris dans la plateforme (migration 025 du back). À vérifier après le déploiement du back : ouvrir la check-list d'une investigation."],
+        ['4', 'Abréviation « DEI »', "Le corps du manuel des procédures dit « Département d'Enquête et d'Investigation », mais son tableau des abréviations donne « Direction de la Documentation et de la Communication » (tableau décalé). L'ASCE-LC doit corriger cette ligne de son manuel."],
+        ['5', 'Délais', "Conformes au manuel des procédures, sauf deux écarts à confirmer : l'approbation du rapport par le CGEA (10 jours dans la plateforme, 20 jours pour le CGE et le CGEA ensemble dans le manuel) et la réponse à une demande de complément (14 jours dans la plateforme, 7 jours évoqués dans le manuel)."],
         ['6', 'Comptes de formation', 'Créer les huit comptes dans un environnement distinct de la production, avec des mots de passe propres à la formation.']
     ], [500, 3000, 6138]));
     c.push(apresTableau());
