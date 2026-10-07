@@ -338,6 +338,7 @@ export class AuditDashboard implements OnInit {
     { label: 'Créer rôle',           value: 'CREER_ROLE'           },
     { label: 'Modifier rôle',        value: 'MODIFIER_ROLE'        },
     { label: 'Supprimer rôle',       value: 'SUPPRIMER_ROLE'       },
+    { label: 'Recevoir complément',  value: 'RECEVOIR_COMPLEMENT'  },
   ];
  
   ngOnInit(): void {

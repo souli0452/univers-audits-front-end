@@ -40,6 +40,19 @@ export const appRoutes: Routes = [
                     import('./app/pages/investigations/investigations.routes')
             },
             {
+                path: 'seances-ctadp',
+                loadChildren: () =>
+                    import('./app/pages/seances-ctadp/seances-ctadp.routes')
+                    .then(m => m.default)
+            },
+            {
+                path: 'informations-preoccupantes',
+                canActivate: [roleGuard(['AGENT_BRPD', 'ADMIN_DDIC'])],
+                loadChildren: () =>
+                    import('./app/pages/informations-preoccupantes/informations-preoccupantes.routes')
+                    .then(m => m.default)
+            },
+            {
                 path: 'statistiques',
                 loadChildren: () =>
                     import('./app/pages/statistiques/statistiques.routes')
@@ -55,6 +68,19 @@ export const appRoutes: Routes = [
                 loadChildren: () =>
                     import('./app/pages/rapports/rapports.routes')
                     .then(m => m.default)
+            },
+            {
+                path: 'lecons-a-partager',
+                loadComponent: () =>
+                    import('./app/pages/lecons-a-partager/lecons-a-partager-list')
+                    .then(m => m.LeconsAPartagerList)
+            },
+            {
+                path: 'registre-auditions',
+                canActivate: [roleGuard(['CGEA', 'ADMIN_DDIC'])],
+                loadComponent: () =>
+                    import('./app/pages/registre-auditions/registre-auditions-list')
+                    .then(m => m.RegistreAuditionsList)
             },
             {
                 path: 'profil',

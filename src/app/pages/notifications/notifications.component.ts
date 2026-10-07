@@ -116,6 +116,7 @@ type FilterType = 'ALL' | 'UNREAD' | 'INVESTIGATION' | 'ALERT' | 'STATUS';
                 [class.bg-red-100]="isAlert(notif)"
                 [class.bg-blue-100]="isStatus(notif)"
                 [class.bg-amber-100]="isComplement(notif)"
+                [class.bg-purple-100]="isEscalade(notif)"
                 [class.bg-surface-100]="isOther(notif)">
                 <i class="pi"
                     [class.pi-search]="isInvestigation(notif)"
@@ -126,6 +127,8 @@ type FilterType = 'ALL' | 'UNREAD' | 'INVESTIGATION' | 'ALERT' | 'STATUS';
                     [class.text-blue-600]="isStatus(notif)"
                     [class.pi-question-circle]="isComplement(notif)"
                     [class.text-amber-600]="isComplement(notif)"
+                    [class.pi-arrow-up-right]="isEscalade(notif)"
+                    [class.text-purple-600]="isEscalade(notif)"
                     [class.pi-bell]="isOther(notif)"
                     [class.text-surface-400]="isOther(notif)"
                     style="font-size:.875rem"></i>
@@ -315,9 +318,10 @@ export class NotificationsComponent implements OnInit {
     isAlert(n: NotificationItem): boolean         { return n.type.includes('ALERT') || n.type.includes('DEADLINE'); }
     isStatus(n: NotificationItem): boolean        { return n.type === 'STATUS_UPDATE'; }
     isComplement(n: NotificationItem): boolean    { return n.type === 'COMPLEMENT_REQUEST'; }
+    isEscalade(n: NotificationItem): boolean      { return n.type.startsWith('ESCALADE_'); }
     isOther(n: NotificationItem): boolean {
         return !this.isInvestigation(n) && !this.isAlert(n)
-            && !this.isStatus(n) && !this.isComplement(n);
+            && !this.isStatus(n) && !this.isComplement(n) && !this.isEscalade(n);
     }
 
     getTypeLabel(type: string): string {
@@ -330,12 +334,22 @@ export class NotificationsComponent implements OnInit {
             COMPLEMENT_REQUEST:       'Complément',
             RECEIPT_B4:               'Récépissé B4',
             ACKNOWLEDGMENT_B5:        'AR B5',
+            DEADLINE_ALERT_J3:          'Alerte délai J-3',
+            COMPLEMENT_ALERT_J3:        'Alerte complément J-3',
+            INVESTIGATION_ALERT_J3:     'Alerte investigation J-3',
+            DEMANDE_DOCUMENTS_ALERT:    'Alerte demande de documents',
+            DEMANDE_DOCUMENTS_ALERT_J3: 'Alerte demande de documents J-3',
+            ESCALADE_AR:                 'Escalade — AR',
+            ESCALADE_COMPLEMENT:         'Escalade — Complément',
+            ESCALADE_INVESTIGATION:      'Escalade — Investigation',
+            ESCALADE_DEMANDE_DOCUMENTS:  'Escalade — Demande de documents',
         };
         return labels[type] ?? type;
     }
 
     getTypeBadgeClass(type: string): string {
         if (type === 'INVESTIGATION_ASSIGNMENT') return 'bg-green-50 text-green-700 border-green-200';
+        if (type.startsWith('ESCALADE_'))        return 'bg-purple-50 text-purple-700 border-purple-200';
         if (type.includes('ALERT'))              return 'bg-red-50 text-red-700 border-red-200';
         if (type === 'STATUS_UPDATE')            return 'bg-blue-50 text-blue-700 border-blue-200';
         if (type === 'COMPLEMENT_REQUEST')       return 'bg-amber-50 text-amber-700 border-amber-200';

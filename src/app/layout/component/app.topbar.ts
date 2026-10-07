@@ -17,6 +17,14 @@ import { NotificationService, NotificationItem }
         RouterModule, CommonModule, StyleClassModule,
         AppConfigurator, Popover, ButtonModule
     ],
+    styles: [`
+        /* Petit écran : on garde le logo (réduit) et on masque le texte « INTÉGRITÉ+ », sinon le
+           bouton des actions (notifications, profil, déconnexion) sort de l'écran. */
+        @media (max-width: 640px) {
+            .layout-topbar-logo span { display: none; }
+            .layout-topbar-logo img { height: 26px !important; }
+        }
+    `],
     template: `
 <div class="layout-topbar">
 
@@ -28,7 +36,7 @@ import { NotificationService, NotificationItem }
         </button>
         <a class="layout-topbar-logo" routerLink="/app"
            style="display:flex;align-items:center;gap:.5rem;">
-            <img src="assets/logo-integrite.png" alt="Intégrité+"
+            <img src="assets/logo-asce.png" alt="ASCE-LC"
                  style="height:34px;width:auto;object-fit:contain;"/>
             <span>INTÉGRITÉ+</span>
         </a>

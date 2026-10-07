@@ -319,7 +319,7 @@ const MAX_DURATION_SECONDS = 600;
                 </div>
 
                 <!-- Lieu + Date des faits -->
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="flex flex-col gap-1.5">
                         <label class="text-xs font-semibold text-surface-600
                                       dark:text-surface-300 uppercase tracking-wide">
@@ -576,8 +576,12 @@ export class DossierAudio implements OnDestroy {
 
         const incidentDate = this.f['incidentDate'].value as Date | null;
 
+        const isAnonymous = this.f['type'].value === 'ANONYMOUS';
+        const quality = this.f['type'].value === 'COMPLAINT' ? 'VICTIME' : 'TEMOIN';
         const request = {
-            type:             this.f['type'].value as any,
+            type:             (isAnonymous ? 'DENUNCIATION' : this.f['type'].value) as any,
+            quality:          quality as any,
+            anonymous:        isAnonymous,
             submissionMode:   this.f['submissionMode'].value as any,
             object:           this.f['object'].value!,
             description:      this.f['description'].value || undefined,
@@ -585,12 +589,12 @@ export class DossierAudio implements OnDestroy {
             incidentDate:     incidentDate ? incidentDate.toISOString().split('T')[0] : undefined,
             estimatedLoss:    this.f['estimatedLoss'].value || undefined,
             declarantData: {
-                typeDeclarant:         'CITIZEN' as any,
-                firstName:             this.fd['firstName'].value  || undefined,
-                lastName:              this.fd['lastName'].value   || undefined,
-                phoneNumber:           this.fd['phoneNumber'].value || undefined,
-                commune:               this.fd['commune'].value    || undefined,
-                anonymous:             false,
+                typeDeclarant:         (isAnonymous ? 'ANONYMOUS' : 'CITIZEN') as any,
+                firstName:             isAnonymous ? undefined : this.fd['firstName'].value  || undefined,
+                lastName:              isAnonymous ? undefined : this.fd['lastName'].value   || undefined,
+                phoneNumber:           isAnonymous ? undefined : this.fd['phoneNumber'].value || undefined,
+                commune:               isAnonymous ? undefined : this.fd['commune'].value || undefined,
+                anonymous:             isAnonymous,
                 dataProcessingConsent: !!this.fd['dataProcessingConsent'].value,
                 notificationsAccepted: true,
                 protectionRequested:   false
@@ -604,7 +608,7 @@ export class DossierAudio implements OnDestroy {
                     `temoignage_${Date.now()}.webm`,
                     { type: 'audio/webm' }
                 );
-                this.attachmentService.upload(dossier.id, [audioFile]).subscribe({
+                this.attachmentService.upload(dossier.id, [audioFile], false, dossier.accessCode).subscribe({
                     next: () => {
                         this.submitting     = false;
                         this.createdDossier = dossier;

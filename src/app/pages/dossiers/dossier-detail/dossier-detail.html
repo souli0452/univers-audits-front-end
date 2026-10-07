@@ -61,6 +61,36 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showTransferDialog"
+    header="Transférer le dossier à une institution"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+            <i class="pi pi-exclamation-circle text-amber-500 mt-0.5 flex-shrink-0"></i>
+            <p class="text-sm text-amber-700">
+                Le dossier passera au statut <strong>Transféré</strong> et ne sera plus modifiable.
+            </p>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-1 block">
+                Institution destinataire <span class="text-red-500 ml-1">*</span>
+            </label>
+            <input pInputText [(ngModel)]="transferInstitution" maxlength="300"
+                placeholder="Ex : Autorité compétente pour les marchés publics" class="w-full"/>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-1 block">Motif (optionnel)</label>
+            <textarea pTextarea [(ngModel)]="transferReason" maxlength="2000"
+                placeholder="Motif du transfert..." rows="4" class="w-full resize-none"></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showTransferDialog=false"/>
+        <p-button label="Transférer le dossier" icon="pi pi-share-alt"
+            [loading]="transitioning" (onClick)="executeTransfer()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showVersionConflictDialog"
     header="Conflit de version détecté"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false" [closable]="false">
@@ -243,6 +273,162 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showCreateFicheDialog" header="Créer la fiche d'affectation"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Décision du Cabinet du CGE <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheCreateForm.decisionCge" [options]="decisionCgeOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Observations</label>
+            <textarea pTextarea [(ngModel)]="ficheCreateForm.observationsCge" rows="4"
+                class="w-full resize-none" placeholder="Observations du Cabinet du CGE (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showCreateFicheDialog=false"/>
+        <p-button label="Créer" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveCreateFiche()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showAffecterFicheDialog" header="Affecter le dossier"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Type de désignation <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.typeDesignation" [options]="typeDesignationOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheAffecterForm.typeDesignation === 'DEPARTEMENT'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Département (DEI ou DAC) <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.departementDesigneId" [options]="departements"
+                optionLabel="libelle" optionValue="id"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheAffecterForm.typeDesignation === 'AGENT_CJ'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Conseiller juridique <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheAffecterForm.agentDesigneId" [options]="conseillers"
+                optionLabel="lastName" optionValue="id"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body">
+                <ng-template let-a pTemplate="item">{{ a.firstName }} {{ a.lastName }}</ng-template>
+                <ng-template let-a pTemplate="selectedItem">{{ a.firstName }} {{ a.lastName }}</ng-template>
+            </p-select>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Observations</label>
+            <textarea pTextarea [(ngModel)]="ficheAffecterForm.observationsCgea" rows="4"
+                class="w-full resize-none" placeholder="Observations du CGEA (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showAffecterFicheDialog=false"/>
+        <p-button label="Affecter" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveAffecterFiche()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showSuiviFicheDialog" header="Mettre à jour le suivi"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                État d'avancement <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="ficheSuiviForm.etatAvancement" [options]="etatAvancementOptions"
+                optionLabel="label" optionValue="value"
+                placeholder="Sélectionner..." styleClass="w-full" appendTo="body"/>
+        </div>
+        <div *ngIf="ficheSuiviForm.etatAvancement === 'AUTRE'">
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">
+                Précision <span class="text-red-500">*</span>
+            </label>
+            <input pInputText [(ngModel)]="ficheSuiviForm.etatAvancementPrecision"
+                class="w-full border border-surface-300 rounded-lg px-3 py-2" placeholder="Précisez l'état..."/>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Commentaires</label>
+            <textarea pTextarea [(ngModel)]="ficheSuiviForm.commentairesSuivi" rows="4"
+                class="w-full resize-none" placeholder="Commentaires de suivi (optionnel)..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showSuiviFicheDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" [loading]="savingFiche" (onClick)="saveSuiviFiche()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showEtudeDialog" header="Étude d'opportunité — Fiche d'analyse première"
+    [modal]="true" [style]="{width:'640px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2" style="max-height:65vh;overflow-y:auto;">
+
+        <div *ngFor="let q of etudeBoolQuestions" class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold text-surface-700">{{ q.label }}</label>
+            <div class="flex items-center gap-2">
+                <p-select [(ngModel)]="etudeForm[q.key]" [options]="ouiNonOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="—" [showClear]="true" styleClass="w-40" appendTo="body"/>
+                <input pInputText [(ngModel)]="etudeForm[q.commentKey]"
+                    class="flex-1 border border-surface-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Commentaire (optionnel)..."/>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-semibold text-surface-700">Secteur sensible ?</label>
+            <div class="flex items-center gap-2">
+                <p-select [(ngModel)]="etudeForm.secteurSensible" [options]="ouiNonOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="—" [showClear]="true" styleClass="w-40" appendTo="body"/>
+                <input pInputText [(ngModel)]="etudeForm.secteurPrecision"
+                    class="flex-1 border border-surface-300 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Précision (optionnel)..."/>
+            </div>
+        </div>
+
+        <div class="p-3 rounded-xl border border-primary-100 bg-primary-50 flex flex-col gap-3">
+            <div>
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Nature de la qualification</label>
+                <p-select [(ngModel)]="etudeForm.natureQualification" [options]="natureQualificationOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+            <div *ngIf="etudeForm.natureQualification === 'PENALE'">
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Qualification pénale</label>
+                <p-select [(ngModel)]="etudeForm.typeInfractionId" [options]="typesInfraction"
+                    optionLabel="libelle" optionValue="id"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+            <div *ngIf="etudeForm.natureQualification === 'ADMINISTRATIVE'">
+                <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Qualification non pénale</label>
+                <p-select [(ngModel)]="etudeForm.qualificationNonPenale" [options]="qualificationNonPenaleOptions"
+                    optionLabel="label" optionValue="value"
+                    placeholder="Sélectionner..." [showClear]="true" styleClass="w-full" appendTo="body"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Avis général</label>
+            <textarea pTextarea [(ngModel)]="etudeForm.avisGeneral" rows="4"
+                class="w-full resize-none" placeholder="Avis général du conseiller juridique..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showEtudeDialog=false"/>
+        <p-button label="Enregistrer" icon="pi pi-check" [loading]="savingEtude" (onClick)="saveEtude()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showConfidentialDialog"
     [header]="dossier?.isConfidential ? 'Retirer la confidentialité' : 'Marquer comme confidentiel'"
     [modal]="true" [style]="{width:'480px'}" [draggable]="false">
@@ -293,6 +479,66 @@
             [severity]="dossier?.isConfidential ? 'secondary' : 'warn'"
             [loading]="savingConfidential"
             (onClick)="executeToggleConfidential()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showHabilitationDialog" header="Octroyer un accès"
+    [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">
+                Agent <span class="text-red-500">*</span>
+            </label>
+            <p-select [(ngModel)]="habilitationForm.agentId" [options]="habilitationAgentOptions"
+                optionLabel="label" optionValue="value" placeholder="Sélectionner un agent..."
+                styleClass="w-full" [filter]="true" appendTo="body"/>
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-surface-700 mb-2 block">
+                Motif <span class="text-red-500">*</span>
+            </label>
+            <textarea pTextarea [(ngModel)]="habilitationForm.reason" rows="3" class="w-full resize-none"
+                placeholder="Motif de l'octroi manuel d'accès..."></textarea>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showHabilitationDialog=false"/>
+        <p-button label="Octroyer" icon="pi pi-check"
+            [disabled]="!habilitationForm.agentId || !habilitationForm.reason.trim()"
+            [loading]="savingHabilitation" (onClick)="executeGrantHabilitation()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showRevokeHabilitationDialog" header="Révoquer l'accès"
+    [modal]="true" [style]="{width:'440px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-sm font-semibold text-surface-700 mb-1 block">
+            Motif de révocation <span class="text-red-500">*</span>
+        </label>
+        <textarea pTextarea [(ngModel)]="revokeHabilitationReason" rows="3" class="w-full resize-none"
+            placeholder="Motif de la révocation..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRevokeHabilitationDialog=false"/>
+        <p-button label="Révoquer" icon="pi pi-times" severity="danger"
+            [disabled]="!revokeHabilitationReason.trim()"
+            [loading]="revokingHabilitation" (onClick)="executeRevokeHabilitation()"/>
+    </ng-template>
+</p-dialog>
+
+<p-dialog [(visible)]="showReclasserDialog" header="Classer dans une section"
+    [modal]="true" [style]="{width:'420px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <label class="text-sm font-semibold text-surface-700 mb-1 block">Section du dossier de travail</label>
+        <p-select [(ngModel)]="reclasserSectionId" [options]="sectionOptions"
+            optionLabel="displayLabel" optionValue="id" placeholder="Sélectionner une section..."
+            styleClass="w-full" appendTo="body"/>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showReclasserDialog=false"/>
+        <p-button label="Classer" icon="pi pi-check"
+            [disabled]="!reclasserSectionId"
+            [loading]="savingReclasser" (onClick)="executeReclasser()"/>
     </ng-template>
 </p-dialog>
 
@@ -644,6 +890,11 @@
                     label="Déclarer irrecevable" icon="pi pi-times-circle"
                     severity="danger" size="small"
                     (onClick)="openDeclareInadmissible()"/>
+                <p-button *ngIf="canTransfer()"
+                    label="Transférer" icon="pi pi-share-alt"
+                    severity="secondary" size="small"
+                    pTooltip="Transmettre le dossier à une institution compétente"
+                    (onClick)="openTransfer()"/>
 
                 <button *ngIf="dossier.status==='IRRECEVABLE' && hasRole(['CGE','CGEA'])"
                     class="btn-cloture p-button p-component p-button-sm flex items-center
@@ -669,11 +920,40 @@
                     severity="secondary" outlined size="small"
     [loading]="exportingPdf"
     pTooltip="Exporter en PDF (4 pages complètes)" (onClick)="exportPdf()"/>
+
+                <p-button *ngIf="dossier.status !== 'CLASSE' && dossier.status !== 'TRANSFERE'"
+                    label="Export officiel" icon="pi pi-file"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingOfficialPdf"
+                    pTooltip="Export PDF officiel généré par le serveur" (onClick)="downloadOfficialPdf()"/>
                 <p-button *ngIf="dossier.status === 'CLASSE' || dossier.status === 'TRANSFERE'"
                     label="Exporter PDF" icon="pi pi-file-pdf"
                     severity="secondary" outlined size="small"
     [loading]="exportingPdf"
     pTooltip="Seule action disponible" (onClick)="exportPdf()"/>
+
+                <p-button label="Récépissé" icon="pi pi-receipt"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingRecepisse"
+                    pTooltip="Télécharger le récépissé de dépôt" (onClick)="downloadRecepisse()"/>
+
+                <p-button *ngIf="dossier.decisionCGE && dossier.decisionCGE.decision !== 'CLASSEMENT'"
+                    label="Accusé de réception" icon="pi pi-envelope"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingAccuse"
+                    pTooltip="Télécharger l'accusé de réception (suites à donner)" (onClick)="downloadAccuseReception()"/>
+
+                <p-button *ngIf="dossier.decisionCGE && dossier.decisionCGE.decision === 'CLASSEMENT'"
+                    label="Réponse motivée" icon="pi pi-envelope"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingReponse"
+                    pTooltip="Télécharger la réponse motivée (dossier classé)" (onClick)="downloadReponseMotivee()"/>
+
+                <p-button *ngIf="dossier.status === 'CLOS' || dossier.status === 'CLASSE'"
+                    label="Résumé de clôture" icon="pi pi-book"
+                    severity="secondary" outlined size="small"
+                    [loading]="downloadingResume"
+                    pTooltip="Synthèse interne du dossier (archivage)" (onClick)="downloadResumeCloture()"/>
 
                 <p-button *ngIf="dossier.status !== 'CLASSE'
                                  && dossier.status !== 'TRANSFERE'
@@ -946,6 +1226,130 @@
                     </div>
                 </div>
 
+                <div *ngIf="activeTab === 'affectation'" class="p-5">
+                    <div *ngIf="!ficheAffectation" class="text-center py-10 text-surface-400">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
+                            <i class="pi pi-send text-xl text-surface-300"></i>
+                        </div>
+                        <p class="text-sm mb-4">Aucune fiche d'affectation créée pour ce dossier</p>
+                        <p-button *ngIf="canCreateFiche()" icon="pi pi-plus" label="Créer la fiche d'affectation"
+                            severity="contrast" outlined size="small" (onClick)="openCreateFicheDialog()"/>
+                    </div>
+
+                    <div *ngIf="ficheAffectation" class="flex flex-col gap-4">
+                        <div class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Décision du Cabinet du CGE</span>
+                                <span class="text-xs text-surface-400">{{ ficheAffectation.dateDecisionCge | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="text-sm font-semibold">{{ getDecisionCgeLabel(ficheAffectation.decisionCge) }}</div>
+                            <div *ngIf="ficheAffectation.observationsCge" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.observationsCge }}</div>
+                            <div *ngIf="ficheAffectation.agentCgeNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentCgeNom }}</div>
+                        </div>
+
+                        <div *ngIf="ficheAffectation.typeDesignation"
+                            class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Affectation CGEA</span>
+                                <span class="text-xs text-surface-400">{{ ficheAffectation.dateImputation | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="text-sm font-semibold">
+                                {{ getTypeDesignationLabel(ficheAffectation.typeDesignation) }}
+                                <span *ngIf="ficheAffectation.departementDesigneLibelle"> — {{ ficheAffectation.departementDesigneLibelle }}</span>
+                                <span *ngIf="ficheAffectation.agentDesigneNom"> — {{ ficheAffectation.agentDesigneNom }}</span>
+                            </div>
+                            <div *ngIf="ficheAffectation.observationsCgea" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.observationsCgea }}</div>
+                            <div *ngIf="ficheAffectation.agentCgeaNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentCgeaNom }}</div>
+                        </div>
+
+                        <div *ngIf="ficheAffectation.etatAvancement"
+                            class="p-4 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-surface-500">Suivi</span>
+                                <p-tag [value]="getEtatAvancementLabel(ficheAffectation.etatAvancement)"
+                                    [severity]="getEtatAvancementSeverity(ficheAffectation.etatAvancement)"/>
+                            </div>
+                            <div *ngIf="ficheAffectation.etatAvancementPrecision" class="text-sm text-surface-600">{{ ficheAffectation.etatAvancementPrecision }}</div>
+                            <div *ngIf="ficheAffectation.commentairesSuivi" class="text-sm text-surface-600 mt-2">{{ ficheAffectation.commentairesSuivi }}</div>
+                            <div *ngIf="ficheAffectation.agentSuiviNom" class="text-xs text-surface-400 mt-2">Par {{ ficheAffectation.agentSuiviNom }}</div>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <p-button *ngIf="canAffecterFiche()" icon="pi pi-share-alt" label="Affecter"
+                                severity="contrast" outlined size="small" (onClick)="openAffecterFicheDialog()"/>
+                            <p-button *ngIf="canSuivreFiche()" icon="pi pi-refresh" label="Mettre à jour le suivi"
+                                severity="secondary" outlined size="small" (onClick)="openSuiviFicheDialog()"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="activeTab === 'etude'" class="p-5">
+                    <div class="flex justify-end mb-4" *ngIf="canEditEtude()">
+                        <p-button [icon]="etudeOpportunite ? 'pi pi-pencil' : 'pi pi-plus'"
+                            [label]="etudeOpportunite ? 'Modifier' : etudeCreateLabel"
+                            severity="secondary" outlined size="small" (onClick)="openEtudeDialog()"/>
+                    </div>
+
+                    <div *ngIf="!etudeOpportunite" class="text-center py-10 text-surface-400">
+                        <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
+                            <i class="pi pi-verified text-xl text-surface-300"></i>
+                        </div>
+                        <p class="text-sm">Aucune étude d'opportunité enregistrée</p>
+                    </div>
+
+                    <div *ngIf="etudeOpportunite" class="flex flex-col gap-3">
+                        <div *ngFor="let q of etudeBoolQuestions"
+                            class="p-3 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm text-surface-700 dark:text-surface-200">{{ q.label }}</span>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                    [class.bg-green-100]="getEtudeVal(q.key) === true"
+                                    [class.text-green-700]="getEtudeVal(q.key) === true"
+                                    [class.bg-red-100]="getEtudeVal(q.key) === false"
+                                    [class.text-red-700]="getEtudeVal(q.key) === false"
+                                    [class.bg-surface-100]="getEtudeVal(q.key) == null"
+                                    [class.text-surface-400]="getEtudeVal(q.key) == null">
+                                    {{ getOuiNonLabel(getEtudeVal(q.key)) }}
+                                </span>
+                            </div>
+                            <p *ngIf="getEtudeVal(q.commentKey)"
+                                class="text-xs text-surface-500 mt-1.5">{{ getEtudeVal(q.commentKey) }}</p>
+                        </div>
+
+                        <div class="p-3 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm text-surface-700 dark:text-surface-200">Secteur sensible ?</span>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                    [class.bg-green-100]="etudeOpportunite.secteurSensible === true"
+                                    [class.text-green-700]="etudeOpportunite.secteurSensible === true"
+                                    [class.bg-surface-100]="etudeOpportunite.secteurSensible !== true"
+                                    [class.text-surface-400]="etudeOpportunite.secteurSensible !== true">
+                                    {{ getOuiNonLabel(etudeOpportunite.secteurSensible) }}
+                                </span>
+                            </div>
+                            <p *ngIf="etudeOpportunite.secteurPrecision" class="text-xs text-surface-500 mt-1.5">
+                                {{ etudeOpportunite.secteurPrecision }}
+                            </p>
+                        </div>
+
+                        <div class="p-4 rounded-xl border border-primary-100 bg-primary-50">
+                            <div class="text-xs font-bold uppercase tracking-wide text-primary-600 mb-2">Qualification</div>
+                            <div class="text-sm font-semibold">{{ getNatureQualificationLabel(etudeOpportunite.natureQualification) }}</div>
+                            <div *ngIf="etudeOpportunite.natureQualification === 'PENALE'" class="text-sm text-surface-600 mt-1">
+                                {{ etudeOpportunite.typeInfractionLibelle || '—' }}
+                            </div>
+                            <div *ngIf="etudeOpportunite.natureQualification === 'ADMINISTRATIVE'" class="text-sm text-surface-600 mt-1">
+                                {{ getQualificationNonPenaleLabel(etudeOpportunite.qualificationNonPenale) }}
+                            </div>
+                        </div>
+
+                        <div *ngIf="etudeOpportunite.avisGeneral" class="p-4 rounded-xl border border-surface-100 dark:border-surface-600">
+                            <div class="text-xs font-bold uppercase tracking-wide text-surface-500 mb-2">Avis général</div>
+                            <p class="text-sm text-surface-700 dark:text-surface-200 whitespace-pre-line">{{ etudeOpportunite.avisGeneral }}</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div *ngIf="activeTab === 'attachments'" class="p-5">
                     <div *ngIf="attachments.length === 0" class="text-center py-10 text-surface-400">
                         <div class="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto mb-3">
@@ -980,6 +1384,10 @@
                                     <div class="text-xs text-surface-400 mt-0.5">{{ formatSize(att.fileSizeBytes) }}</div>
                                 </div>
                                 <div class="flex items-center gap-1 flex-shrink-0">
+                                    <p-button *ngIf="sectionsDossierTravail.length && hasRole(['CONTROLEUR_ETAT','AGENT_BRPD','ADMIN_DDIC'])"
+                                        icon="pi pi-folder" severity="secondary" text size="small"
+                                        pTooltip="Classer dans une section du dossier de travail"
+                                        (onClick)="openReclasserDialog(att.id)"/>
                                     <p-button *ngIf="getBlobUrl(att.id)"
                                         [icon]="previewId===att.id ? 'pi pi-eye-slash' : 'pi pi-eye'"
                                         severity="info" text size="small"
@@ -1021,6 +1429,64 @@
                         </div>
                     </div>
                 </div>
+
+                <div *ngIf="activeTab === 'dossierTravail'" class="p-5">
+                    <div *ngIf="loadingSections" class="text-xs text-surface-400">Chargement...</div>
+
+                    <div *ngIf="!loadingSections" class="flex flex-col gap-5">
+                        <div>
+                            <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide mb-2">
+                                Sections fixes
+                            </div>
+                            <div *ngIf="!sectionsDossierTravail.length" class="text-sm text-surface-400">
+                                Aucune section — l'investigation n'a peut-être pas encore été ouverte.
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <div *ngFor="let s of sectionsDossierTravail" class="flex items-center justify-between p-3 rounded-xl border border-surface-100 dark:border-surface-600 bg-surface-50 dark:bg-surface-700">
+                                    <div>
+                                        <div class="text-sm font-semibold text-surface-800">
+                                            {{ s.type === 'DETAIL' ? s.libelle : getSectionTypeLabel(s.type) }}
+                                        </div>
+                                        <div *ngIf="s.type === 'DETAIL'" class="text-xs text-surface-400">Section détail</div>
+                                    </div>
+                                    <span class="text-xs font-bold bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full">
+                                        {{ s.nombrePieces }} pièce(s)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div *ngIf="canEditDossier()" class="pt-4 border-t border-surface-100 dark:border-surface-700">
+                            <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide mb-2">
+                                Mode d'organisation du détail
+                            </div>
+                            <p class="text-xs text-surface-400 mb-2">
+                                À définir une seule fois pour ce dossier, avant de créer des sections détail.
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <p-select [(ngModel)]="organisationDetailChoice" [options]="organisationDetailOptions"
+                                    optionLabel="label" optionValue="value" placeholder="Sélectionner..."
+                                    styleClass="flex-1" appendTo="body"/>
+                                <p-button label="Valider" icon="pi pi-check" size="small"
+                                    [loading]="savingOrganisationDetail" [disabled]="!organisationDetailChoice"
+                                    (onClick)="executeDefinirOrganisationDetail()"/>
+                            </div>
+                        </div>
+
+                        <div *ngIf="canEditDossier()">
+                            <div class="text-xs font-semibold text-surface-400 uppercase tracking-wide mb-2">
+                                Ajouter une section détail
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input pInputText [(ngModel)]="newSectionLibelle" class="flex-1"
+                                    placeholder="Ex : Site de Bobo-Dioulasso..."/>
+                                <p-button label="Ajouter" icon="pi pi-plus" size="small"
+                                    [loading]="creatingSection" [disabled]="!newSectionLibelle.trim()"
+                                    (onClick)="executeCreerSectionDetail()"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1031,6 +1497,39 @@
                 <div class="font-mono text-2xl font-bold tracking-widest mb-1">{{ dossier?.accessCode }}</div>
                 <div class="text-xs opacity-50 flex items-center gap-1 mt-2">
                     <i class="pi pi-info-circle text-xs"></i> À remettre avec le formulaire B4
+                </div>
+            </div>
+
+            <div *ngIf="dossier?.isConfidential && hasRole(['CGE','CGEA','ADMIN_DDIC'])"
+                class="bg-white dark:bg-surface-800 rounded-2xl border
+                       border-surface-100 dark:border-surface-700 overflow-hidden">
+                <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-700 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                            <i class="pi pi-key text-orange-600 text-xs"></i>
+                        </div>
+                        <h3 class="font-semibold text-sm text-surface-900 dark:text-surface-0">Habilitations</h3>
+                    </div>
+                    <p-button icon="pi pi-plus" text size="small" pTooltip="Octroyer un accès"
+                        (onClick)="openHabilitationDialog()"/>
+                </div>
+                <div class="p-4">
+                    <div *ngIf="loadingHabilitations" class="text-xs text-surface-400">Chargement...</div>
+                    <div *ngIf="!loadingHabilitations && !habilitations.length" class="text-xs text-surface-400">
+                        Aucune habilitation active.
+                    </div>
+                    <div *ngFor="let h of habilitations"
+                        class="flex items-start justify-between gap-2 py-2 border-b border-surface-50 dark:border-surface-700 last:border-0">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium text-surface-800 dark:text-surface-100 truncate">
+                                {{ h.agent.firstName }} {{ h.agent.lastName }}
+                            </div>
+                            <div class="text-xs text-surface-400">{{ getHabilitationSourceLabel(h.source) }}</div>
+                            <div *ngIf="h.reason" class="text-xs text-surface-400 mt-0.5">{{ h.reason }}</div>
+                        </div>
+                        <p-button *ngIf="h.source === 'MANUAL'" icon="pi pi-times" text size="small" severity="danger"
+                            pTooltip="Révoquer" (onClick)="openRevokeHabilitationDialog(h)"/>
+                    </div>
                 </div>
             </div>
 

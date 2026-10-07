@@ -3,3 +3,13 @@
 @use './layout/layout.scss';
 @use 'primeicons/primeicons.css';
 @use './demo/demo.scss';
+
+/* Lato hébergé par le site : sous-ensemble latin (français) en WOFF2, ~20-40 Ko par graisse.
+   font-display: swap affiche le texte tout de suite avec la police de secours puis bascule.
+   Voir public/assets/fonts/lato/LISEZ-MOI.txt (origine et licence). */
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url('/assets/fonts/lato/Lato-Regular.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 500; font-display: swap; src: url('/assets/fonts/lato/Lato-Medium.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 600; font-display: swap; src: url('/assets/fonts/lato/Lato-SemiBold.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url('/assets/fonts/lato/Lato-Bold.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 800; font-display: swap; src: url('/assets/fonts/lato/Lato-ExtraBold.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-style: normal; font-weight: 900; font-display: swap; src: url('/assets/fonts/lato/Lato-Black.woff2') format('woff2'); }
