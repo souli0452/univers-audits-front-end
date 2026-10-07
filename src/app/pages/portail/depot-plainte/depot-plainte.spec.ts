@@ -150,4 +150,31 @@ describe('DepotPlainte', () => {
             expect(component.qualityOptions.map(q => q.label)).toEqual(['Je suis la victime', 'Je représente la victime']);
         });
     });
+
+    describe('pièces jointes', () => {
+        const fichier = (nom: string) => new File(['x'], nom);
+        const ajouter = (...noms: string[]) =>
+            component.onFileSelect({ target: { files: noms.map(fichier) } });
+
+        beforeEach(() => fixture.detectChanges());
+
+        it('affiche les formats acceptés dans la zone de dépôt', () => {
+            expect((fixture.nativeElement as HTMLElement).textContent)
+                .toContain('Formats acceptés : PDF, DOC, DOCX, JPG, JPEG, PNG, MP3, MP4, AVI, MOV');
+        });
+
+        it('refuse un format non accepté, même glissé dans la zone, et le dit', () => {
+            ajouter('virus.exe', 'preuve.pdf');
+
+            expect(component.attachments.map(f => f.name)).toEqual(['preuve.pdf']);
+            expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Format non accepté' }));
+        });
+
+        it('limite à 5 fichiers et prévient quand il y en a trop', () => {
+            ajouter('1.pdf', '2.pdf', '3.pdf', '4.pdf', '5.pdf', '6.pdf');
+
+            expect(component.attachments.length).toBe(5);
+            expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Nombre de fichiers limité' }));
+        });
+    });
 });

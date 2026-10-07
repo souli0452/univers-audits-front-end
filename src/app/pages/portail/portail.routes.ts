@@ -26,6 +26,24 @@ export default [
             .then(m => m.PortailSuivi)
     },
     {
+        path: 'chiffres',
+        loadComponent: () =>
+            import('./chiffres/portail-chiffres')
+            .then(m => m.PortailChiffres)
+    },
+    {
+        path: 'info/:page',
+        loadComponent: () =>
+            import('./info/portail-info')
+            .then(m => m.PortailInfo)
+    },
+    {
+        path: 'faq',
+        loadComponent: () =>
+            import('./faq/portail-faq')
+            .then(m => m.PortailFaq)
+    },
+    {
         path: 'complement',
         loadComponent: () =>
             import('./complement/portail-complement')

@@ -5,12 +5,16 @@ export const COMPLEMENT_MAX_FILES = 5;
 export const COMPLEMENT_MAX_FILE_MB = 25;
 export const COMPLEMENT_MAX_TOTAL_MB = 50;
 
-const EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'mp3', 'mp4', 'avi', 'mov'];
+/** Extensions de pièces jointes acceptées, communes au dépôt et à la réponse à un complément. */
+export const EXTENSIONS_AUTORISEES = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'mp3', 'mp4', 'avi', 'mov'];
+const EXTENSIONS = EXTENSIONS_AUTORISEES;
 export const COMPLEMENT_ACCEPT = EXTENSIONS.map(e => `.${e}`).join(',');
+/** Liste lisible : « PDF, DOC, DOCX, JPG… ». */
+export const LIBELLE_EXTENSIONS = EXTENSIONS.map(e => e.toUpperCase()).join(', ');
 
 const MB = 1024 * 1024;
 
-function isAllowedExtension(name: string): boolean {
+export function isAllowedExtension(name: string): boolean {
     const dot = name.lastIndexOf('.');
     return dot > -1 && EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
 }

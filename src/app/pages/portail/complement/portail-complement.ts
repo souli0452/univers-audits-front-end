@@ -8,7 +8,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { DossierService } from '../../../core/services/dossier.service';
 import { ComplementRequestResponse } from '../../../core/models/complement.model';
 import {
-    COMPLEMENT_ACCEPT, COMPLEMENT_MAX_FILES, COMPLEMENT_MAX_FILE_MB,
+    COMPLEMENT_ACCEPT, LIBELLE_EXTENSIONS, COMPLEMENT_MAX_FILES, COMPLEMENT_MAX_FILE_MB,
     COMPLEMENT_MIN_MESSAGE, addComplementFiles, formatFileSize, validateComplement
 } from '../../../core/utils/complement-form';
 
@@ -102,7 +102,7 @@ export type EtatComplement = 'chargement' | 'formulaire' | 'introuvable' | 'non-
                 <input #champ type="file" multiple hidden [accept]="accept" (change)="choisirFichiers($event)" />
                 <p-button label="Ajouter des fichiers" icon="pi pi-paperclip" severity="secondary" outlined
                     [disabled]="fichiers.length >= maxFichiers" (onClick)="champ.click()" />
-                <div class="aide">{{ maxFichiers }} fichiers maximum, {{ maxMo }} Mo chacun (PDF, Word, images, audio, vidéo).</div>
+                <div class="aide">{{ maxFichiers }} fichiers maximum, {{ maxMo }} Mo chacun. Formats acceptés : {{ extensionsLibelle }}.</div>
                 <div *ngFor="let f of fichiers; let i = index" class="fichier">
                     <span>{{ f.name }} — {{ taille(f.size) }}</span>
                     <p-button icon="pi pi-times" severity="danger" text size="small"
@@ -125,6 +125,7 @@ export class PortailComplement implements OnInit {
     private service = inject(DossierService);
 
     readonly accept = COMPLEMENT_ACCEPT;
+    readonly extensionsLibelle = LIBELLE_EXTENSIONS;
     readonly maxFichiers = COMPLEMENT_MAX_FILES;
     readonly maxMo = COMPLEMENT_MAX_FILE_MB;
     readonly min = COMPLEMENT_MIN_MESSAGE;

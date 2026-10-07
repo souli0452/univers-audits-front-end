@@ -6,7 +6,7 @@ import { PortailAccueil } from './portail-accueil';
 import { StatistiqueService } from '../../../core/services/statistique.service';
 import { PortalConfigService } from '../../../core/services/portal-config.service';
 
-const STATS = { totalDossiers: 12, dossiersNouveaux: 3, dossiersEnCours: 4, dossiersTraites: 5, confidentiel: '100%', delaiJours: 7 };
+const STATS = { totalDossiers: 12, dossiersNouveaux: 3, dossiersEnCours: 4, dossiersTraites: 5, confidentiel: '100%' };
 
 describe('PortailAccueil', () => {
     let fixture: ComponentFixture<PortailAccueil>;
@@ -81,9 +81,9 @@ describe('PortailAccueil', () => {
             expect(texte('.hero-actions')).not.toContain('Suivre ma dénonciation');
         });
 
-        it('le haut de page ne garde que le logo ASCE-LC et le numéro vert, sans bouton', () => {
+        it('le haut de page ne garde que le logo ASCE-LC, le numéro vert et le réglage de taille du texte, sans bouton d’action', () => {
             expect(q('.hero-topbar img[alt="ASCE-LC"]')).not.toBeNull();
-            expect(qa('.hero-topbar button').length).toBe(0);
+            expect(qa('.hero-topbar button:not(app-taille-texte button)').length).toBe(0);
             expect(texte('.hero-topbar')).toContain('Numéro vert');
             expect(texte('.hero-topbar')).toContain('80 00 11 02');
         });
@@ -147,7 +147,7 @@ describe('PortailAccueil', () => {
         it('rappelle les trois garanties (les mêmes que la section « Vos garanties »), sous le bouton', () => {
             const lignes = qa('.hero-trust li').map(li => (li.textContent ?? '').trim());
 
-            expect(lignes).toEqual(['Anonymat garanti', 'Plateforme sécurisée', 'Institution officielle']);
+            expect(lignes).toEqual(['Anonymat possible', 'Plateforme sécurisée', 'Institution officielle']);
             expect(lignes).toEqual(component.trustItems.map(t => t.title));
         });
 

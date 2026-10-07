@@ -8,12 +8,15 @@ import { Subject, takeUntil } from 'rxjs';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
 import { PortalConfigService } from '../../../core/services/portal-config.service';
 import { preventIfEmptyLink } from '../../../core/utils/empty-link';
-import { NUMERO_VERT } from '../../../core/constants/numero-vert';
+import { NUMERO_VERT, lienTelephone } from '../../../core/constants/numero-vert';
+import { TailleTexte } from '../shared/taille-texte';
+import { ApercuChiffres } from '../shared/apercu-chiffres';
+import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
 @Component({
     selector: 'app-portail-accueil',
     standalone: true,
-    imports: [CommonModule, RouterModule, FormsModule, ButtonModule],
+    imports: [CommonModule, RouterModule, FormsModule, ButtonModule, TailleTexte, AvantDeSignaler, ApercuChiffres],
     animations: [
         trigger('fadeIn', [
             transition(':enter', [
@@ -35,6 +38,18 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         a{text-decoration:none;color:inherit}
+        .skip{position:absolute;left:-9999px;top:0;background:#fff;color:var(--ink);padding:.6rem 1rem;z-index:10000;font-weight:700}
+        .skip:focus{left:.5rem;top:.5rem}
+        a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+        .nav-tools{display:flex;align-items:center;gap:1.25rem;color:#fff}
+        .nav-hotline{min-height:44px}
+        .chiffres{background:#fff;padding:3.5rem 2rem 3rem;text-align:center}
+        .chiffres > app-apercu-chiffres{display:block;max-width:960px;margin:0 auto}
+        .chiffres .section-sub{margin-bottom:2rem}
+        .stats-lien{text-align:center;margin-top:1.5rem;font-size:.85rem;font-weight:700}
+        .stats-lien a{color:var(--green);text-decoration:underline;display:inline-flex;align-items:center;gap:.4rem;min-height:36px}
+        .avant{background:var(--mist);padding:4rem 2rem;text-align:center}
+        .avant .section-sub{margin-bottom:2.25rem}
         button{font-family:inherit}
 
         /* ── Bloc logo + actions, intégré au hero (pas de navbar séparée) ── */
@@ -54,7 +69,7 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
         .letter-icon{font-size:.8em;color:var(--yellow);vertical-align:middle;margin:0 .02em}
         .hero-subtitle{font-size:1rem;color:rgba(255,255,255,.88);max-width:460px;margin:0 0 .85rem;line-height:1.7}
-        .hero-legal{font-size:.72rem;font-weight:700;letter-spacing:.5px;color:var(--yellow);text-transform:uppercase;margin-bottom:2rem}
+        .hero-legal{font-size:.75rem;font-weight:700;letter-spacing:.5px;color:#fff;text-transform:uppercase;margin-bottom:2rem}
 
         .hero-actions{display:flex;justify-content:flex-start;gap:1rem;flex-wrap:wrap}
         .hero-trust{list-style:none;display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:1.5rem}
@@ -75,22 +90,17 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         .track-hint{font-size:.72rem;color:var(--ink-40);margin-top:.85rem}
 
         /* ── Carte "second parcours" (témoignage vocal) ─────── */
-        .vocal-card-wrap{background:#fff;padding:3rem 2rem;display:flex;justify-content:center}
-        .vocal-card{background:#fff;border:1px solid var(--hair);box-shadow:0 10px 30px rgba(0,0,0,.06);border-radius:14px;padding:2.25rem 2rem;max-width:720px;width:100%;text-align:center}
-        .vocal-card-icons{display:flex;align-items:center;justify-content:center;gap:.75rem;margin-bottom:.5rem}
-        .vocal-card-icons i{font-size:1.3rem;color:var(--green)}
-        .vocal-card h2{font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:var(--ink)}
-        .vocal-card p{font-size:.9rem;color:var(--ink-60);margin-top:.5rem;line-height:1.6}
-        .vocal-card .btn-hero-primary{margin:1.5rem auto 0}
+        /* Parcours vocal : bandeau horizontal, action secondaire (le rouge est réservé au signalement) */
+        .vocal-card-wrap{background:#fff;padding:3rem 2rem 0;display:flex;justify-content:center}
+        .vocal-card{background:var(--mist);border:1px solid var(--hair);border-radius:16px;padding:1.75rem 2rem;max-width:960px;width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:1.5rem;align-items:center;text-align:left}
+        .vocal-ico{width:60px;height:60px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .vocal-ico i{font-size:1.5rem;color:#fff}
+        .vocal-card h2{font-family:var(--font-display);font-size:1.25rem;font-weight:800;color:var(--ink);margin-bottom:.3rem}
+        .vocal-card p{font-size:.92rem;color:var(--ink-60);line-height:1.6}
+        .btn-vocal{display:inline-flex;align-items:center;gap:.6rem;min-height:48px;padding:0 1.4rem;border-radius:8px;border:1.5px solid var(--green);background:#fff;color:var(--green);font-weight:800;font-size:.87rem;cursor:pointer;white-space:nowrap;transition:all .2s}
+        .btn-vocal:hover{background:var(--green);color:#fff}
 
-        /* ── Bandeau de statistiques ─────────────────────────── */
-        .stats-strip{background:#fff;border-bottom:1px solid var(--hair);padding:1.5rem 2rem}
-        .stats-strip-inner{max-width:820px;margin:0 auto;display:flex;justify-content:center;flex-wrap:wrap}
-        .stat{padding:0 2rem;text-align:center;position:relative}
-        .stat+.stat::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--hair)}
-        .stat-num{font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--ink);display:block;line-height:1}
-        .stat-num.is-loading{color:var(--ink-40)}
-        .stat-lbl{font-size:.66rem;color:var(--ink-60);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem;font-weight:600}
+        /* ── Chiffres ─ voir app-apercu-chiffres ── */
 
         /* ── Section shell ──────────────────────────────────── */
         .section-eyebrow{font-size:.7rem;font-weight:800;color:var(--green);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:.6rem}
@@ -98,7 +108,7 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         .section-sub{font-size:.95rem;color:var(--ink-60);max-width:480px;margin:0 auto 3rem;line-height:1.6}
 
         /* ── Processus ──────────────────────────────────────── */
-        .how{padding:5rem 2rem;background:#fff;text-align:center}
+        .how{padding:4rem 2rem 5rem;background:#fff;text-align:center}
         .steps-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;max-width:980px;margin:0 auto;position:relative}
         .steps-row::before{content:'';position:absolute;top:26px;left:calc(12.5% + 26px);right:calc(12.5% + 26px);height:1px;background:var(--hair)}
         .how-step{position:relative;z-index:1;text-align:left}
@@ -122,7 +132,7 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
 
         /* ── Vos garanties (aplat vert, cartes blanches) ────── */
         .garanties{background:var(--green);padding:3.5rem 2rem 4rem;text-align:center}
-        .garanties .section-eyebrow{color:var(--yellow)}
+        .garanties .section-eyebrow{color:#fff}
         .garanties .section-title{color:#fff}
         .garanties .section-sub{color:rgba(255,255,255,.82)}
         .garanties-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:960px;margin:2.5rem auto 0}
@@ -198,7 +208,9 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         .dialog-note{margin-top:1.5rem;padding:.85rem 1.1rem;background:var(--mist);border-radius:10px;border-left:3px solid var(--green);font-size:.78rem;color:var(--ink-60);text-align:left;line-height:1.5}
 
         @media (max-width:860px){
-            .steps-row,.tc-grid,.garanties-grid{grid-template-columns:1fr}
+            .steps-row,.tc-grid,.garanties-grid,.channels-list{grid-template-columns:1fr}
+            .vocal-card{grid-template-columns:1fr;text-align:center;justify-items:center;padding:1.5rem 1.25rem}
+            .btn-vocal{width:100%;justify-content:center}
             .steps-row::before{display:none}
             .footer-inner{grid-template-columns:1fr 1fr;gap:2rem}
             .footer-arms{right:1rem;top:2.4rem;padding:6px 8px}
@@ -210,25 +222,28 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
             .d-choice{max-width:none;min-width:0}
             /* Zones de toucher confortables pour les liens du pied de page */
             .footer-col a,.footer-phone{min-height:36px;padding:.4rem 0}
-            .hero-title{font-size:2.1rem}
+            .hero-title{font-size:clamp(1.5rem,7vw,2.1rem);overflow-wrap:anywhere}
+            .hero-grid>*{min-width:0}
             .hero-left,.hero-title,.hero-subtitle,.hero-actions{text-align:left}
             .tc-grid{gap:2.5rem}
-            .stats-strip-inner{gap:0}
-            .stat{padding:0 1rem}
         }
     `],
     template: `
 <div>
-    <section class="hero">
+    <a class="skip" href="#contenu">Aller au contenu</a>
+    <section class="hero" id="contenu">
         <div class="hero-topbar" @fadeIn>
             <div class="navbar-brand">
                 <div class="navbar-logo">
                     <img src="/assets/logo-asce.png" alt="ASCE-LC" />
                 </div>
             </div>
-            <div class="nav-hotline">
-                <i class="pi pi-phone"></i>
-                <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || numeroVert }}</strong></div>
+            <div class="nav-tools">
+                <app-taille-texte />
+                <a class="nav-hotline" [href]="lienNumeroVert" aria-label="Appeler le numéro vert">
+                    <i class="pi pi-phone"></i>
+                    <div><small>Numéro vert</small><strong>{{ c['hotline_number'] || numeroVert }}</strong></div>
+                </a>
             </div>
         </div>
 
@@ -239,7 +254,7 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
                     ACTES DE CORRUPTI<i class="pi pi-search letter-icon"></i>N
                 </h1>
                 <p class="hero-subtitle" @fadeIn>{{ heroSubtitle }}</p>
-                <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°010-2004/AN</p>
+                <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°001-2021/AN</p>
                 <div class="hero-actions" @fadeIn>
                     <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
                 </div>
@@ -262,32 +277,29 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
         </div>
     </section>
 
+    <section class="chiffres" aria-labelledby="chiffres-titre">
+        <div class="section-eyebrow">En chiffres</div>
+        <h2 class="section-title" id="chiffres-titre">Où en sont les signalements ?</h2>
+        <p class="section-sub">Des totaux, sans aucune donnée personnelle.</p>
+        <app-apercu-chiffres [stats]="publicStats" [chargement]="statsLoading" [erreur]="statsErreur" [compact]="true" />
+        <p class="stats-lien"><a routerLink="/portail/chiffres">Voir le détail des chiffres <i class="pi pi-arrow-right"></i></a></p>
+    </section>
+
+    <section class="avant">
+        <div class="section-eyebrow">Avant de commencer</div>
+        <h2 class="section-title">Signaler, c'est simple</h2>
+        <p class="section-sub">Trois repères pour vous lancer sans crainte.</p>
+        <app-avant-de-signaler [large]="true" />
+    </section>
+
     <div class="vocal-card-wrap">
         <div class="vocal-card">
-            <div class="vocal-card-icons"><i class="pi pi-microphone"></i><h2>Témoignez de vive voix, en toute confiance</h2><i class="pi pi-microphone"></i></div>
-            <p>Vous préférez raconter les faits plutôt que les écrire ? Enregistrez votre témoignage vocal directement depuis votre téléphone, dans votre langue, en toute confidentialité.</p>
-            <button class="btn-hero-primary" routerLink="/portail/vocal"><i class="pi pi-microphone"></i> Accéder à l'enregistrement vocal</button>
-        </div>
-    </div>
-
-    <div class="stats-strip">
-        <div class="stats-strip-inner">
-            <div class="stat">
-                <span class="stat-num" [class.is-loading]="statsLoading">{{ statsLoading ? '···' : (stats.dossiersTraites | number)+'+' }}</span>
-                <span class="stat-lbl">Dossiers traités</span>
+            <span class="vocal-ico" aria-hidden="true"><i class="pi pi-microphone"></i></span>
+            <div>
+                <h2>Témoignez de vive voix, en toute confiance</h2>
+                <p>Vous préférez raconter les faits plutôt que les écrire ? Enregistrez votre témoignage depuis votre téléphone, dans votre langue, en toute confidentialité.</p>
             </div>
-            <div class="stat">
-                <span class="stat-num" [class.is-loading]="statsLoading">{{ statsLoading ? '···' : (stats.dossiersNouveaux | number) }}</span>
-                <span class="stat-lbl">Nouveaux</span>
-            </div>
-            <div class="stat">
-                <span class="stat-num" [class.is-loading]="statsLoading">{{ statsLoading ? '···' : (stats.dossiersEnCours | number) }}</span>
-                <span class="stat-lbl">En cours</span>
-            </div>
-            <div class="stat">
-                <span class="stat-num">{{ stats.confidentiel }}</span>
-                <span class="stat-lbl">Confidentiel</span>
-            </div>
+            <button class="btn-vocal" routerLink="/portail/vocal">Enregistrer mon témoignage <i class="pi pi-arrow-right"></i></button>
         </div>
     </div>
 
@@ -356,16 +368,17 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
                 <ul>
                     <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Nos missions</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>FAQ</a></li>
+                    <li><a routerLink="/portail/info/missions"><i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a routerLink="/portail/info/textes-juridiques"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
+                    <li><a routerLink="/portail/chiffres"><i class="pi pi-angle-right"></i>Chiffres</a></li>
+                    <li><a routerLink="/portail/faq"><i class="pi pi-angle-right"></i>Foire aux questions</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>CONTACT</h4>
                 <ul>
                     <li><div class="footer-phone">{{ c['hotline_number'] || numeroVert }}</div></li>
-                    <li><a [href]="'mailto:'+(c['email_contact']||'contact@asce-lc.bf')"><i class="pi pi-envelope"></i>{{ c['email_contact'] || 'contact@asce-lc.bf' }}</a></li>
+                    <li><a [href]="'mailto:'+(c['email_contact']||'info@asce-lc.bf')"><i class="pi pi-envelope"></i>{{ c['email_contact'] || 'info@asce-lc.bf' }}</a></li>
                     <li><a [href]="c['website_url'] || 'https://www.asce-lc.bf'" target="_blank"><i class="pi pi-globe"></i>{{ c['website_url'] || 'www.asce-lc.bf' }}</a></li>
                     <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-map-marker"></i>{{ c['address'] || 'Ouagadougou, Burkina Faso' }}</a></li>
                 </ul>
@@ -373,10 +386,9 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
             <div class="footer-col">
                 <h4>INFORMATIONS</h4>
                 <ul>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
-                    <li><a href="#" (click)="$event.preventDefault()"><i class="pi pi-angle-right"></i>Rapport annuel</a></li>
+                    <li><a routerLink="/portail/info/mentions-legales"><i class="pi pi-angle-right"></i>Mentions légales</a></li>
+                    <li><a routerLink="/portail/info/confidentialite"><i class="pi pi-angle-right"></i>Confidentialité</a></li>
+                    <li><a routerLink="/portail/info/conditions"><i class="pi pi-angle-right"></i>Conditions d'utilisation</a></li>
                 </ul>
             </div>
         </div>
@@ -412,7 +424,7 @@ import { NUMERO_VERT } from '../../../core/constants/numero-vert';
             </div>
             <div class="dialog-note">
                 <i class="pi pi-shield" style="color:var(--green);margin-right:6px;"></i>
-                <strong>Confidentialité garantie</strong> — Votre identité est protégée conformément à la loi N°010-2004/AN.
+                <strong>Confidentialité</strong> — Vos données personnelles sont protégées conformément à la loi N°001-2021/AN.
             </div>
         </div>
     </div>
@@ -433,6 +445,7 @@ export class PortailAccueil implements OnInit, OnDestroy {
 
     /** Numéro vert affiché tant que l'administration n'en a pas défini un autre (paramètre hotline_number). */
     readonly numeroVert = NUMERO_VERT;
+    readonly lienNumeroVert = lienTelephone(NUMERO_VERT);
 
     showDialog   = false;
     scrolled     = false;
@@ -441,10 +454,8 @@ export class PortailAccueil implements OnInit, OnDestroy {
     heroSubtitle = 'La corruption n\'est pas une fatalité. Votre voix compte.';
     footerAbout  = 'Autorité Supérieure de Contrôle d\'État et de Lutte contre la Corruption';
 
-    stats: PublicStats = {
-        totalDossiers: 0, dossiersNouveaux: 0, dossiersEnCours: 0,
-        dossiersTraites: 0, confidentiel: '100%', delaiJours: 7
-    };
+    publicStats: PublicStats | null = null;
+    statsErreur = false;
 
     @HostListener('window:scroll')
     onScroll(): void { this.scrolled = window.scrollY > 80; }
@@ -461,8 +472,8 @@ export class PortailAccueil implements OnInit, OnDestroy {
         this.cfgService.loadPublicConfig();
 
         this.statsService.getPublicStats().subscribe({
-            next:  s  => { this.stats = s; this.statsLoading = false; },
-            error: () => { this.statsLoading = false; }
+            next:  s  => { this.publicStats = s; this.statsLoading = false; },
+            error: () => { this.statsErreur = true; this.statsLoading = false; }
         });
     }
 
@@ -485,10 +496,10 @@ export class PortailAccueil implements OnInit, OnDestroy {
     }
 
     readonly trustItems = [
-        { icon:'pi pi-lock',         title:'Anonymat garanti',
-          desc:"Votre identité est strictement protégée. Vous pouvez déposer sans révéler qui vous êtes." },
+        { icon:'pi pi-lock',         title:'Anonymat possible',
+          desc:"En tant que témoin, vous pouvez déposer sans révéler qui vous êtes. Si vous donnez vos coordonnées, elles restent réservées aux agents habilités." },
         { icon:'pi pi-shield',       title:'Plateforme sécurisée',
-          desc:'Toutes les données sont chiffrées. Aucune information ne peut être interceptée.' },
+          desc:'Les échanges sont chiffrés et l\'accès aux dossiers est réservé aux agents habilités.' },
         { icon:'pi pi-check-circle', title:'Institution officielle',
           desc:"Organe d'État habilité par la loi à recevoir et traiter les plaintes anticorruption." }
     ];
@@ -504,7 +515,7 @@ export class PortailAccueil implements OnInit, OnDestroy {
             { icon:'pi pi-building',   name:'Guichet BRPD',
               desc:'Venez en personne au Bureau de Réception des Plaintes' },
             { icon:'pi pi-envelope',   name:'Email',
-              desc:'Envoyez vos documents à ' + (this.c['email_contact'] || 'contact@asce-lc.bf') },
+              desc:'Envoyez votre signalement à ' + (this.c['email_denonciation'] || 'denoncer@asce-lc.bf') },
             { icon:'pi pi-send',       name:'Courrier Postal',
               desc:'Envoyez votre témoignage écrit par courrier officiel' }
         ];
