@@ -37,7 +37,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         <div>
             <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">Séances CTADP</h1>
             <p class="text-surface-400 text-sm mt-1">
-                {{ seances.length }} séance(s) — Comité de Traitement et d'Analyse des Dossiers de Plaintes
+                {{ seances.length }} séance(s) — Comité de Traitement et d'Analyse des Dénonciations et des Plaintes
             </p>
         </div>
         <p-button label="Nouvelle séance" icon="pi pi-plus" (onClick)="openCreateDialog()"/>
