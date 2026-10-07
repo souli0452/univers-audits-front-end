@@ -6,7 +6,7 @@ export async function chapitres3() {
 
     // ============================================================ 9
     c.push(h1('9. Profil membre du comité (CTADP)'));
-    c.push(p("Le Comité de Traitement et d'Analyse des Dossiers de Plaintes (CTADP) examine, en séance, les dossiers que le conseiller juridique lui soumet. Le membre du comité **lit** les dossiers et les enquêtes qui lui sont soumis et **participe à la séance** ; il ne modifie pas le circuit."));
+    c.push(p("Le Comité de Traitement et d'Analyse des Dénonciations et des Plaintes (CTADP) examine, en séance, les dossiers que le conseiller juridique lui soumet. Le membre du comité **lit** les dossiers et les enquêtes qui lui sont soumis et **participe à la séance** ; il ne modifie pas le circuit."));
     c.push(h2('9.1 Votre espace'));
     c.push(...(await fig('ctadp-01-tableau-de-bord', 'Le tableau de bord du membre du comité', { recadrer: { haut: 0, hauteur: 860 } })));
     c.push(p("Votre menu comprend le tableau de bord, les statistiques, les dossiers, les **séances CTADP**, les enquêtes et les rapports. Comme les autres agents, vous ne voyez que les dossiers pour lesquels vous avez une habilitation."));
@@ -188,7 +188,7 @@ export async function chapitres3() {
         ['DEI', "Département d'Enquête et d'Investigation : il fait l'analyse finale de fond et de forme des rapports d'enquête (15 jours ouvrables)"],
         ['B4 (code de suivi)', 'Code de 8 caractères remis au déclarant pour suivre son dossier'],
         ['CGE / CGEA', 'Contrôleur Général d\'État / Contrôleur Général d\'État Adjoint'],
-        ['CTADP', 'Comité de Traitement et d\'Analyse des Dossiers de Plaintes'],
+        ['CTADP', 'Comité de Traitement et d\'Analyse des Dénonciations et des Plaintes'],
         ['DCP', 'Direction de la Communication et de la Presse'],
         ['DDIC', 'Direction chargée de l\'administration de la plateforme (rôle administrateur)'],
         ['Dénonciation', 'Information donnée par une personne extérieure aux faits, identifiée ou anonyme'],
@@ -221,7 +221,7 @@ export async function chapitres3() {
         ['1', 'Accès du BRPD aux dépôts en ligne « Soumis »', 'Corrigé dans la plateforme (correctif du back, PR n° 6) : le BRPD voit et ouvre les dépôts « Soumis ». À vérifier en production après le déploiement, avec un vrai compte BRPD.'],
         ['2', 'Boutons visibles et droits réels', 'Corrigé dans le front (PR n° 6) : le CGEA ne voit plus les boutons que le serveur lui refuse. À vérifier après le déploiement du front.'],
         ['3', 'Check-list du dossier de travail', "Les 22 libellés du manuel des procédures sont repris dans la plateforme (migration 025 du back). À vérifier après le déploiement du back : ouvrir la check-list d'une investigation."],
-        ['4', 'Abréviation « DEI »', "Le corps du manuel des procédures dit « Département d'Enquête et d'Investigation », mais son tableau des abréviations donne « Direction de la Documentation et de la Communication » (tableau décalé). L'ASCE-LC doit corriger cette ligne de son manuel."],
+        ['4', 'Abréviation « DEI »', "Vérifié dans le manuel des procédures : DEI = Département d'Enquête et d'Investigation (intitulé repris dans le glossaire). Rien à confirmer."],
         ['5', 'Délais', "Conformes au manuel des procédures, sauf deux écarts à confirmer : l'approbation du rapport par le CGEA (10 jours dans la plateforme, 20 jours pour le CGE et le CGEA ensemble dans le manuel) et la réponse à une demande de complément (14 jours dans la plateforme, 7 jours évoqués dans le manuel)."],
         ['6', 'Comptes de formation', 'Créer les huit comptes dans un environnement distinct de la production, avec des mots de passe propres à la formation.']
     ], [500, 3000, 6138]));
