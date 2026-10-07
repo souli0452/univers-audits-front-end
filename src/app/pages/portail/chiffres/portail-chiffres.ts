@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { StatistiqueService } from '../../../core/services/statistique.service';
 import { PublicStats } from '../../../core/models/statistique.model';
 import { PortailPage } from '../shared/portail-page';
-import { ApercuChiffres } from '../shared/apercu-chiffres';
+import { ApercuChiffres, SEUIL_TAUX_TRAITEMENT } from '../shared/apercu-chiffres';
 
 export { versBarres, LIBELLES_TYPE, LIBELLES_CANAL } from '../shared/apercu-chiffres';
 export type { LigneBarre } from '../shared/apercu-chiffres';
@@ -23,7 +23,7 @@ export type { LigneBarre } from '../shared/apercu-chiffres';
         <app-portail-page titre="Chiffres" intro="Le volume des signalements reçus et leur évolution. Ces chiffres sont des totaux : aucune information personnelle n'est affichée.">
             <app-apercu-chiffres [stats]="stats" [chargement]="chargement" [erreur]="erreur" />
             @if (stats) {
-                <p class="note">Les chiffres couvrent les signalements enregistrés sur la plateforme. Un dossier est « nouveau » tant qu'il n'a pas été pris en charge, « en cours » pendant l'instruction, et « traité » une fois décidé, classé, clos ou déclaré irrecevable. Le taux de traitement est la part de dossiers traités parmi ceux reçus.</p>
+                <p class="note">Les chiffres couvrent les signalements enregistrés sur la plateforme. Un dossier est « nouveau » tant qu'il n'a pas été pris en charge, « en cours » pendant l'instruction, et « traité » une fois décidé, classé, clos ou déclaré irrecevable. Le taux de traitement, part de dossiers traités parmi ceux reçus, est publié à partir de {{ seuil }} dossiers reçus : en dessous, il ne refléterait pas l'activité du service.</p>
             }
         </app-portail-page>
     `
@@ -32,6 +32,7 @@ export class PortailChiffres implements OnInit {
     private readonly service = inject(StatistiqueService);
 
     stats: PublicStats | null = null;
+    readonly seuil = SEUIL_TAUX_TRAITEMENT;
     chargement = true;
     erreur = false;
 

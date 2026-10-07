@@ -38,9 +38,16 @@ export const LIBELLES_CANAL: Record<string, string> = {
     AUDIT_REPORT: "Rapport d'audit"
 };
 
-/** Part de dossiers traités, en pourcentage entier ; null tant qu'aucun dossier n'a été reçu. */
+/**
+ * Nombre de dossiers reçus à partir duquel le taux de traitement est publié. En dessous, un pourcentage
+ * (« 0 % » avec 3 dossiers) ne mesurerait que la jeunesse du service et induirait en erreur ; les totaux,
+ * eux, restent affichés. Décision éditoriale à confirmer avec l'ASCE-LC.
+ */
+export const SEUIL_TAUX_TRAITEMENT = 20;
+
+/** Part de dossiers traités, en pourcentage entier ; null sous le seuil de publication. */
 export function tauxTraitement(s: Pick<PublicStats, 'totalDossiers' | 'dossiersTraites'>): number | null {
-    return s.totalDossiers > 0 ? Math.round((s.dossiersTraites / s.totalDossiers) * 100) : null;
+    return s.totalDossiers >= SEUIL_TAUX_TRAITEMENT ? Math.round((s.dossiersTraites / s.totalDossiers) * 100) : null;
 }
 
 const enBarres = (m: Record<string, number> | undefined, libelles: Record<string, string>): LigneBarre[] =>
@@ -95,7 +102,11 @@ const enBarres = (m: Record<string, number> | undefined, libelles: Record<string
                 <div class="tuile"><strong>{{ stats.dossiersEnCours | number }}</strong><span>En cours d'instruction</span></div>
                 <div class="tuile"><strong>{{ stats.dossiersTraites | number }}</strong><span>Traités</span></div>
                 <div class="tuile cle">
-                    <strong>{{ taux === null ? '—' : taux + ' %' }}</strong><span>Taux de traitement</span>
+                    @if (taux !== null) {
+                        <strong>{{ taux }} %</strong><span>Taux de traitement</span>
+                    } @else {
+                        <strong>{{ stats.dossiersNouveaux | number }}</strong><span>Nouveaux dossiers</span>
+                    }
                 </div>
             </div>
 
