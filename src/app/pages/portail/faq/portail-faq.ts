@@ -44,7 +44,7 @@ export const QUESTIONS_FAQ: QuestionFaq[] = [
     { groupe: 'Après le dépôt', question: "L'ASCE-LC peut-elle me demander des précisions ?",
       reponse: "Oui. Si des informations manquent, l'agent peut vous adresser une demande de complément. Vous y répondez depuis le lien indiqué ou depuis la page de suivi, sans créer de compte." },
     { groupe: 'Après le dépôt', question: "Comment joindre l'ASCE-LC autrement qu'en ligne ?",
-      reponse: "Par le numéro vert gratuit 80 00 11 02, par téléphone au (+226) 25 37 40 56 ou 25 37 40 60, par courriel à denoncer@asce-lc.bf pour un signalement (info@asce-lc.bf pour une question générale), ou sur place à Ouaga 2000, avenue Pascal Zagré. Les bureaux sont ouverts du lundi au jeudi de 7 h 30 à 16 h 00 et le vendredi de 7 h 30 à 16 h 30." },
+      reponse: "Par le numéro vert gratuit 80 00 11 02, par téléphone au (+226) 25 37 40 60 pour dénoncer un fait de corruption (standard : 25 37 40 56), par courriel à denoncer@asce-lc.bf pour un signalement (info@asce-lc.bf pour une question générale), ou sur place à Ouaga 2000, avenue Pascal Zagré. Les bureaux sont ouverts du lundi au jeudi de 7 h 30 à 16 h 00 et le vendredi de 7 h 30 à 16 h 30." },
     { groupe: 'Après le dépôt', question: 'Mon signalement peut-il être transmis à une autre autorité ?',
       reponse: "Si les faits relèvent d'une autre autorité compétente, le dossier peut lui être transmis, dans le respect de la confidentialité de votre identité." },
 ];

@@ -20,7 +20,10 @@ export const COORDONNEES_OFFICIELLES = {
     courrielDenonciation: 'denoncer@asce-lc.bf',
     adresse: 'Avenue Pascal Zagré, Ouaga 2000, Ouagadougou, Burkina Faso',
     boitePostale: '01 BP 617 Ouagadougou 01',
-    telephones: ['(+226) 25 37 40 56', '(+226) 25 37 40 60'],
+    telephones: [
+        { libelle: 'Standard', numero: '(+226) 25 37 40 56' },
+        { libelle: 'Dénoncer un fait de corruption', numero: '(+226) 25 37 40 60' }
+    ],
     horaires: 'Du lundi au jeudi de 7 h 30 à 16 h 00, le vendredi de 7 h 30 à 16 h 30',
     site: 'https://www.asce-lc.bf'
 };
@@ -118,7 +121,9 @@ export const PAGES_INFO: Record<string, PageInfo> = {
                         @for (p of s.paragraphes; track $index) {
                             @if (p === '{contact}') {
                                 <p>Numéro vert (gratuit) : <a [href]="lienNumero">{{ numero }}</a></p>
-                                <p>Téléphone : {{ telephones.join(' · ') }}</p>
+                                @for (t of telephones; track t.numero) {
+                                    <p>{{ t.libelle }} : {{ t.numero }}</p>
+                                }
                                 <p>Courriel : <a [href]="'mailto:' + courriel">{{ courriel }}</a></p>
                                 <p>Signalements par courriel : <a [href]="'mailto:' + courrielDenonciation">{{ courrielDenonciation }}</a></p>
                                 <p>{{ adresse }}<br>{{ boitePostale }}</p>
