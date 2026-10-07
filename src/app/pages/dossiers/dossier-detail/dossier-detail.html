@@ -859,7 +859,7 @@
                     label="Enregistrer" icon="pi pi-check" severity="success" size="small"
                     (onClick)="openRegister()"/>
 
-                <p-button *ngIf="dossier.status==='RECU' && hasRole(['CONSEILLER_JURIDIQUE','CGEA'])"
+                <p-button *ngIf="dossier.status==='RECU' && hasRole(['CONSEILLER_JURIDIQUE'])"
                     label="Démarrer étude" icon="pi pi-play" severity="info" size="small"
                     (onClick)="openStartStudy()"/>
 
@@ -869,24 +869,24 @@
                     pTooltip="Transmettre au Comité de Traitement et d'Analyse"
                     (onClick)="openSubmitCtadp()"/>
                 <p-button *ngIf="dossier.status==='EN_ETUDE_OPPORTUNITE'
-                                 && hasRole(['CONSEILLER_JURIDIQUE','CGEA'])"
+                                 && hasRole(['CONSEILLER_JURIDIQUE'])"
                     label="Demander complément" icon="pi pi-question-circle"
                     severity="warn" size="small"
                     pTooltip="Demander des informations supplémentaires au déclarant"
                     (onClick)="openComplementDialog()"/>
 
                 <p-button *ngIf="dossier.status==='EN_ATTENTE_COMPLEMENT'
-                                 && hasRole(['CONSEILLER_JURIDIQUE','CGEA','AGENT_BRPD'])"
+                                 && hasRole(['CONSEILLER_JURIDIQUE','AGENT_BRPD'])"
                     label="Complément reçu" icon="pi pi-check-circle"
                     severity="success" size="small"
                     pTooltip="Marquer le complément comme reçu et reprendre l'étude"
                     (onClick)="openComplementReceived()"/>
 
-                <p-button *ngIf="dossier.status==='EN_REVUE_CTADP' && hasRole(['CGE','CGEA'])"
+                <p-button *ngIf="dossier.status==='EN_REVUE_CTADP' && hasRole(['CGE'])"
                     label="Déclarer recevable" icon="pi pi-check-circle"
                     severity="success" size="small"
                     (onClick)="openDeclareAdmissible()"/>
-                <p-button *ngIf="dossier.status==='EN_REVUE_CTADP' && hasRole(['CGE','CGEA'])"
+                <p-button *ngIf="dossier.status==='EN_REVUE_CTADP' && hasRole(['CGE'])"
                     label="Déclarer irrecevable" icon="pi pi-times-circle"
                     severity="danger" size="small"
                     (onClick)="openDeclareInadmissible()"/>
