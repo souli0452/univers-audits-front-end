@@ -59,7 +59,7 @@ const GROUP_ICONS: Record<string, string> = {
                 Paramètres du portail
             </h1>
             <p class="text-surface-400 text-sm mt-1">
-                Configurez le contenu visible sur le portail public INTÉGRITÉ+
+                Configurez le contenu visible sur le portail public
             </p>
         </div>
         <div class="flex gap-2">

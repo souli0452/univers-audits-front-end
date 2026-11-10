@@ -1205,7 +1205,7 @@ export class DossierDetail implements OnInit {
 
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(15); doc.setFont('helvetica', 'bold');
-            doc.text('ASCE-LC — INTÉGRITÉ+', 14, 11);
+            doc.text('ASCE-LC', 14, 11);
 
             doc.setFontSize(10); doc.setFont('helvetica', 'normal');
             doc.text('Dossier détaillé — Document officiel confidentiel', 14, 18);

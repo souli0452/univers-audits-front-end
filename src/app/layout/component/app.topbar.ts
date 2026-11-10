@@ -18,10 +18,8 @@ import { NotificationService, NotificationItem }
         AppConfigurator, Popover, ButtonModule
     ],
     styles: [`
-        /* Petit écran : on garde le logo (réduit) et on masque le texte « INTÉGRITÉ+ », sinon le
-           bouton des actions (notifications, profil, déconnexion) sort de l'écran. */
+        /* Petit écran : logo réduit pour que les boutons d'actions restent visibles. */
         @media (max-width: 640px) {
-            .layout-topbar-logo span { display: none; }
             .layout-topbar-logo img { height: 26px !important; }
         }
     `],
@@ -38,7 +36,6 @@ import { NotificationService, NotificationItem }
            style="display:flex;align-items:center;gap:.5rem;">
             <img src="assets/logo-asce.png" alt="ASCE-LC"
                  style="height:34px;width:auto;object-fit:contain;"/>
-            <span>INTÉGRITÉ+</span>
         </a>
     </div>
 

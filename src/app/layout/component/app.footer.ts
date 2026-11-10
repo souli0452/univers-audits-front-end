@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
     standalone: true,
     selector: 'app-footer',
     template: `<div class="layout-footer">
-        <a href="http://localhost:4200/#/app" target="_blank">ASCE-LC INTEGRITE +</a>
+        <a href="http://localhost:4200/#/app" target="_blank">ASCE-LC</a>
     </div>`
 })
 export class AppFooter {}
