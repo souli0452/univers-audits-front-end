@@ -25,10 +25,6 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             from { opacity:0; transform:translateY(20px); }
             to   { opacity:1; transform:translateY(0); }
         }
-        @keyframes pulse-ring {
-            0%   { transform:scale(1);   opacity:.6; }
-            100% { transform:scale(1.8); opacity:0; }
-        }
         @keyframes result-in {
             from { opacity:0; transform:scale(.96); }
             to   { opacity:1; transform:scale(1); }
@@ -113,128 +109,48 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         .search-btn:disabled { opacity:.45; cursor:not-allowed; }
 
         /* ── Résultat ─────────────── */
-        .result-card {
-            border-radius:24px;
-            padding:2rem 1.75rem;
-            animation:result-in .4s ease;
-            text-align:center;
-            position:relative;
-            overflow:hidden;
-        }
-        .result-card::before {
-            content:'';
-            position:absolute;
-            top:-60px; right:-60px;
-            width:200px; height:200px;
-            border-radius:50%;
-            opacity:.06;
-            background:currentColor;
-            pointer-events:none;
-        }
-
-        /* Indicateur pulsant */
-        .pulse-wrap {
-            position:relative;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            margin-bottom:1.25rem;
-        }
-        .pulse-ring {
-            position:absolute;
-            inset:-12px;
-            border-radius:50%;
-            border:3px solid currentColor;
-            animation:pulse-ring 2s ease-out infinite;
-        }
-        .status-icon-circle {
-            width:72px;
-            height:72px;
-            border-radius:50%;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            position:relative;
-            z-index:1;
-        }
-
-        /* Étape courante */
-        .current-step {
-            display:inline-flex;
-            align-items:center;
-            gap:.5rem;
-            font-size:.78rem;
-            font-weight:700;
-            padding:5px 14px;
-            border-radius:20px;
-            margin-bottom:1.5rem;
-            letter-spacing:.04em;
-            text-transform:uppercase;
-        }
-
-        /* Barre de progression simple */
-        .progress-bar-track {
-            height:8px;
-            background:rgba(0,0,0,.08);
-            border-radius:4px;
-            overflow:hidden;
-            margin-bottom:.5rem;
-        }
-        .progress-bar-fill {
-            height:100%;
-            border-radius:4px;
-            transition:width .8s ease;
-        }
-        .progress-labels {
-            display:flex;
-            justify-content:space-between;
-            font-size:.72rem;
-            font-weight:600;
-            opacity:.6;
-        }
-
-        /* Action complément */
-        .complement-btn {
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:.5rem;
-            padding:.8rem 1.5rem;
-            border-radius:10px;
-            background:var(--red);
-            color:#fff;
-            font-weight:700;
-            font-size:.875rem;
-            text-decoration:none;
-            cursor:pointer;
-            border:none;
-            width:100%;
-            margin-top:1.25rem;
-            box-shadow:0 4px 12px rgba(227,6,19,.3);
-            transition:all .2s;
-        }
-        .complement-btn:hover {
-            transform:translateY(-1px);
-            background:#c00511;
-            box-shadow:0 6px 18px rgba(227,6,19,.4);
-        }
-
-        /* Boutons bas */
-        .btn-reset {
-            padding:.7rem 1.5rem;
-            border-radius:10px;
-            border:1.5px solid var(--hair);
+        .result {
             background:#fff;
-            color:var(--ink);
-            font-weight:600;
-            font-size:.875rem;
-            cursor:pointer;
-            display:flex;
-            align-items:center;
-            gap:.5rem;
-            transition:all .2s;
+            border:1px solid var(--hair);
+            border-left:4px solid var(--accent, var(--green));
+            border-radius:12px;
+            padding:1.5rem 1.5rem 1.75rem;
+            animation:result-in .3s ease;
         }
-        .btn-reset:hover { border-color:var(--ink-40); background:var(--mist); }
+        .result-code { font-size:.82rem; color:var(--ink-60); }
+        .result-code span {
+            font-family:var(--mono); font-weight:700; letter-spacing:.14em;
+            color:var(--ink); margin-left:.4rem; font-size:.95rem;
+        }
+        .result-title {
+            font-family:var(--font-display); font-size:1.75rem; line-height:1.2;
+            font-weight:700; color:var(--ink); margin:1.25rem 0 .6rem;
+        }
+        .result-msg { font-size:1rem; line-height:1.6; color:var(--ink-60); margin:0 0 1.5rem; }
+
+        .btn-main {
+            width:100%; padding:.8rem 1rem; border-radius:10px; border:none;
+            background:var(--ink); color:#fff; font-weight:700; font-size:.95rem;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem;
+            transition:background .15s;
+        }
+        .btn-main:hover:not(:disabled) { background:#00280f; }
+        .btn-main:disabled { opacity:.55; cursor:default; }
+        .complement-btn {
+            display:flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.8rem 1rem; margin-bottom:.75rem; border-radius:10px;
+            background:var(--red); color:#fff; font-weight:700; font-size:.95rem; text-decoration:none;
+        }
+        .complement-btn:hover { background:#c00511; }
+        .link-reset {
+            background:none; border:none; cursor:pointer; color:var(--ink-60);
+            font:600 .875rem var(--font); text-decoration:underline; text-underline-offset:3px; padding:.5rem;
+        }
+        .link-reset:hover { color:var(--ink); }
+        .btn-main:focus-visible, .complement-btn:focus-visible, .link-reset:focus-visible {
+            outline:3px solid var(--yellow); outline-offset:2px;
+        }
+        @media (prefers-reduced-motion: reduce) { .result { animation:none; } }
 
         @media (max-width:440px) {
             .code-input { font-size:1.3rem; letter-spacing:.3em; }
@@ -266,7 +182,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         <p style="text-align:center;font-size:.85rem;color:var(--ink-60);
                   margin:0 0 1.25rem;line-height:1.6;">
             Entrez le code de suivi reçu lors de votre dépôt
-            <strong style="color:var(--ink);">(formulaire B4)</strong>
+            <strong style="color:var(--ink);">(sur votre récépissé)</strong>
         </p>
 
         <input class="code-input"
@@ -305,7 +221,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
                     Code introuvable
                 </div>
                 <div style="font-size:.775rem;color:var(--red);margin-top:2px;">
-                    Vérifiez le code sur votre reçu B4.
+                    Vérifiez le code sur votre récépissé.
                 </div>
             </div>
         </div>
@@ -313,83 +229,30 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 
     <ng-container *ngIf="dossier">
 
-        <!-- Carte statut principal -->
-        <div class="result-card"
-            [style.background]="getCardBg(dossier.status)"
-            [style.border]="'2px solid ' + getCardBorder(dossier.status)"
-            style="margin-bottom:1rem;"
-            [style.color]="getCardColor(dossier.status)">
-
-            <!-- Icône pulsante -->
-            <div class="pulse-wrap"
-                [style.color]="getCardColor(dossier.status)">
-                <div *ngIf="isActive(dossier.status)" class="pulse-ring"></div>
-                <div class="status-icon-circle"
-                    [style.background]="getIconBg(dossier.status)">
-                    <i [class]="getStatusIcon(dossier.status)"
-                        style="font-size:1.75rem;"
-                        [style.color]="getCardColor(dossier.status)"></i>
-                </div>
+        <section class="result" [style.--accent]="accent(dossier.status)" aria-live="polite">
+            <div class="result-code">
+                Code de suivi <span>{{ dossier.accessCode }}</span>
             </div>
 
-            <!-- Niveau actuel -->
-            <div style="font-size:1.2rem;font-weight:900;margin-bottom:.375rem;
-                        letter-spacing:-.3px;">
-                {{ getStatusLabel(dossier.status) }}
-            </div>
+            <h2 class="result-title">{{ getStatusLabel(dossier.status) }}</h2>
+            <p class="result-msg">{{ getShortMessage(dossier.status) }}</p>
 
-            <!-- Message unique et court -->
-            <p style="font-size:.875rem;line-height:1.6;margin:0 0 1.5rem;
-                      opacity:.85;">
-                {{ getShortMessage(dossier.status) }}
-            </p>
-
-            <!-- Barre de progression -->
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill"
-                    [style.width]="getProgress(dossier.status) + '%'"
-                    [style.background]="getProgressColor(dossier.status)">
-                </div>
-            </div>
-            <div class="progress-labels">
-                <span>Dépôt</span>
-                <span style="opacity:.9;font-size:.7rem;">
-                    Étape {{ getStepNumber(dossier.status) }}
-                    / {{ totalSteps }}
-                </span>
-                <span>Clôture</span>
-            </div>
-
-            <!-- CTA complément -->
             <a *ngIf="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
                [routerLink]="['/portail/complement']"
                [queryParams]="{code: dossier.accessCode}"
                class="complement-btn">
                 <i class="pi pi-upload"></i>
-                Soumettre mon complément
-                <i class="pi pi-arrow-right"
-                    style="font-size:.75rem;margin-left:auto;"></i>
+                Envoyer mon complément
             </a>
-        </div>
 
-        <!-- Code de suivi discret -->
-        <div style="text-align:center;margin-bottom:1.25rem;">
-            <span style="font-family:var(--mono);font-size:.8rem;font-weight:700;
-                         color:var(--ink-40);letter-spacing:.2em;">
-                CODE : {{ dossier.accessCode }}
-            </span>
-        </div>
-
-        <!-- Boutons bas -->
-        <div style="display:flex;justify-content:center;gap:.75rem;flex-wrap:wrap;">
-            <button class="btn-reset" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
+            <button class="btn-main" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
                 <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
-                Mon récépissé
+                Télécharger mon récépissé
             </button>
-            <button class="btn-reset" (click)="reset()">
-                <i class="pi pi-refresh"></i>
-                Nouvelle recherche
-            </button>
+        </section>
+
+        <div style="text-align:center;margin-top:1rem;">
+            <button class="link-reset" (click)="reset()">Suivre un autre dossier</button>
         </div>
 
     </ng-container>
@@ -434,14 +297,6 @@ export class PortailSuivi implements OnInit {
     }
 
     readonly codeSlots   = [0,1,2,3,4,5,6,7];
-    readonly totalSteps  = 10;
-
-    private readonly stepOrder = [
-        'SOUMIS', 'RECU', 'EN_ETUDE_OPPORTUNITE',
-        'EN_ATTENTE_COMPLEMENT', 'EN_REVUE_CTADP',
-        'RECEVABLE', 'EN_INVESTIGATION',
-        'RAPPORT_PRODUIT', 'DECISION_RENDUE', 'CLOS'
-    ];
 
     search(): void {
         if (!this.accessCode || this.accessCode.length < 6) return;
@@ -476,84 +331,11 @@ export class PortailSuivi implements OnInit {
         });
     }
 
-    getStepNumber(status: string): number {
-        const i = this.stepOrder.indexOf(status);
-        return i >= 0 ? i + 1 : 1;
-    }
-
-    getProgress(status: string): number {
-        if (['IRRECEVABLE', 'CLASSE'].includes(status)) return 100;
-        if (status === 'TRANSFERE') return 50;
-        const i = this.stepOrder.indexOf(status);
-        if (i < 0) return 5;
-        return Math.round(((i + 1) / this.stepOrder.length) * 100);
-    }
-
-    isActive(status: string): boolean {
-        return !['CLOS', 'CLASSE', 'IRRECEVABLE', 'TRANSFERE'].includes(status);
-    }
-
-    /**
-     * Chaque statut est rattaché à l'une des 4 teintes de la charte :
-     * noir (neutre/informatif), jaune (attention requise), vert (progression
-     * positive), rouge (rejeté) — pas de couleur hors charte.
-     */
-    private readonly statusTone: Record<string, 'ink' | 'yellow' | 'green' | 'red'> = {
-        SOUMIS: 'ink', RECU: 'ink', RAPPORT_PRODUIT: 'ink',
-        TRANSFERE: 'ink', CLASSE: 'ink',
-        EN_ETUDE_OPPORTUNITE: 'yellow', EN_ATTENTE_COMPLEMENT: 'yellow', EN_REVUE_CTADP: 'yellow',
-        RECEVABLE: 'green', EN_INVESTIGATION: 'green', DECISION_RENDUE: 'green', CLOS: 'green',
-        IRRECEVABLE: 'red'
-    };
-
-    private tone(s: string): 'ink' | 'yellow' | 'green' | 'red' {
-        return this.statusTone[s] || 'ink';
-    }
-
-    getCardBg(s: string): string {
-        const m = {
-            ink:    'rgba(0,54,23,.05)',
-            yellow: 'rgba(255,216,0,.14)',
-            green:  'var(--mist)',
-            red:    '#FDEBEC'
-        };
-        return m[this.tone(s)];
-    }
-
-    getCardBorder(s: string): string {
-        const m = {
-            ink:    'rgba(0,54,23,.18)',
-            yellow: 'rgba(255,216,0,.5)',
-            green:  'rgba(0,150,64,.35)',
-            red:    'rgba(227,6,19,.35)'
-        };
-        return m[this.tone(s)];
-    }
-
-    getCardColor(s: string): string {
-        const m = {
-            ink: 'var(--ink)', yellow: 'var(--ink)',
-            green: 'var(--green)', red: 'var(--red)'
-        };
-        return m[this.tone(s)];
-    }
-
-    getIconBg(s: string): string {
-        const m = {
-            ink:    'rgba(0,54,23,.09)',
-            yellow: 'rgba(255,216,0,.28)',
-            green:  'rgba(0,150,64,.16)',
-            red:    'rgba(227,6,19,.16)'
-        };
-        return m[this.tone(s)];
-    }
-
-    getProgressColor(s: string): string {
-        const m = {
-            ink: 'var(--ink)', yellow: 'var(--yellow)',
-            green: 'var(--green)', red: 'var(--red)'
-        };
-        return m[this.tone(s)];
+    /** Filet latéral : vert par défaut, jaune si une action est attendue, rouge si rejeté. */
+    accent(s: string): string {
+        if (s === 'EN_ATTENTE_COMPLEMENT') return 'var(--yellow)';
+        if (s === 'IRRECEVABLE') return 'var(--red)';
+        return 'var(--green)';
     }
 
     getStatusLabel(s: string): string {

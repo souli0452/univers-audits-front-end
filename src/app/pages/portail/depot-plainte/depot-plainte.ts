@@ -375,7 +375,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
             Conservez précieusement votre code d'accès.
         </p>
         <div class="code-box">
-            <div class="code-label">Votre code de suivi (B4)</div>
+            <div class="code-label">Votre code de suivi</div>
             <div class="code-value">{{ createdAccessCode }}</div>
             <div class="code-hint">
                 <i class="pi pi-camera" style="font-size:.7rem;"></i>

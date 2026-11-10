@@ -696,7 +696,7 @@ export class RapportEtatComponent implements OnInit {
     get delayIndicators() {
         if (!this.stats) return [];
         return [
-            {label:'Enregistrement B4',   value:this.stats.avgRegistrationDelayDays,     max:7},
+            {label:'Enregistrement', value:this.stats.avgRegistrationDelayDays,     max:7},
             {label:'Durée investigation', value:this.stats.avgInvestigationDurationDays, max:90},
             {label:'Approbation DEI',     value:this.stats.avgDeiApprovalDays,           max:15},
             {label:'Approbation CGE',     value:this.stats.avgCgeApprovalDays,           max:20}

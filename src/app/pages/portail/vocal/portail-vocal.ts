@@ -312,7 +312,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
             et traiter votre dossier.
         </p>
         <div class="code-box">
-            <div class="code-label">Votre code de suivi B4</div>
+            <div class="code-label">Votre code de suivi</div>
             <div class="code-value">{{ createdAccessCode }}</div>
             <div class="code-hint">
                 <i class="pi pi-camera" style="font-size:.75rem;"></i>
