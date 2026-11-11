@@ -54,16 +54,16 @@ export const QUESTIONS_FAQ: QuestionFaq[] = [
     standalone: true,
     imports: [CommonModule, RouterModule, TailleTexte, AideNumeroVert],
     styles: [`
-        :host{--green:#009640;--red:#E30613;--yellow:#FFD800;--ink:#003617;--mist:#F2F8F4;--hair:#E4E9E6;--ink-60:rgba(0,54,23,.72);
+        :host{--green:#009640;--ink:#222222;--mist:#FFFFFF;--hair:#DCDCDC;--ink-60:#5f6368;
               display:block;min-height:100vh;background:var(--mist);font-family:'Lato',system-ui,sans-serif;color:var(--ink)}
         .skip{position:absolute;left:-9999px;top:0;background:#fff;color:var(--ink);padding:.6rem 1rem;z-index:10}
         .skip:focus{left:.5rem;top:.5rem}
-        header{background:var(--green);color:#fff;border-bottom:3px solid var(--yellow)}
+        header{background:#fff;color:var(--green);border-bottom:1px solid var(--hair)}
         .bar{max-width:860px;margin:0 auto;padding:.9rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-        .bar a.retour{color:#fff;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:.5rem;min-height:36px}
-        .bar .outils{display:flex;align-items:center;gap:1rem;color:#fff}
+        .bar a.retour{color:var(--green);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:.5rem;min-height:36px}
+        .bar .outils{display:flex;align-items:center;gap:1rem;color:var(--green)}
         main{max-width:860px;margin:0 auto;padding:2rem 1.25rem 4rem}
-        h1{font-family:ui-serif,Georgia,serif;font-size:1.8rem;font-weight:800;margin:0 0 .5rem;color:var(--ink)}
+        h1{font-size:1.8rem;font-weight:700;margin:0 0 .5rem;color:var(--ink)}
         .intro{color:var(--ink-60);font-size:.92rem;line-height:1.6;margin:0 0 1.25rem}
         .actions{display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap}
         .actions button{background:#fff;border:1.5px solid var(--hair);border-radius:8px;padding:.5rem .9rem;font-weight:700;font-size:.8rem;color:var(--ink);cursor:pointer;font-family:inherit;min-height:36px}

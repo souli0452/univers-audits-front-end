@@ -122,7 +122,7 @@ export const PAGES_INFO: Record<string, PageInfo> = {
     standalone: true,
     imports: [CommonModule, RouterModule, PortailPage],
     styles: [`
-        :host{--green:#009640;--ink:#003617;--hair:#E4E9E6;--ink-60:rgba(0,54,23,.72)}
+        :host{--green:#009640;--ink:#222222;--hair:#DCDCDC;--ink-60:#5f6368}
         article{background:#fff;border:1px solid var(--hair);border-radius:12px;padding:1.4rem 1.6rem}
         h2{font-size:1rem;font-weight:800;margin:1.4rem 0 .4rem;color:var(--ink)}
         h2:first-child{margin-top:0}
