@@ -112,21 +112,25 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         .result {
             background:#fff;
             border:1px solid var(--hair);
-            border-left:4px solid var(--accent, var(--green));
             border-radius:12px;
-            padding:1.5rem 1.5rem 1.75rem;
+            overflow:hidden;
             animation:result-in .3s ease;
         }
-        .result-code { font-size:.82rem; color:var(--ink-60); }
-        .result-code span {
-            font-family:var(--mono); font-weight:700; letter-spacing:.14em;
-            color:var(--ink); margin-left:.4rem; font-size:.95rem;
-        }
+        .result-head { padding:1.5rem 1.5rem 1.25rem; }
+        .result-label { font-size:.8rem; font-weight:700; color:var(--accent, var(--green)); }
         .result-title {
             font-family:var(--font-display); font-size:1.75rem; line-height:1.2;
-            font-weight:700; color:var(--ink); margin:1.25rem 0 .6rem;
+            font-weight:700; color:var(--ink); margin:.35rem 0 .6rem;
         }
-        .result-msg { font-size:1rem; line-height:1.6; color:var(--ink-60); margin:0 0 1.5rem; }
+        .result-msg { font-size:.975rem; line-height:1.6; color:var(--ink-60); margin:0; }
+
+        .result-details { margin:0; padding:1.1rem 1.5rem; background:var(--mist); }
+        .result-details .row { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; padding:.4rem 0; }
+        .result-details dt { font-size:.82rem; color:var(--ink-60); flex-shrink:0; }
+        .result-details dd { margin:0; font-size:.92rem; font-weight:600; color:var(--ink); text-align:right; overflow-wrap:anywhere; }
+        .result-details dd.code { font-family:var(--mono); letter-spacing:.14em; }
+
+        .result-actions { padding:1.25rem 1.5rem 1.5rem; display:flex; flex-direction:column; gap:.75rem; }
 
         .btn-main {
             width:100%; padding:.8rem 1rem; border-radius:10px; border:none;
@@ -138,7 +142,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         .btn-main:disabled { opacity:.55; cursor:default; }
         .complement-btn {
             display:flex; align-items:center; justify-content:center; gap:.5rem;
-            padding:.8rem 1rem; margin-bottom:.75rem; border-radius:10px;
+            padding:.8rem 1rem; border-radius:10px;
             background:var(--red); color:#fff; font-weight:700; font-size:.95rem; text-decoration:none;
         }
         .complement-btn:hover { background:#c00511; }
@@ -230,25 +234,50 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     <ng-container *ngIf="dossier">
 
         <section class="result" [style.--accent]="accent(dossier.status)" aria-live="polite">
-            <div class="result-code">
-                Code de suivi <span>{{ dossier.accessCode }}</span>
+
+            <div class="result-head">
+                <div class="result-label">Statut de votre dossier</div>
+                <h2 class="result-title">{{ getStatusLabel(dossier.status) }}</h2>
+                <p class="result-msg">{{ getShortMessage(dossier.status) }}</p>
             </div>
 
-            <h2 class="result-title">{{ getStatusLabel(dossier.status) }}</h2>
-            <p class="result-msg">{{ getShortMessage(dossier.status) }}</p>
+            <dl class="result-details">
+                <div class="row">
+                    <dt>Code de suivi</dt>
+                    <dd class="code">{{ dossier.accessCode }}</dd>
+                </div>
+                <div class="row" *ngIf="dossier.number">
+                    <dt>Numéro d'enregistrement</dt>
+                    <dd>{{ dossier.number }}</dd>
+                </div>
+                <div class="row" *ngIf="dossier.object">
+                    <dt>Objet</dt>
+                    <dd>{{ dossier.object }}</dd>
+                </div>
+                <div class="row" *ngIf="dossier.createdAt">
+                    <dt>Date de dépôt</dt>
+                    <dd>{{ dossier.createdAt | date:'dd/MM/yyyy' }}</dd>
+                </div>
+                <div class="row" *ngIf="dossier.updatedAt">
+                    <dt>Dernière mise à jour</dt>
+                    <dd>{{ dossier.updatedAt | date:'dd/MM/yyyy' }}</dd>
+                </div>
+            </dl>
 
-            <a *ngIf="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
-               [routerLink]="['/portail/complement']"
-               [queryParams]="{code: dossier.accessCode}"
-               class="complement-btn">
-                <i class="pi pi-upload"></i>
-                Envoyer mon complément
-            </a>
+            <div class="result-actions">
+                <a *ngIf="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
+                   [routerLink]="['/portail/complement']"
+                   [queryParams]="{code: dossier.accessCode}"
+                   class="complement-btn">
+                    <i class="pi pi-upload"></i>
+                    Envoyer mon complément
+                </a>
 
-            <button class="btn-main" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
-                <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
-                Télécharger mon récépissé
-            </button>
+                <button class="btn-main" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
+                    <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
+                    Télécharger mon récépissé
+                </button>
+            </div>
         </section>
 
         <div style="text-align:center;margin-top:1rem;">
