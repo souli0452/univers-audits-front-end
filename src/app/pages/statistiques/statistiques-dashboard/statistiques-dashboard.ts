@@ -227,7 +227,7 @@ import { TypePeriode, calculerPeriode, libellePeriode } from '../../../core/util
                 <div>
                     <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-surface-500 font-medium">
-                            Enregistrement B4
+                            Délai d'enregistrement
                         </span>
                         <span class="font-bold text-xs"
                             [class]="getDelayTextClass(stats.avgRegistrationDelayDays, 7)">

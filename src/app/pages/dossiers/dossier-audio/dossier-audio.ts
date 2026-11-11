@@ -42,11 +42,11 @@ const MAX_DURATION_SECONDS = 600;
         </p>
     </div>
 
-    <!-- Code B4 — à remettre physiquement au déclarant -->
+    <!-- Code de suivi — à remettre physiquement au déclarant -->
     <div class="bg-primary-50 dark:bg-primary-950 border-2 border-primary-200
                 dark:border-primary-800 rounded-2xl p-6 text-center w-full max-w-sm">
         <div class="text-xs text-primary-400 uppercase tracking-widest mb-2">
-            Code de suivi B4 — À remettre au déclarant
+            Code de suivi — à remettre au déclarant
         </div>
         <div class="font-mono text-4xl font-bold text-primary-700
                     dark:text-primary-300 tracking-widest mb-3">
@@ -59,7 +59,7 @@ const MAX_DURATION_SECONDS = 600;
     </div>
 
     <div class="flex gap-3">
-        <p-button label="Imprimer le B4" icon="pi pi-print"
+        <p-button label="Imprimer le code de suivi" icon="pi pi-print"
             severity="secondary" outlined
             (onClick)="printB4()" />
         <p-button label="Voir le dossier" icon="pi pi-arrow-right"

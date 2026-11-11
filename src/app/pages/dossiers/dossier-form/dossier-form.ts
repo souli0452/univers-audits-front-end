@@ -419,7 +419,7 @@ import { environment } from '../../../../environments/environment';
                                         Mode anonyme activé
                                     </div>
                                     <div class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                                        Votre identité sera protégée. Conservez votre code d'accès B4 pour suivre votre dossier.
+                                        Votre identité sera protégée. Conservez votre code de suivi pour suivre votre dossier.
                                     </div>
                                 </div>
                             </div>
@@ -554,7 +554,7 @@ import { environment } from '../../../../environments/environment';
                                         Dossier enregistré avec succès !
                                     </div>
                                     <div class="text-sm text-green-700 dark:text-green-300 mt-1">
-                                        Code d'accès B4 :
+                                        Code de suivi :
                                         <span class="font-mono font-bold bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded ml-1">
                                             {{ accessCode }}
                                         </span>
@@ -685,7 +685,7 @@ export class DossierForm {
     ];
 
     readonly afterSubmitItems = [
-        "Code d'accès B4 généré",
+        "Code de suivi généré",
         'SMS / Email envoyé au déclarant',
         'Numéro officiel attribué',
         'Récépissé remis au déclarant',
@@ -885,7 +885,7 @@ export class DossierForm {
                 this.messageService.add({
                     severity: 'success',
                     summary:  'Dossier enregistré',
-                    detail:   `Code B4 : ${dossier.accessCode}`,
+                    detail:   `Code de suivi : ${dossier.accessCode}`,
                     life:     3000
                 });
 

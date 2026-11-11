@@ -53,7 +53,7 @@ import { environment } from '../../../../environments/environment';
             <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
                 Rapport d'état — Plaintes &amp; Dénonciations
             </h1>
-            <p class="text-surface-400 text-sm mt-0.5">ASCE-LC Intégrité+</p>
+            <p class="text-surface-400 text-sm mt-0.5">ASCE-LC</p>
         </div>
         <div class="flex gap-2">
             <p-button label="PDF" icon="pi pi-file-pdf"
@@ -257,7 +257,7 @@ import { environment } from '../../../../environments/environment';
                     </div>
                     <div>
                         <div class="font-black text-surface-900 dark:text-surface-0">
-                            ASCE-LC — INTÉGRITÉ+
+                            ASCE-LC
                         </div>
                         <div class="text-xs text-surface-400 mt-0.5">
                             Rapport d'état — {{ periodLabel }}
@@ -696,7 +696,7 @@ export class RapportEtatComponent implements OnInit {
     get delayIndicators() {
         if (!this.stats) return [];
         return [
-            {label:'Enregistrement B4',   value:this.stats.avgRegistrationDelayDays,     max:7},
+            {label:'Enregistrement', value:this.stats.avgRegistrationDelayDays,     max:7},
             {label:'Durée investigation', value:this.stats.avgInvestigationDurationDays, max:90},
             {label:'Approbation DEI',     value:this.stats.avgDeiApprovalDays,           max:15},
             {label:'Approbation CGE',     value:this.stats.avgCgeApprovalDays,           max:20}
@@ -869,7 +869,7 @@ export class RapportEtatComponent implements OnInit {
             doc.setFillColor(22,163,74); doc.rect(0,0,W,26,'F');
             doc.setTextColor(255,255,255);
             doc.setFontSize(13); doc.setFont('helvetica','bold');
-            doc.text('ASCE-LC — INTÉGRITÉ+',14,10);
+            doc.text('ASCE-LC',14,10);
             doc.setFontSize(9); doc.setFont('helvetica','normal');
             doc.text('Rapport d\'état — '+this.periodLabel
                 +(this.filtresAppliques?' [FILTRÉ]':''),14,16);
@@ -954,7 +954,7 @@ export class RapportEtatComponent implements OnInit {
             const XLSX=await import('xlsx');
             const wb=XLSX.utils.book_new();
             const wsR=XLSX.utils.aoa_to_sheet([
-                ['ASCE-LC — INTÉGRITÉ+'],
+                ['ASCE-LC'],
                 ['Rapport d\'état — '+this.periodLabel],
                 ['Généré le : '+this.today.toLocaleDateString('fr-FR')],
                 [],

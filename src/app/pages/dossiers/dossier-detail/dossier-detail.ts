@@ -1065,7 +1065,7 @@ export class DossierDetail implements OnInit {
             'RAPPORT_PRODUIT', 'DECISION_RENDUE', 'CLOS', 'CLASSE'
         ];
         const labels: Record<string, string> = {
-            SOUMIS: 'Soumis', RECU: 'Reçu — B4 remis',
+            SOUMIS: 'Soumis', RECU: 'Reçu — code de suivi remis',
             EN_ETUDE_OPPORTUNITE: 'Étude opportunité',
             EN_ATTENTE_COMPLEMENT: 'Attente complément',
             EN_REVUE_CTADP: 'Revue CTADP', RECEVABLE: 'Déclaré recevable',
@@ -1107,7 +1107,7 @@ export class DossierDetail implements OnInit {
 
     openRegister(): void {
         this.openTransition('register', 'Enregistrer le dossier',
-            'Le dossier sera enregistré et un numéro B4 attribué au déclarant.');
+            'Le dossier sera enregistré et un code de suivi attribué au déclarant.');
     }
     openStartStudy(): void {
         this.openTransition('start-study', 'Démarrer étude opportunité',
@@ -1205,7 +1205,7 @@ export class DossierDetail implements OnInit {
 
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(15); doc.setFont('helvetica', 'bold');
-            doc.text('ASCE-LC — INTÉGRITÉ+', 14, 11);
+            doc.text('ASCE-LC', 14, 11);
 
             doc.setFontSize(10); doc.setFont('helvetica', 'normal');
             doc.text('Dossier détaillé — Document officiel confidentiel', 14, 18);

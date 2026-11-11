@@ -61,6 +61,24 @@ export const PAGES_INFO: Record<string, PageInfo> = {
         ],
         source: { texte: "Voir le fondement légal sur le site de l'ASCE-LC", url: 'https://www.asce-lc.bf/fondement-legal-des-plaintes-et-denonciations/' }
     },
+    'charte': {
+        titre: 'Notre charte',
+        intro: "Ce que le portail vous garantit lorsque vous signalez des faits de corruption, et ce que nous attendons de vous.",
+        sections: [
+            { titre: 'Vous pouvez rester anonyme', paragraphes: ["Vous n'êtes pas obligé de donner votre identité. Sans identité, le signalement est traité comme une dénonciation (une plainte est nominative)."] },
+            { titre: 'Votre signalement est reçu et suivi', paragraphes: [
+                "À la fin du dépôt, vous recevez un code de suivi et un récépissé. Votre signalement est enregistré sous 7 jours ouvrables.",
+                "Avec ce code, vous suivez l'avancement de votre dossier sur le portail, sans avoir à vous identifier." ] },
+            { titre: 'Des agents habilités le traitent', paragraphes: [
+                "Seuls les agents habilités accèdent aux dossiers. Vos informations ne sont pas affichées publiquement.",
+                "Si les faits relèvent d'une autre autorité compétente, le dossier peut lui être transmis." ] },
+            { titre: 'Un complément peut vous être demandé', paragraphes: ["Si votre dossier est incomplet, la page de suivi vous invite à envoyer un complément, avec votre code de suivi."] },
+            { titre: 'Une réponse motivée', paragraphes: ["Si votre dossier est déclaré irrecevable ou classé sans suite, une réponse motivée vous est adressée."] },
+            { titre: 'Ce que nous attendons de vous', paragraphes: [
+                "Signaler des faits que vous soupçonnez ou connaissez, de bonne foi, et ne transmettre que les informations utiles.",
+                "Conserver votre code de suivi et ne pas le partager : il est la seule clé d'accès à votre dossier." ] }
+        ]
+    },
     'confidentialite': {
         titre: 'Confidentialité',
         intro: "Ce que nous collectons lorsque vous signalez des faits, pourquoi, et qui peut y accéder. Le traitement de vos données relève de la loi n°001-2021/AN du 30 mars 2021.",
@@ -104,7 +122,7 @@ export const PAGES_INFO: Record<string, PageInfo> = {
     standalone: true,
     imports: [CommonModule, RouterModule, PortailPage],
     styles: [`
-        :host{--green:#009640;--ink:#003617;--hair:#E4E9E6;--ink-60:rgba(0,54,23,.72)}
+        :host{--green:#009640;--ink:#222222;--hair:#DCDCDC;--ink-60:#5f6368}
         article{background:#fff;border:1px solid var(--hair);border-radius:12px;padding:1.4rem 1.6rem}
         h2{font-size:1rem;font-weight:800;margin:1.4rem 0 .4rem;color:var(--ink)}
         h2:first-child{margin-top:0}

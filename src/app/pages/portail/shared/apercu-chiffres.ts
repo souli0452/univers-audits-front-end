@@ -65,7 +65,7 @@ const enBarres = (m: Record<string, number> | undefined, libelles: Record<string
     standalone: true,
     imports: [CommonModule],
     styles: [`
-        :host{--green:#009640;--ink:#003617;--hair:#E4E9E6;--mist:#F2F8F4;--ink-60:rgba(0,54,23,.74);--amber:#E8A200;display:block;text-align:left}
+        :host{--green:#009640;--ink:#222222;--hair:#DCDCDC;--mist:#F7F7F7;--ink-60:#5f6368;--amber:#E8A200;display:block;text-align:left}
         .tuiles{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem}
         .tuile{background:#fff;border:1px solid var(--hair);border-radius:12px;padding:1.1rem;text-align:center}
         .tuile strong{display:block;font-family:ui-monospace,Consolas,monospace;font-size:1.8rem;line-height:1.1;color:var(--ink)}

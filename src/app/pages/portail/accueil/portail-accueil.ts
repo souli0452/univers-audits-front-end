@@ -63,7 +63,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .nav-hotline strong{display:block;font-family:var(--mono);font-size:1.2rem;font-weight:700;line-height:1.2}
 
         /* ── Hero ───────────────────────────────────────────── */
-        .hero{position:relative;background:var(--green);overflow:hidden;border-bottom:3px solid var(--yellow)}
+        .hero{position:relative;background:var(--green);overflow:hidden}
         .hero-grid{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:3rem 2rem 4.5rem;display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
 
         .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
@@ -369,6 +369,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                     <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
                     <li><a routerLink="/portail/info/missions"><i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a routerLink="/portail/info/charte"><i class="pi pi-angle-right"></i>Notre charte</a></li>
                     <li><a routerLink="/portail/info/textes-juridiques"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
                     <li><a routerLink="/portail/chiffres"><i class="pi pi-angle-right"></i>Chiffres</a></li>
                     <li><a routerLink="/portail/faq"><i class="pi pi-angle-right"></i>Foire aux questions</a></li>

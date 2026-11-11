@@ -31,8 +31,8 @@ interface Repere { icone: string; titre: string; texte: string; }
         /* large : accueil, trois cartes */
         .cartes{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;max-width:960px;margin:0 auto;text-align:left}
         .carte{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:1.6rem 1.5rem;box-shadow:0 4px 16px rgba(0,54,23,.05)}
-        .carte .ico{width:44px;height:44px;border-radius:50%;background:var(--mist);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
-        .carte .ico i{color:var(--green);font-size:1.15rem}
+        .carte .ico{width:48px;height:48px;border-radius:12px;background:var(--green);display:flex;align-items:center;justify-content:center;margin-bottom:1.1rem}
+        .carte .ico i{color:#fff;font-size:1.3rem}
         .carte b{font-size:1.02rem;margin-bottom:.45rem}
         .carte p{margin:0;font-size:.92rem;line-height:1.65;color:var(--ink-60)}
         .carte p strong{color:var(--ink)}
@@ -74,11 +74,11 @@ export class AvantDeSignaler {
     @Input() large = false;
 
     readonly reperes: Repere[] = [
-        { icone: 'pi pi-check-circle', titre: 'Un soupçon raisonnable suffit',
+        { icone: 'pi pi-comments', titre: 'Un soupçon raisonnable suffit',
           texte: "Vous n'avez pas à prouver les faits : dites ce que vous savez, l'ASCE-LC instruit." },
-        { icone: 'pi pi-list', titre: 'Ce qui aide',
+        { icone: 'pi pi-file-edit', titre: 'Ce qui aide',
           texte: "Qui, quoi, où et quand, l'organisme concerné, un montant s'il est connu, tout document en votre possession. Même incomplet, signalez quand même." },
-        { icone: 'pi pi-key', titre: 'Ensuite',
+        { icone: 'pi pi-search', titre: 'Ensuite',
           texte: "Vous recevez un code de suivi à conserver. Il vous permet de suivre l'avancement et de répondre à une demande de complément." }
     ];
 }

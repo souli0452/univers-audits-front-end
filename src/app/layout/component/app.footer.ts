@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
     standalone: true,
     selector: 'app-footer',
+    imports: [RouterLink],
     template: `<div class="layout-footer">
-        <a href="http://localhost:4200/#/app" target="_blank">ASCE-LC INTEGRITE +</a>
+        <a routerLink="/app">ASCE-LC</a>
     </div>`
 })
 export class AppFooter {}

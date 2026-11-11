@@ -332,7 +332,7 @@ export class NotificationsComponent implements OnInit {
             INVESTIGATION_ALERT:      'Alerte investigation',
             STATUS_UPDATE:            'Mise à jour',
             COMPLEMENT_REQUEST:       'Complément',
-            RECEIPT_B4:               'Récépissé B4',
+            RECEIPT_B4:               'Récépissé de dépôt',
             ACKNOWLEDGMENT_B5:        'AR B5',
             DEADLINE_ALERT_J3:          'Alerte délai J-3',
             COMPLEMENT_ALERT_J3:        'Alerte complément J-3',

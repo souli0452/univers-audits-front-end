@@ -44,7 +44,7 @@ describe('AppTopbar', () => {
         expect(images.some(src => src.includes('logo-integrite'))).toBeFalse();
     });
 
-    it('garde le texte « INTÉGRITÉ+ » à côté du logo', () => {
-        expect((el.querySelector('.layout-topbar-logo span')?.textContent ?? '').trim()).toBe('INTÉGRITÉ+');
+    it('n’affiche plus le nom « INTÉGRITÉ+ » à côté du logo', () => {
+        expect(el.querySelector('.layout-topbar-logo')?.textContent ?? '').not.toContain('INTÉGRITÉ');
     });
 });

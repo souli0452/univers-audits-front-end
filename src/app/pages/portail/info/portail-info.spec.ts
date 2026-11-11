@@ -21,7 +21,7 @@ describe('PortailInfo', () => {
 
     it('couvre toutes les pages du pied de page', () => {
         expect(Object.keys(PAGES_INFO).sort()).toEqual(
-            ['conditions', 'confidentialite', 'mentions-legales', 'missions', 'textes-juridiques']);
+            ['charte', 'conditions', 'confidentialite', 'mentions-legales', 'missions', 'textes-juridiques']);
     });
 
     it('affiche la page demandée', () => {

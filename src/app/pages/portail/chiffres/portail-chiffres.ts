@@ -16,7 +16,7 @@ export type { LigneBarre } from '../shared/apercu-chiffres';
     standalone: true,
     imports: [PortailPage, ApercuChiffres],
     styles: [`
-        :host{--ink-60:rgba(0,54,23,.74)}
+        :host{--ink-60:#5f6368}
         .note{font-size:.78rem;color:var(--ink-60);line-height:1.6;margin:1.25rem 0 0}
     `],
     template: `
