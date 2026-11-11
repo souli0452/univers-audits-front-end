@@ -31,12 +31,12 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         }
 
         :host {
-            --green:#009640; --red:#E30613; --yellow:#FFD800;
-            --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
-            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
-            --hair:#E4E9E6;
+            --green:#009640; --green-dark:#007a34; --red:#b3261e;
+            --ink:#222222; --paper:#FFFFFF; --mist:#FFFFFF;
+            --ink-60:#5f6368; --ink-40:#8a8f94;
+            --hair:#dcdcdc;
             --font: 'Lato', system-ui, sans-serif;
-            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
+            --font-display: 'Lato', system-ui, sans-serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
             display:block; font-family:var(--font);
         }
@@ -58,8 +58,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             border-radius:16px;
             padding:1.75rem;
             border:1.5px solid var(--hair);
-            box-shadow:0 4px 24px rgba(0,0,0,.05);
-            animation:slide-up .35s ease;
+                        animation:slide-up .35s ease;
         }
 
         .code-input {
@@ -100,12 +99,8 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             align-items:center;
             justify-content:center;
             gap:.625rem;
-            box-shadow:0 4px 14px rgba(0,150,64,.3);
-        }
-        .search-btn:hover:not(:disabled) {
-            transform:translateY(-2px);
-            box-shadow:0 8px 20px rgba(0,150,64,.4);
-        }
+                    }
+        .search-btn:hover:not(:disabled) { background:var(--green-dark); }
         .search-btn:disabled { opacity:.45; cursor:not-allowed; }
 
         /* ── Résultat ─────────────── */
@@ -116,43 +111,45 @@ import { DossierResponse } from '../../../core/models/dossier.model';
             overflow:hidden;
             animation:result-in .3s ease;
         }
-        .result-head { padding:1.5rem 1.5rem 1.25rem; }
-        .result-label { font-size:.8rem; font-weight:700; color:var(--accent, var(--green)); }
+        .result-head { padding:1.5rem 1.5rem 1rem; }
+        .result-label { font-size:.8rem; font-weight:700; color:var(--green); }
         .result-title {
             font-family:var(--font-display); font-size:1.75rem; line-height:1.2;
-            font-weight:700; color:var(--ink); margin:.35rem 0 .6rem;
+            font-weight:700; color:var(--green); margin:.35rem 0 .6rem;
         }
         .result-msg { font-size:.975rem; line-height:1.6; color:var(--ink-60); margin:0; }
 
-        .result-details { margin:0; padding:1.1rem 1.5rem; background:var(--mist); }
+        .result-details { margin:0; padding:0 1.5rem 1rem; }
         .result-details .row { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; padding:.4rem 0; }
         .result-details dt { font-size:.82rem; color:var(--ink-60); flex-shrink:0; }
         .result-details dd { margin:0; font-size:.92rem; font-weight:600; color:var(--ink); text-align:right; overflow-wrap:anywhere; }
-        .result-details dd.code { font-family:var(--mono); letter-spacing:.14em; }
+        .result-details dd.code { font-family:var(--font); letter-spacing:.12em; }
 
-        .result-actions { padding:1.25rem 1.5rem 1.5rem; display:flex; flex-direction:column; gap:.75rem; }
+        .result-actions { padding:.5rem 1.5rem 1.5rem; display:flex; flex-direction:column; gap:.75rem; }
 
         .btn-main {
             width:100%; padding:.8rem 1rem; border-radius:10px; border:none;
-            background:var(--ink); color:#fff; font-weight:700; font-size:.95rem;
+            background:var(--green); color:#fff; font-weight:700; font-size:.95rem;
             cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem;
             transition:background .15s;
         }
-        .btn-main:hover:not(:disabled) { background:#00280f; }
+        .btn-main:hover:not(:disabled) { background:var(--green-dark); }
+        .btn-main.outline { background:#fff; color:var(--green); border:1px solid var(--green); }
+        .btn-main.outline:hover:not(:disabled) { background:#fff; border-color:var(--green-dark); color:var(--green-dark); }
         .btn-main:disabled { opacity:.55; cursor:default; }
         .complement-btn {
             display:flex; align-items:center; justify-content:center; gap:.5rem;
             padding:.8rem 1rem; border-radius:10px;
-            background:var(--red); color:#fff; font-weight:700; font-size:.95rem; text-decoration:none;
+            background:var(--green); color:#fff; font-weight:700; font-size:.95rem; text-decoration:none;
         }
-        .complement-btn:hover { background:#c00511; }
+        .complement-btn:hover { background:var(--green-dark); }
         .link-reset {
             background:none; border:none; cursor:pointer; color:var(--ink-60);
             font:600 .875rem var(--font); text-decoration:underline; text-underline-offset:3px; padding:.5rem;
         }
         .link-reset:hover { color:var(--ink); }
         .btn-main:focus-visible, .complement-btn:focus-visible, .link-reset:focus-visible {
-            outline:3px solid var(--yellow); outline-offset:2px;
+            outline:2px solid var(--green); outline-offset:2px;
         }
         @media (prefers-reduced-motion: reduce) { .result { animation:none; } }
 
@@ -214,26 +211,15 @@ import { DossierResponse } from '../../../core/models/dossier.model';
         </button>
 
         <!-- Erreur -->
-        <div *ngIf="notFound"
-            style="margin-top:.875rem;padding:.875rem;
-                   background:#FDEBEC;border-radius:10px;
-                   border:1.5px solid var(--red);
-                   display:flex;align-items:center;gap:.75rem;">
-            <i class="pi pi-times-circle" style="color:var(--red);font-size:1.1rem;flex-shrink:0;"></i>
-            <div>
-                <div style="font-weight:700;color:var(--red);font-size:.875rem;">
-                    Code introuvable
-                </div>
-                <div style="font-size:.775rem;color:var(--red);margin-top:2px;">
-                    Vérifiez le code sur votre récépissé.
-                </div>
-            </div>
-        </div>
+        <p *ngIf="notFound" role="alert"
+            style="margin:.875rem 0 0;text-align:center;font-size:.875rem;color:var(--red);">
+            Code introuvable. Vérifiez le code sur votre récépissé.
+        </p>
     </div>
 
     <ng-container *ngIf="dossier">
 
-        <section class="result" [style.--accent]="accent(dossier.status)" aria-live="polite">
+        <section class="result" aria-live="polite">
 
             <div class="result-head">
                 <div class="result-label">Statut de votre dossier</div>
@@ -273,7 +259,7 @@ import { DossierResponse } from '../../../core/models/dossier.model';
                     Envoyer mon complément
                 </a>
 
-                <button class="btn-main" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
+                <button class="btn-main" [class.outline]="dossier.status === 'EN_ATTENTE_COMPLEMENT'" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
                     <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
                     Télécharger mon récépissé
                 </button>
@@ -358,13 +344,6 @@ export class PortailSuivi implements OnInit {
                 });
             }
         });
-    }
-
-    /** Filet latéral : vert par défaut, jaune si une action est attendue, rouge si rejeté. */
-    accent(s: string): string {
-        if (s === 'EN_ATTENTE_COMPLEMENT') return 'var(--yellow)';
-        if (s === 'IRRECEVABLE') return 'var(--red)';
-        return 'var(--green)';
     }
 
     getStatusLabel(s: string): string {
