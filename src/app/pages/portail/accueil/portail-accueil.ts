@@ -369,6 +369,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                     <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
                     <li><a routerLink="/portail/info/missions"><i class="pi pi-angle-right"></i>Nos missions</a></li>
+                    <li><a routerLink="/portail/info/charte"><i class="pi pi-angle-right"></i>Notre charte</a></li>
                     <li><a routerLink="/portail/info/textes-juridiques"><i class="pi pi-angle-right"></i>Textes juridiques</a></li>
                     <li><a routerLink="/portail/chiffres"><i class="pi pi-angle-right"></i>Chiffres</a></li>
                     <li><a routerLink="/portail/faq"><i class="pi pi-angle-right"></i>Foire aux questions</a></li>
