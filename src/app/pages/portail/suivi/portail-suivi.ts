@@ -21,69 +21,140 @@ import { DossierResponse } from '../../../core/models/dossier.model';
     ],
     providers: [MessageService],
     styles: [`
+        @keyframes slide-up {
+            from { opacity:0; transform:translateY(20px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes result-in {
+            from { opacity:0; transform:scale(.96); }
+            to   { opacity:1; transform:scale(1); }
+        }
+
         :host {
-            --primary:#009640; --primary-dark:#007a34;
-            --text:#1f2933; --muted:#6b7480; --line:#dfe4e1; --danger:#b3261e;
+            --green:#009640; --red:#E30613; --yellow:#FFD800;
+            --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
+            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
+            --hair:#E4E9E6;
             --font: 'Lato', system-ui, sans-serif;
-            display:block; font-family:var(--font); color:var(--text);
+            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
+            --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
+            display:block; font-family:var(--font);
         }
 
         .page {
-            min-height:100vh; background:#fff;
-            display:flex; align-items:center; justify-content:center;
+            min-height:100vh;
+            background: var(--paper);
+            display:flex;
+            align-items:center;
+            justify-content:center;
             padding:2rem 1rem;
         }
+
         .wrap { width:100%; max-width:420px; }
 
-        .head { text-align:center; margin-bottom:2.25rem; }
-        .head img { height:84px; width:auto; object-fit:contain; display:block; margin:0 auto 1.25rem; }
-        .head h1 { font-size:1.5rem; font-weight:700; color:var(--text); margin:0; }
-
-        .intro { text-align:center; font-size:.95rem; line-height:1.6; color:var(--muted); margin:0 0 1.25rem; }
+        /* ── Carte recherche ──────── */
+        .search-card {
+            background:#fff;
+            border-radius:16px;
+            padding:1.75rem;
+            border:1.5px solid var(--hair);
+            box-shadow:0 4px 24px rgba(0,0,0,.05);
+            animation:slide-up .35s ease;
+        }
 
         .code-input {
-            display:block; width:100%; box-sizing:border-box; margin-bottom:1rem;
-            font:700 1.5rem var(--font); letter-spacing:.35em; text-align:center; text-transform:uppercase;
-            padding:.9rem 1rem; color:var(--text); background:#fff;
-            border:1px solid var(--line); border-radius:8px; outline:none;
+            font-family:var(--mono);
+            font-size:1.6rem;
+            font-weight:900;
+            letter-spacing:.45em;
+            text-align:center;
+            text-transform:uppercase;
+            border:2.5px solid var(--hair);
+            border-radius:12px;
+            padding:1rem;
+            width:100%;
+            outline:none;
+            transition:all .2s;
+            color:var(--ink);
+            background:var(--mist);
+            box-sizing:border-box;
         }
-        .code-input::placeholder { color:#b6bdb9; font-weight:400; letter-spacing:.15em; font-size:1.1rem; }
-        .code-input:focus { border-color:var(--primary); }
+        .code-input:focus {
+            border-color:var(--green);
+            background:#fff;
+            box-shadow:0 0 0 4px rgba(0,150,64,.1);
+        }
 
-        .btn {
-            width:100%; padding:.85rem 1rem; border-radius:8px; border:none;
-            background:var(--primary); color:#fff; font:700 .95rem var(--font);
+        .search-btn {
+            width:100%;
+            padding:.9rem;
+            border-radius:10px;
+            border:none;
+            background:var(--green);
+            color:#fff;
+            font-weight:800;
+            font-size:.95rem;
+            cursor:pointer;
+            transition:all .2s;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:.625rem;
+            box-shadow:0 4px 14px rgba(0,150,64,.3);
+        }
+        .search-btn:hover:not(:disabled) {
+            transform:translateY(-2px);
+            box-shadow:0 8px 20px rgba(0,150,64,.4);
+        }
+        .search-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+        /* ── Résultat ─────────────── */
+        .result {
+            background:#fff;
+            border:1px solid var(--hair);
+            border-left:4px solid var(--accent, var(--green));
+            border-radius:12px;
+            padding:1.5rem 1.5rem 1.75rem;
+            animation:result-in .3s ease;
+        }
+        .result-code { font-size:.82rem; color:var(--ink-60); }
+        .result-code span {
+            font-family:var(--mono); font-weight:700; letter-spacing:.14em;
+            color:var(--ink); margin-left:.4rem; font-size:.95rem;
+        }
+        .result-title {
+            font-family:var(--font-display); font-size:1.75rem; line-height:1.2;
+            font-weight:700; color:var(--ink); margin:1.25rem 0 .6rem;
+        }
+        .result-msg { font-size:1rem; line-height:1.6; color:var(--ink-60); margin:0 0 1.5rem; }
+
+        .btn-main {
+            width:100%; padding:.8rem 1rem; border-radius:10px; border:none;
+            background:var(--ink); color:#fff; font-weight:700; font-size:.95rem;
             cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem;
-            text-decoration:none;
+            transition:background .15s;
         }
-        .btn:hover:not(:disabled) { background:var(--primary-dark); }
-        .btn:disabled { opacity:.45; cursor:not-allowed; }
-        .btn + .btn { margin-top:.75rem; }
-        .btn-outline { background:#fff; color:var(--primary); border:1px solid var(--primary); }
-        .btn-outline:hover:not(:disabled) { background:#f2faf5; }
-
-        .error { margin:1rem 0 0; text-align:center; font-size:.9rem; color:var(--danger); }
-
-        .result { text-align:center; }
-        .result-code { font-size:.9rem; color:var(--muted); }
-        .result-code strong { color:var(--text); letter-spacing:.12em; margin-left:.35rem; }
-        .result-title { font-size:1.75rem; line-height:1.25; font-weight:700; color:var(--primary); margin:1rem 0 .5rem; }
-        .result-msg { font-size:1rem; line-height:1.6; color:var(--muted); margin:0 0 1.75rem; }
-
+        .btn-main:hover:not(:disabled) { background:#00280f; }
+        .btn-main:disabled { opacity:.55; cursor:default; }
+        .complement-btn {
+            display:flex; align-items:center; justify-content:center; gap:.5rem;
+            padding:.8rem 1rem; margin-bottom:.75rem; border-radius:10px;
+            background:var(--red); color:#fff; font-weight:700; font-size:.95rem; text-decoration:none;
+        }
+        .complement-btn:hover { background:#c00511; }
         .link-reset {
-            background:none; border:none; cursor:pointer; color:var(--muted);
-            font:600 .9rem var(--font); padding:.5rem;
+            background:none; border:none; cursor:pointer; color:var(--ink-60);
+            font:600 .875rem var(--font); text-decoration:underline; text-underline-offset:3px; padding:.5rem;
         }
-        .link-reset:hover { color:var(--primary); }
-
-        .btn:focus-visible, .link-reset:focus-visible, .foot a:focus-visible, .code-input:focus-visible {
-            outline:2px solid var(--primary); outline-offset:2px;
+        .link-reset:hover { color:var(--ink); }
+        .btn-main:focus-visible, .complement-btn:focus-visible, .link-reset:focus-visible {
+            outline:3px solid var(--yellow); outline-offset:2px;
         }
+        @media (prefers-reduced-motion: reduce) { .result { animation:none; } }
 
-        .foot { text-align:center; margin-top:2.5rem; font-size:.85rem; color:var(--muted); }
-        .foot a { color:var(--primary); text-decoration:none; font-weight:700; display:inline-block; padding:.4rem .75rem; }
-
-        @media (max-width:440px) { .code-input { font-size:1.25rem; letter-spacing:.25em; } }
+        @media (max-width:440px) {
+            .code-input { font-size:1.3rem; letter-spacing:.3em; }
+        }
     `],
     template: `
 <p-toast />
@@ -91,64 +162,109 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 <div class="page">
 <div class="wrap">
 
-    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;color:var(--text);"><app-taille-texte /></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;color:var(--ink);"><app-taille-texte /></div>
 
-    <div class="head">
-        <img src="assets/logo-asce.png" alt="ASCE-LC" />
-        <h1>Suivi de dossier</h1>
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:1.75rem;animation:slide-up .3s ease;">
+        <div style="height:96px;margin:0 auto .875rem;display:flex;align-items:center;justify-content:center;">
+            <img src="assets/logo-asce.png" alt="ASCE-LC"
+                style="height:100%;width:auto;object-fit:contain;" />
+        </div>
+        <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;color:var(--ink);
+                   margin:0 0 .25rem;letter-spacing:-.2px;">
+            Suivi de dossier
+        </h1>
+        <p style="color:var(--ink-40);font-size:.8rem;margin:0;">BURKINA FASO</p>
     </div>
 
-    <div *ngIf="!dossier">
-        <p class="intro">Saisissez le code de suivi indiqué sur votre récépissé.</p>
+    <div *ngIf="!dossier" class="search-card">
+
+        <p style="text-align:center;font-size:.85rem;color:var(--ink-60);
+                  margin:0 0 1.25rem;line-height:1.6;">
+            Entrez le code de suivi reçu lors de votre dépôt
+            <strong style="color:var(--ink);">(sur votre récépissé)</strong>
+        </p>
 
         <input class="code-input"
             [(ngModel)]="accessCode"
-            placeholder="Code de suivi"
+            placeholder="EX: BCS5XHRG"
             maxlength="8"
-            aria-label="Code de suivi"
             (keyup.enter)="search()"
-            (ngModelChange)="accessCode=$event?.toUpperCase(); notFound=false" />
+            (ngModelChange)="accessCode=$event?.toUpperCase(); notFound=false"
+            style="display:block;margin-bottom:.875rem;" />
 
-        <button class="btn" (click)="search()"
+        <!-- Indicateur 8 cases -->
+        <div style="display:flex;justify-content:center;gap:4px;margin-bottom:1.25rem;">
+            <div *ngFor="let i of codeSlots"
+                style="width:30px;height:5px;border-radius:3px;transition:all .2s;"
+                [style.background]="accessCode.length > i
+                    ? 'var(--green)' : 'var(--hair)'">
+            </div>
+        </div>
+
+        <button class="search-btn"
+            (click)="search()"
             [disabled]="loading || !accessCode || accessCode.length < 6">
             <i [class]="loading ? 'pi pi-spin pi-spinner' : 'pi pi-search'"></i>
             {{ loading ? 'Recherche...' : 'Rechercher' }}
         </button>
 
-        <p *ngIf="notFound" class="error" role="alert">
-            Code introuvable. Vérifiez le code sur votre récépissé.
-        </p>
+        <!-- Erreur -->
+        <div *ngIf="notFound"
+            style="margin-top:.875rem;padding:.875rem;
+                   background:#FDEBEC;border-radius:10px;
+                   border:1.5px solid var(--red);
+                   display:flex;align-items:center;gap:.75rem;">
+            <i class="pi pi-times-circle" style="color:var(--red);font-size:1.1rem;flex-shrink:0;"></i>
+            <div>
+                <div style="font-weight:700;color:var(--red);font-size:.875rem;">
+                    Code introuvable
+                </div>
+                <div style="font-size:.775rem;color:var(--red);margin-top:2px;">
+                    Vérifiez le code sur votre récépissé.
+                </div>
+            </div>
+        </div>
     </div>
 
-    <section *ngIf="dossier" class="result" aria-live="polite">
-        <div class="result-code">Code de suivi <strong>{{ dossier.accessCode }}</strong></div>
+    <ng-container *ngIf="dossier">
 
-        <h2 class="result-title">{{ getStatusLabel(dossier.status) }}</h2>
-        <p class="result-msg">{{ getShortMessage(dossier.status) }}</p>
+        <section class="result" [style.--accent]="accent(dossier.status)" aria-live="polite">
+            <div class="result-code">
+                Code de suivi <span>{{ dossier.accessCode }}</span>
+            </div>
 
-        <a *ngIf="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
-           [routerLink]="['/portail/complement']"
-           [queryParams]="{code: dossier.accessCode}"
-           class="btn">
-            <i class="pi pi-upload"></i>
-            Envoyer mon complément
-        </a>
+            <h2 class="result-title">{{ getStatusLabel(dossier.status) }}</h2>
+            <p class="result-msg">{{ getShortMessage(dossier.status) }}</p>
 
-        <button class="btn" [class.btn-outline]="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
-            (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
-            <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
-            Télécharger mon récépissé
-        </button>
+            <a *ngIf="dossier.status === 'EN_ATTENTE_COMPLEMENT'"
+               [routerLink]="['/portail/complement']"
+               [queryParams]="{code: dossier.accessCode}"
+               class="complement-btn">
+                <i class="pi pi-upload"></i>
+                Envoyer mon complément
+            </a>
 
-        <div style="margin-top:1rem;">
+            <button class="btn-main" (click)="downloadRecepisse()" [disabled]="downloadingRecepisse">
+                <i [class]="downloadingRecepisse ? 'pi pi-spin pi-spinner' : 'pi pi-download'"></i>
+                Télécharger mon récépissé
+            </button>
+        </section>
+
+        <div style="text-align:center;margin-top:1rem;">
             <button class="link-reset" (click)="reset()">Suivre un autre dossier</button>
         </div>
-    </section>
 
-    <div class="foot">
-        <div>Numéro vert</div>
-        <a [href]="lienTel">
-            <i class="pi pi-phone" style="font-size:.75rem;margin-right:4px;"></i>{{ numeroVert }}
+    </ng-container>
+
+    <!-- Footer -->
+    <div style="text-align:center;margin-top:2rem;
+                color:var(--ink-40);font-size:.75rem;">
+        <p style="margin:0 0 3px;">ASCE-LC — Numéro vert</p>
+        <a [href]="lienTel"
+            style="color:var(--green);text-decoration:none;font-weight:700;font-size:.875rem;display:inline-block;padding:.6rem 1rem;">
+            <i class="pi pi-phone" style="font-size:.7rem;margin-right:4px;"></i>
+            {{ numeroVert }}
         </a>
     </div>
 
@@ -179,6 +295,8 @@ export class PortailSuivi implements OnInit {
             this.search();
         }
     }
+
+    readonly codeSlots   = [0,1,2,3,4,5,6,7];
 
     search(): void {
         if (!this.accessCode || this.accessCode.length < 6) return;
@@ -211,6 +329,13 @@ export class PortailSuivi implements OnInit {
                 });
             }
         });
+    }
+
+    /** Filet latéral : vert par défaut, jaune si une action est attendue, rouge si rejeté. */
+    accent(s: string): string {
+        if (s === 'EN_ATTENTE_COMPLEMENT') return 'var(--yellow)';
+        if (s === 'IRRECEVABLE') return 'var(--red)';
+        return 'var(--green)';
     }
 
     getStatusLabel(s: string): string {
