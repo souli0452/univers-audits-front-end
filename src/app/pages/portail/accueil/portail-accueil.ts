@@ -27,12 +27,12 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
     ],
     styles: [`
         :host{
-            --green:#009640; --red:#E30613; --yellow:#FFD800;
-            --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
-            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
-            --hair:#E4E9E6;
+            --green:#009640; --green-dark:#007a34;
+            --ink:#222222; --paper:#FFFFFF; --mist:#F6F6F6;
+            --ink-60:#5f6368; --ink-40:#8a8f94;
+            --hair:#DCDCDC;
             --font: 'Lato', system-ui, sans-serif;
-            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
+            --font-display: var(--font);
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
             display:block; font-family:var(--font); color:var(--ink); background:var(--paper);
         }
@@ -40,7 +40,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         a{text-decoration:none;color:inherit}
         .skip{position:absolute;left:-9999px;top:0;background:#fff;color:var(--ink);padding:.6rem 1rem;z-index:10000;font-weight:700}
         .skip:focus{left:.5rem;top:.5rem}
-        a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+        a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         .nav-tools{display:flex;align-items:center;gap:1.25rem;color:#fff}
         .nav-hotline{min-height:44px}
         .chiffres{background:#fff;padding:3.5rem 2rem 3rem;text-align:center}
@@ -58,28 +58,28 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .navbar-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:9px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .navbar-logo img{height:52px;width:auto;object-fit:contain;display:block}
         .nav-hotline{display:flex;align-items:center;gap:.7rem;color:#fff}
-        .nav-hotline i{font-size:1.3rem;color:var(--yellow)}
+        .nav-hotline i{font-size:1.3rem;color:#fff}
         .nav-hotline small{display:block;font-size:.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.82)}
         .nav-hotline strong{display:block;font-family:var(--mono);font-size:1.2rem;font-weight:700;line-height:1.2}
 
         /* ── Hero ───────────────────────────────────────────── */
-        .hero{position:relative;background:var(--green);overflow:hidden;border-bottom:3px solid var(--yellow)}
+        .hero{position:relative;background:var(--green);overflow:hidden}
         .hero-grid{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:3rem 2rem 4.5rem;display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center}
 
         .hero-title{font-family:var(--font-display);font-size:2.5rem;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.3px;margin-bottom:1rem;text-transform:uppercase}
-        .letter-icon{font-size:.8em;color:var(--yellow);vertical-align:middle;margin:0 .02em}
+        .letter-icon{font-size:.8em;color:#fff;vertical-align:middle;margin:0 .02em}
         .hero-subtitle{font-size:1rem;color:rgba(255,255,255,.88);max-width:460px;margin:0 0 .85rem;line-height:1.7}
         .hero-legal{font-size:.75rem;font-weight:700;letter-spacing:.5px;color:#fff;text-transform:uppercase;margin-bottom:2rem}
 
         .hero-actions{display:flex;justify-content:flex-start;gap:1rem;flex-wrap:wrap}
         .hero-trust{list-style:none;display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:1.5rem}
         .hero-trust li{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700;color:rgba(255,255,255,.92)}
-        .hero-trust i{font-size:.75rem;color:var(--yellow)}
-        .btn-hero-primary{background:var(--red);color:#fff;border:none;padding:0 1.85rem;height:52px;border-radius:8px;font-weight:800;font-size:.87rem;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:all .2s;box-shadow:0 6px 18px rgba(227,6,19,.35)}
-        .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(227,6,19,.45)}
+        .hero-trust i{font-size:.75rem;color:#fff}
+        .btn-hero-primary{background:#fff;color:var(--green);border:none;padding:0 1.85rem;height:52px;border-radius:8px;font-weight:800;font-size:.87rem;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:background .2s}
+        .btn-hero-primary:hover{background:#f1f1f1}
 
         /* ── Carte de suivi (hero, colonne droite) ──────────── */
-        .track-card{background:#fff;border-radius:14px;padding:2rem;box-shadow:0 24px 55px rgba(0,0,0,.22)}
+        .track-card{background:#fff;border-radius:14px;padding:2rem}
         .track-card h3{font-family:var(--font-display);font-size:1.15rem;font-weight:800;color:var(--ink);margin-bottom:.4rem}
         .track-card p{font-size:.82rem;color:var(--ink-60);margin-bottom:1.4rem;line-height:1.6}
         .track-input-row{display:flex;gap:.5rem}
@@ -119,7 +119,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         /* ── Bord "papier déchiré" entre deux sections ──────── */
         .torn-top{position:relative}
         .torn-top::before{
-            content:'';position:absolute;top:-1px;left:0;right:0;height:18px;
+            display:none;content:'';position:absolute;top:-1px;left:0;right:0;height:18px;
             background:var(--paper);
             clip-path:polygon(
                 0% 100%,2% 35%,5% 92%,8% 28%,11% 88%,14% 22%,17% 82%,20% 32%,
@@ -157,14 +157,14 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .quick-access{background:var(--mist);padding:4.5rem 2rem;text-align:center}
         .quick-grid{display:flex;justify-content:center;gap:3.5rem;flex-wrap:wrap;margin-top:2.5rem}
         .quick-item{display:flex;flex-direction:column;align-items:center;gap:1rem;cursor:pointer;background:none;border:none;font-family:inherit}
-        .quick-circle{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;box-shadow:0 10px 26px rgba(0,0,0,.14)}
+        .quick-circle{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s}
         .quick-item:hover .quick-circle{transform:translateY(-4px)}
-        .quick-circle.is-red{background:var(--red)}
+        .quick-circle.is-red{background:var(--green)}
         .quick-circle i{font-size:2.1rem;color:#fff}
         .quick-item span{font-weight:800;font-size:.85rem;color:var(--ink);letter-spacing:.3px;text-transform:uppercase}
 
         /* ── Pied de page ───────────────────────────────────── */
-        .footer{position:relative;background:var(--red);color:#fff;padding:4.5rem 2rem 1.5rem}
+        .footer{position:relative;background:var(--green);color:#fff;padding:4.5rem 2rem 1.5rem}
         .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:3rem;margin-bottom:2.5rem;align-items:start}
         .footer-brand{display:flex;flex-direction:column;align-items:flex-start;gap:1.1rem}
         .footer-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.94);border-radius:12px;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
@@ -172,24 +172,24 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .footer-arms{position:absolute;top:2.6rem;right:2rem;background:rgba(255,255,255,.94);border-radius:12px;padding:8px 12px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
         .footer-arms img{height:76px;width:auto;display:block}
         .footer-brand p{color:rgba(255,255,255,.82);font-size:.8rem;line-height:1.7}
-        .footer-col h4{font-size:.78rem;font-weight:800;color:var(--yellow);letter-spacing:1.5px;margin-bottom:1.15rem}
+        .footer-col h4{font-size:.78rem;font-weight:800;color:#fff;letter-spacing:1.5px;margin-bottom:1.15rem}
         .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.7rem}
         .footer-col a,.footer-phone{color:rgba(255,255,255,.85);font-size:.82rem;display:flex;align-items:center;gap:.5rem;transition:all .15s}
-        .footer-col a:hover{color:var(--yellow);padding-left:3px}
+        .footer-col a:hover{color:#fff;text-decoration:underline}
         .footer-phone{font-family:var(--mono);font-size:1.15rem;font-weight:700;color:#fff}
         .social-row{display:flex;gap:.6rem;justify-content:center;width:100%;margin-bottom:2rem}
         .social-btn{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.95rem;cursor:pointer;transition:all .18s}
-        .social-btn:hover{background:var(--yellow);color:var(--ink)}
+        .social-btn:hover{background:#fff;color:var(--green)}
         .footer-hr{border:none;border-top:1px solid rgba(255,255,255,.18);margin-bottom:1.25rem}
         .footer-bottom{max-width:1100px;margin:0 auto;text-align:center;color:rgba(255,255,255,.68);font-size:.775rem}
-        .footer-bottom em{font-style:normal;color:var(--yellow)}
+        .footer-bottom em{font-style:normal;color:#fff}
 
         /* ── Retour en haut ─────────────────────────────────── */
-        .btt{position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.25);transition:opacity .2s,transform .2s;z-index:300;opacity:0;pointer-events:none}
+        .btt{position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .2s,transform .2s;z-index:300;opacity:0;pointer-events:none}
         .btt.visible{opacity:1;pointer-events:all} .btt:hover{transform:translateY(-3px)}
 
         /* ── Dialogue de dépôt ──────────────────────────────── */
-        .overlay{position:fixed;inset:0;background:rgba(0,54,23,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}
         .dialog{background:#fff;border-radius:16px;padding:2.75rem 2.5rem;max-width:520px;width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.3);position:relative;animation:dialog-in .25s ease-out}
         @keyframes dialog-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .dialog-close{position:absolute;top:1rem;right:1.1rem;width:30px;height:30px;border-radius:50%;background:var(--mist);border:none;font-size:.9rem;cursor:pointer;color:var(--ink-60);display:flex;align-items:center;justify-content:center;transition:background .15s}
@@ -199,9 +199,9 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .dialog-choices{display:flex;gap:1rem;justify-content:center}
         .d-choice{flex:1;min-width:150px;max-width:200px;border:1.5px solid var(--hair);border-radius:12px;padding:1.75rem 1.1rem;cursor:pointer;transition:all .2s;background:#fff;display:flex;flex-direction:column;align-items:center;gap:.75rem}
         .d-choice:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(0,0,0,.08)}
-        .d-choice.c-form:hover{border-color:var(--green)} .d-choice.c-audio:hover{border-color:var(--red)}
+        .d-choice.c-form:hover{border-color:var(--green)} .d-choice.c-audio:hover{border-color:var(--green)}
         .d-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-        .c-form .d-icon{background:var(--green)} .c-audio .d-icon{background:var(--red)}
+        .c-form .d-icon{background:var(--green)} .c-audio .d-icon{background:var(--green)}
         .d-icon i{font-size:1.4rem;color:#fff}
         .d-label{font-size:.9rem;font-weight:800;color:var(--ink)}
         .d-hint{font-size:.75rem;color:var(--ink-60);line-height:1.5}
