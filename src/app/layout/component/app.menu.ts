@@ -45,6 +45,7 @@ export class AppMenu {
                 {
                     label: 'Statistiques',
                     icon: 'pi pi-fw pi-chart-bar',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/statistiques']
                 }
             ]
@@ -74,6 +75,7 @@ export class AppMenu {
                 {
                     label: 'Rapports',
                     icon:  'pi pi-chart-bar',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/rapports']
                 }
             ]

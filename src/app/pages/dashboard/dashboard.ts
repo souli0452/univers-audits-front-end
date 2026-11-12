@@ -55,7 +55,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-surface-400 text-sm font-medium">Total dossiers</span>
+                <span class="text-surface-400 text-sm font-medium">{{ portee === 'globale' ? 'Total dossiers' : 'Mes dossiers' }}</span>
                 <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900
                             rounded-xl flex items-center justify-center">
                     <i class="pi pi-folder text-blue-600 dark:text-blue-400"></i>
@@ -65,7 +65,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
                 <div class="text-3xl font-black text-surface-900 dark:text-surface-0">
                     {{ stats?.totalDossiers || 0 }}
                 </div>
-                <div class="text-xs text-surface-400 mt-1">Cette année</div>
+                <div class="text-xs text-surface-400 mt-1">{{ portee === 'globale' ? 'Cette année' : 'Dossiers auxquels vous avez accès' }}</div>
             </ng-container>
         </div>
 
@@ -88,7 +88,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         </div>
 
         <!-- Taux recevabilité -->
-        <div class="bg-white dark:bg-surface-800 rounded-2xl p-5
+        <div *ngIf="portee === 'globale'" class="bg-white dark:bg-surface-800 rounded-2xl p-5
                     border border-surface-100 dark:border-surface-700 shadow-sm">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-surface-400 text-sm font-medium">Taux recevabilité</span>
@@ -106,7 +106,7 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
         </div>
 
         <!-- Alertes -->
-        <div class="rounded-2xl p-5 border shadow-sm transition-all"
+        <div *ngIf="portee === 'globale'" class="rounded-2xl p-5 border shadow-sm transition-all"
             [class]="hasAlerts
                 ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
                 : 'bg-white dark:bg-surface-800 border-surface-100 dark:border-surface-700'">
@@ -294,6 +294,10 @@ export class Dashboard implements OnInit {
     loading         = true;
     loadingDossiers = true;
 
+    /** « globale » : statistiques de tous les dossiers (direction, administration, DCP) ; « personnelle » : dossiers de l'agent. */
+    portee: 'globale' | 'personnelle' =
+        this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']) ? 'globale' : 'personnelle';
+
     stats: StatistiqueResponse | null = null;
     recentDossiers: DossierResponse[] = [];
     statusSegments: { label: string; count: number; pct: number; color: string }[] = [];
@@ -328,7 +332,36 @@ export class Dashboard implements OnInit {
         this.loadRecentDossiers();
     }
 
+    /** Pour un agent sans droit sur les totaux globaux : synthèse calculée sur ses seuls dossiers accessibles. */
+    private loadPersonalStats(): void {
+        this.dossierService.findAll(0, 500).subscribe({
+            next: page => {
+                const parStatut: Record<string, number> = {};
+                const parCanal: Record<string, number> = {};
+                for (const d of page.content) {
+                    parStatut[d.status] = (parStatut[d.status] || 0) + 1;
+                    if (d.submissionMode) parCanal[d.submissionMode] = (parCanal[d.submissionMode] || 0) + 1;
+                }
+                const stats = {
+                    totalDossiers: page.totalElements,
+                    countByStatus: parStatut,
+                    countBySubmissionMode: parCanal
+                } as StatistiqueResponse;
+                this.stats = stats;
+                this.buildStatusChart(stats);
+                this.buildModeChart(stats);
+                this.buildStatusSegments(stats);
+                this.loading = false;
+            },
+            error: () => { this.loading = false; }
+        });
+    }
+
     private loadStats(): void {
+    if (this.portee === 'personnelle') {
+        this.loadPersonalStats();
+        return;
+    }
     const now   = new Date();
     const start = new Date(now.getFullYear(), 0, 1).toISOString();
     const end   = now.toISOString();

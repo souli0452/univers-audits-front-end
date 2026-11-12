@@ -4,6 +4,7 @@ import { roleGuard } from '../../core/guards/auth.guard';
 export default [
     {
         path: '',
+        canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP'])],
         loadComponent: () =>
             import('./statistiques-dashboard/statistiques-dashboard')
             .then(m => m.StatistiquesDashboard)

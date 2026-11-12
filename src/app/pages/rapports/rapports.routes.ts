@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../core/guards/auth.guard';
 
 export default [
     {
-        path: '',                        
+        path: '',
+        canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP'])],
         loadComponent: () =>
             import('./rapport-etat/rapport-etat.component')
             .then(m => m.RapportEtatComponent)
