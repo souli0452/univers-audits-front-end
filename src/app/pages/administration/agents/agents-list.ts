@@ -225,6 +225,8 @@ import { TooltipModule } from 'primeng/tooltip';
                     <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4">Email</th>
                     <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4">Rôles</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4 w-40">Grade</th>
                     <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4 w-24">Statut</th>
@@ -273,6 +275,18 @@ import { TooltipModule } from 'primeng/tooltip';
                     </td>
 
                     <td class="px-4 py-3">
+                        <div class="flex flex-wrap gap-1">
+                            <span *ngFor="let r of agent.keycloakRoles"
+                                class="text-xs bg-primary-50 dark:bg-surface-700 text-primary-700
+                                       px-2 py-1 rounded-md">
+                                {{ getRoleLabel(r) }}
+                            </span>
+                            <span *ngIf="!agent.keycloakRoles?.length"
+                                class="text-surface-300 text-xs">—</span>
+                        </div>
+                    </td>
+
+                    <td class="px-4 py-3">
                         <span *ngIf="agent.grade"
                             class="text-xs bg-surface-100 dark:bg-surface-700
                                    text-surface-600 px-2 py-1 rounded-md">
@@ -316,7 +330,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="flex flex-col items-center justify-center py-16">
                             <div class="w-16 h-16 rounded-2xl bg-surface-100
                                         flex items-center justify-center mb-4">
@@ -479,6 +493,16 @@ export class AgentsList implements OnInit {
                 });
             }
         });
+    }
+
+    getRoleLabel(role: string): string {
+        const labels: Record<string, string> = {
+            ADMIN_DDIC: 'Administrateur DDIC', AGENT_BRPD: 'Agent BRPD',
+            CGE: "Contrôleur Général d'État", CGEA: 'Contrôleur Général Adjoint',
+            CONSEILLER_JURIDIQUE: 'Conseiller Juridique', CONTROLEUR_ETAT: "Contrôleur d'État",
+            MEMBRE_CTADP: 'Membre CTADP', DCP: 'DCP'
+        };
+        return labels[role] || role;
     }
 
     getInitials(agent: AgentResponse): string {

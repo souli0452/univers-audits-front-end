@@ -10,6 +10,7 @@ export interface AgentResponse {
     keycloakId?: string;
     createdAt?: string;
     departementLabel?: string;
+    keycloakRoles?: string[];
 }
 
 export interface CreateAgentRequest {
