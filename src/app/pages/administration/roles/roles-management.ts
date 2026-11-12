@@ -155,6 +155,16 @@ type Sev = 'success'|'info'|'warn'|'danger'|'secondary'|'contrast'|null|undefine
     <p-button label="Nouveau rôle" icon="pi pi-plus" (onClick)="openCreate()" />
   </div>
 
+  <div class="p-3 rounded-xl bg-amber-50 text-amber-800 text-sm flex items-start gap-2">
+    <i class="pi pi-info-circle mt-0.5"></i>
+    <span>
+      Les permissions affichées ici sont <strong>indicatives</strong> : elles ne commandent pas l'accès
+      réel à l'application, qui est défini dans le code selon le rôle. Pour voir ce que chaque rôle peut
+      réellement faire, ouvrez
+      <a href="#/app/administration/acces" class="underline font-semibold">Accès par rôle</a>.
+    </span>
+  </div>
+
   <div *ngIf="loading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
     <div *ngFor="let i of [1,2,3,4,5,6,7]"
         class="h-52 bg-surface-100 rounded-2xl animate-pulse"></div>

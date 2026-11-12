@@ -147,8 +147,14 @@ export class AppMenu {
                     routerLink: ['/app/administration/roles']
                 },
                 {
+                    label: 'Accès par rôle',
+                    icon: 'pi pi-fw pi-lock',
+                    routerLink: ['/app/administration/acces']
+                },
+                {
                     label: 'Journal d\'audit',
                     icon: 'pi pi-fw pi-history',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC']),
                     routerLink: ['/app/administration/audit']
                 },
                 {

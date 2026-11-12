@@ -29,7 +29,13 @@ export default [
             import('./roles/roles-management').then(m => m.RolesManagement)
     },
     {
+        path: 'acces',
+        loadComponent: () =>
+            import('./acces-roles/acces-roles').then(m => m.AccesRoles)
+    },
+    {
      path: 'audit',
+     canActivate: [roleGuard(['ADMIN_DDIC'])],
      loadComponent: () =>
        import('./audit/audit-dashboard').then(m => m.AuditDashboard)
    },
