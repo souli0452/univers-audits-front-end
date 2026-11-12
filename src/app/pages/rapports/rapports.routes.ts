@@ -10,7 +10,8 @@ export default [
             .then(m => m.RapportEtatComponent)
     },
     {
-        path: 'investigations',          
+        path: 'investigations',
+        canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE', 'MEMBRE_CTADP'])],
         loadComponent: () =>
             import('./rapport-investigation/rapport-investigation.component')
             .then(m => m.RapportInvestigationComponent)

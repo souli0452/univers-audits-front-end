@@ -110,11 +110,13 @@ export class AppMenu {
                 {
                     label: 'Toutes les enquêtes',
                     icon: 'pi pi-fw pi-search',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'CONTROLEUR_ETAT']),
                     routerLink: ['/app/investigations']
                 },
                 {
             label: 'Rapport investigations',
             icon:  'pi pi-fw pi-chart-bar',
+            visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE', 'MEMBRE_CTADP']),
             routerLink: ['/app/rapports/investigations']
         },
                 {
