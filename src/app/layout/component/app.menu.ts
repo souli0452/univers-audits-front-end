@@ -45,6 +45,7 @@ export class AppMenu {
                 {
                     label: 'Statistiques',
                     icon: 'pi pi-fw pi-chart-bar',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/statistiques']
                 }
             ]
@@ -74,6 +75,7 @@ export class AppMenu {
                 {
                     label: 'Rapports',
                     icon:  'pi pi-chart-bar',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/rapports']
                 }
             ]
@@ -108,11 +110,13 @@ export class AppMenu {
                 {
                     label: 'Toutes les enquêtes',
                     icon: 'pi pi-fw pi-search',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'CONTROLEUR_ETAT']),
                     routerLink: ['/app/investigations']
                 },
                 {
             label: 'Rapport investigations',
             icon:  'pi pi-fw pi-chart-bar',
+            visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE', 'MEMBRE_CTADP']),
             routerLink: ['/app/rapports/investigations']
         },
                 {
