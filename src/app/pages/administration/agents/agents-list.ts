@@ -128,6 +128,13 @@ import { TooltipModule } from 'primeng/tooltip';
 
             <!-- Actions -->
             <div class="flex items-center justify-center gap-1 px-3" style="height:48px;">
+                <select [(ngModel)]="selectedRole" (ngModelChange)="applyFilters()"
+                    aria-label="Filtrer par rôle"
+                    class="text-xs border border-surface-200 rounded-lg px-2 py-1.5
+                           bg-transparent text-surface-600 max-w-44">
+                    <option value="">Tous les rôles</option>
+                    <option *ngFor="let r of roleOptions" [value]="r">{{ getRoleLabel(r) }}</option>
+                </select>
                 <button *ngIf="isFiltering()" (click)="resetFilters()"
                     class="flex items-center gap-1 text-xs text-surface-400
                            hover:text-surface-700 transition-colors px-2 py-1.5
@@ -231,6 +238,8 @@ import { TooltipModule } from 'primeng/tooltip';
                     <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4 w-24">Statut</th>
                     <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-40">Compte</th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4 w-24">Actions</th>
                 </tr>
             </ng-template>
@@ -310,6 +319,16 @@ import { TooltipModule } from 'primeng/tooltip';
                     </td>
 
                     <td class="px-4 py-3">
+                        <span *ngIf="agent.compteKeycloak"
+                            class="text-xs px-2 py-1 rounded-md whitespace-nowrap"
+                            [ngClass]="compteClasse(agent.compteKeycloak)">
+                            {{ compteLibelle(agent.compteKeycloak) }}
+                        </span>
+                        <span *ngIf="!agent.compteKeycloak"
+                            class="text-surface-300 text-xs">—</span>
+                    </td>
+
+                    <td class="px-4 py-3">
                         <div class="flex items-center gap-1">
                             <p-button icon="pi pi-pencil" severity="info" text
                                 size="small"
@@ -330,7 +349,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="flex flex-col items-center justify-center py-16">
                             <div class="w-16 h-16 rounded-2xl bg-surface-100
                                         flex items-center justify-center mb-4">
@@ -373,6 +392,12 @@ export class AgentsList implements OnInit {
 
     searchText:     string          = '';
     selectedStatus: boolean | null  = null;
+    selectedRole:   string          = '';
+
+    /** Rôles présents dans la liste, pour le filtre. */
+    get roleOptions(): string[] {
+        return [...new Set(this.allAgents.flatMap(a => a.keycloakRoles ?? []))].sort();
+    }
 
     get activeCount():   number { return this.allAgents.filter(a =>  a.actif).length; }
     get inactiveCount(): number { return this.allAgents.filter(a => !a.actif).length; }
@@ -422,12 +447,15 @@ export class AgentsList implements OnInit {
             if (this.selectedStatus !== null && agent.actif !== this.selectedStatus)
                 return false;
 
+            if (this.selectedRole && !(agent.keycloakRoles ?? []).includes(this.selectedRole))
+                return false;
+
             return true;
         });
     }
 
     isFiltering(): boolean {
-        return !!(this.searchText || this.selectedStatus !== null);
+        return !!(this.searchText || this.selectedStatus !== null || this.selectedRole);
     }
 
     filterByActive(status: boolean): void {
@@ -449,6 +477,7 @@ export class AgentsList implements OnInit {
     resetFilters(): void {
         this.searchText     = '';
         this.selectedStatus = null;
+        this.selectedRole   = '';
         this.applyFilters();
     }
 
@@ -493,6 +522,18 @@ export class AgentsList implements OnInit {
                 });
             }
         });
+    }
+
+    compteLibelle(etat: string): string {
+        return ({ ACTIF: 'Compte activé', EN_ATTENTE: 'Activation en attente', DESACTIVE: 'Compte bloqué' } as Record<string, string>)[etat] ?? etat;
+    }
+
+    compteClasse(etat: string): string {
+        return ({
+            ACTIF:      'bg-green-50 text-green-700',
+            EN_ATTENTE: 'bg-amber-50 text-amber-700',
+            DESACTIVE:  'bg-red-50 text-red-700'
+        } as Record<string, string>)[etat] ?? 'bg-surface-100 text-surface-600';
     }
 
     getRoleLabel(role: string): string {
