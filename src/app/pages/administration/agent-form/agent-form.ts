@@ -236,10 +236,6 @@ import { RoleManagementService, RegleCumulRoles } from '../../../core/services/r
                 </h4>
                 <div class="flex flex-col gap-2 text-xs text-surface-400">
                     <div>Créé le : {{ agent.createdAt | date:'dd/MM/yyyy' }}</div>
-                    <div class="font-mono mt-1 break-all">ID : {{ agent.id }}</div>
-                    <div class="font-mono break-all" *ngIf="agent.keycloakId">
-                        KC : {{ agent.keycloakId }}
-                    </div>
                 </div>
             </div>
 
@@ -320,6 +316,8 @@ export class AgentForm implements OnInit {
         { label: "Contrôleur d'État",           value: "CONTROLEUR" },
         { label: "Conseiller Juridique",         value: "JURISTE" },
         { label: "Agent BRPD",                   value: "AGENT_BRPD" },
+        { label: "Directeur",                    value: "DIRECTEUR" },
+        { label: "Agent",                        value: "AGENT" },
         { label: "Analyste",                     value: "ANALYSTE" },
         { label: "Informaticien",                value: "INFORMATICIEN" }
     ];
