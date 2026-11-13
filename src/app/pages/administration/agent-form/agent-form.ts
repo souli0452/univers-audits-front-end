@@ -320,6 +320,8 @@ export class AgentForm implements OnInit {
         { label: "Contrôleur d'État",           value: "CONTROLEUR" },
         { label: "Conseiller Juridique",         value: "JURISTE" },
         { label: "Agent BRPD",                   value: "AGENT_BRPD" },
+        { label: "Directeur",                    value: "DIRECTEUR" },
+        { label: "Agent",                        value: "AGENT" },
         { label: "Analyste",                     value: "ANALYSTE" },
         { label: "Informaticien",                value: "INFORMATICIEN" }
     ];
