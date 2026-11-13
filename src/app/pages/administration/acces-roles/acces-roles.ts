@@ -17,10 +17,6 @@ type Niveau = 'tout' | 'partiel' | 'aucun' | 'sans';
 
     <div>
         <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">Accès par rôle</h1>
-        <p class="text-surface-500 text-sm mt-1 max-w-3xl">
-            Ce que chaque rôle peut consulter ou faire, tel que défini dans le code de l'application.
-            Cette page est en lecture seule. Les droits se modifient par le développement, pas depuis l'écran.
-        </p>
     </div>
 
     <div *ngIf="loading" class="h-64 bg-surface-100 rounded-2xl animate-pulse"></div>
@@ -82,12 +78,6 @@ type Niveau = 'tout' | 'partiel' | 'aucun' | 'sans';
             accès à une partie seulement</span>
         <span><span class="text-surface-300">aucune pastille</span> : pas d'accès (ou module sans consultation / action)</span>
     </div>
-
-    <p *ngIf="matrice && !loading" class="text-xs text-surface-400 max-w-3xl">
-        « Voir » compte les consultations, « Agir » les créations, modifications et validations.
-        Certaines règles dépendent aussi du dossier (par exemple l'habilitation de l'agent sur un dossier) et ne
-        figurent pas ici. Le nombre d'agents compte les agents de la base qui ont ce rôle dans Keycloak.
-    </p>
 </div>
     `
 })
