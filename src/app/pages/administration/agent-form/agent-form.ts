@@ -13,6 +13,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { CardModule } from 'primeng/card';
 import { MessageService } from 'primeng/api';
 import { AgentService, AgentResponse } from '../../../core/services/agent.service';
+import { RoleManagementService, RegleCumulRoles } from '../../../core/services/role-management.service';
 
 @Component({
     selector: 'app-agent-form',
@@ -152,6 +153,27 @@ import { AgentService, AgentResponse } from '../../../core/services/agent.servic
                     Impossible de charger les rôles Keycloak
                 </div>
 
+                <!-- Cumuls de rôles -->
+                <div *ngIf="cumulsInterdits.length > 0" role="alert"
+                    class="mt-4 rounded-lg border border-red-300 bg-white p-3 text-sm text-red-700">
+                    <div class="font-semibold mb-1">Cumul de rôles interdit</div>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li *ngFor="let c of cumulsInterdits">
+                            <strong>{{ getRoleLabel(c.roleA) }} + {{ getRoleLabel(c.roleB) }}</strong> : {{ c.raison }}
+                        </li>
+                    </ul>
+                    <div class="mt-2 text-xs">Retire l'un de ces rôles pour pouvoir enregistrer.</div>
+                </div>
+                <div *ngIf="cumulsASurveiller.length > 0" role="status"
+                    class="mt-4 rounded-lg border border-amber-300 bg-white p-3 text-sm text-amber-800">
+                    <div class="font-semibold mb-1">Cumul de rôles à justifier</div>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li *ngFor="let c of cumulsASurveiller">
+                            <strong>{{ getRoleLabel(c.roleA) }} + {{ getRoleLabel(c.roleB) }}</strong> : {{ c.raison }}
+                        </li>
+                    </ul>
+                </div>
+
                 <!-- Rôles sélectionnés -->
                 <div *ngIf="selectedRoles.length > 0"
                     class="mt-4 pt-4 border-t border-surface-100">
@@ -171,7 +193,8 @@ import { AgentService, AgentResponse } from '../../../core/services/agent.servic
                     routerLink="/app/administration/agents" />
                 <p-button
                     [label]="isEdit ? 'Enregistrer les modifications' : 'Creer'"
-                    icon="pi pi-save" [loading]="saving" (onClick)="save()" />
+                    icon="pi pi-save" [loading]="saving"
+                    [disabled]="cumulsInterdits.length > 0" (onClick)="save()" />
             </div>
 
         </div>
@@ -233,6 +256,7 @@ export class AgentForm implements OnInit {
     private route          = inject(ActivatedRoute);
     private router         = inject(Router);
     private messageService = inject(MessageService);
+    private roleService    = inject(RoleManagementService);
 
     agent: AgentResponse | null = null;
     isEdit       = false;
@@ -241,6 +265,23 @@ export class AgentForm implements OnInit {
 
     availableRoles: string[] = [];
     selectedRoles:  string[] = [];
+
+    /** Cumuls de rôles publiés par le back (déduits du workflow). */
+    reglesCumul: RegleCumulRoles[] = [];
+
+    private cumulsApplicables(niveau: 'INTERDIT' | 'A_SURVEILLER'): RegleCumulRoles[] {
+        const roles = this.selectedRoles;
+        // ADMIN_DDIC : compte technique, les cumuls interdits ne bloquent plus (mêmes règles que le serveur)
+        const admin = roles.includes('ADMIN_DDIC');
+        return this.reglesCumul.filter(r => {
+            if (!roles.includes(r.roleA) || !roles.includes(r.roleB)) return false;
+            if (niveau === 'INTERDIT') return !admin && r.niveau === 'INTERDIT';
+            return r.niveau === 'A_SURVEILLER' || (admin && r.niveau === 'INTERDIT');
+        });
+    }
+
+    get cumulsInterdits():   RegleCumulRoles[] { return this.cumulsApplicables('INTERDIT'); }
+    get cumulsASurveiller(): RegleCumulRoles[] { return this.cumulsApplicables('A_SURVEILLER'); }
 
     form = this.fb.group({
         matricule:   ['', Validators.required],
@@ -298,6 +339,11 @@ export class AgentForm implements OnInit {
         this.agentService.getAvailableRoles().subscribe({
             next:  roles => { this.availableRoles = roles; this.loadingRoles = false; },
             error: ()    => { this.loadingRoles = false; }
+        });
+        // Sans ces règles le formulaire reste utilisable : le serveur refuse de toute façon un cumul interdit.
+        this.roleService.listCombinations().subscribe({
+            next:  regles => { this.reglesCumul = regles; },
+            error: ()     => { this.reglesCumul = []; }
         });
     }
 
