@@ -412,9 +412,9 @@ export class DossierDetail implements OnInit {
     openHabilitationDialog(): void {
         this.habilitationForm = { agentId: '', reason: '' };
         if (!this.habilitationAgentOptions.length) {
-            this.agentService.findAll(0, 200).subscribe({
-                next: page => {
-                    this.habilitationAgentOptions = page.content.map(a => ({
+            this.agentService.findActive().subscribe({
+                next: agents => {
+                    this.habilitationAgentOptions = agents.map(a => ({
                         label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
                         value: a.id
                     }));

@@ -3114,11 +3114,11 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     private loadAgents(): void {
-        this.agentService.findAll(0, 100)
+        this.agentService.findActive()
             .pipe(takeUntil(this.destroy$))
             .subscribe({
-                next: (page: any) => {
-                    this.availableAgents = page.content.map((a: any) => ({
+                next: agents => {
+                    this.availableAgents = agents.map(a => ({
                         label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
                         value: a.id
                     }));

@@ -60,7 +60,7 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'administration',
-                canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA'])],
+                canActivate: [roleGuard(['ADMIN_DDIC'])],
                 loadChildren: () =>
                     import('./app/pages/administration/administration.routes')
             },
