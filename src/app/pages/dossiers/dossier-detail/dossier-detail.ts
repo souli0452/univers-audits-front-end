@@ -738,7 +738,7 @@ export class DossierDetail implements OnInit {
 
     canEditDossier(): boolean {
         if (this.isClosed()) return false;
-        if (this.isWhistleblowerProtected() && !this.hasRole(['CGE', 'CGEA'])) return false;
+        if (this.isWhistleblowerProtected() && !this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC'])) return false;
         return this.hasRole([
             'AGENT_BRPD', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE',
             'CGEA', 'CGE', 'ADMIN_DDIC'
