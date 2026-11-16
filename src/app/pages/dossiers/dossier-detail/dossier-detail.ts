@@ -495,6 +495,7 @@ export class DossierDetail implements OnInit {
         return ({
             AGENT_IN_CHARGE: 'Chargé du dossier',
             INVESTIGATION_TEAM: "Équipe d'investigation",
+            AFFECTATION: 'Affectation au département',
             MANUAL: 'Octroi manuel'
         } as Record<string, string>)[s] ?? s;
     }
