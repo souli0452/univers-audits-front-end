@@ -25,6 +25,7 @@ export interface InvestigationResponse {
     deiApprovedAt?:          string;
     legalAdvisorApprovedAt?: string;
     cgeApprovedAt?:          string;
+    cgeaApprovedAt?:         string;
     plannedDurationDays?:    number;
     remainingDays?:          number;
     overdue:                 boolean;

@@ -32,6 +32,7 @@ import {
     SubmitReportRequest,
     ExtendDeadlineRequest
 } from '../../../core/services/investigation.service';
+import { EtapeCircuit, ROLES_PAR_ETAPE, etapeEnAttente, peutRejeter } from './approval-circuit';
 import { AgentService }      from '../../../core/services/agent.service';
 import { KeycloakService }   from '../../../core/auth/keycloak.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
@@ -528,6 +529,26 @@ interface ApiError { error?: { message?: string }; }
 </p-dialog>
 
 <!-- ── Dialog CGE ─────────────────────────────────────────── -->
+<p-dialog [(visible)]="showRejectDialog"
+    [header]="rejectEtape === 'DEI' ? 'Rejeter le rapport (DEI)' : 'Rejeter le rapport (CGEA)'"
+    [modal]="true" [style]="{width:'500px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <p class="text-sm text-surface-600">
+            {{ rejectEtape === 'DEI'
+                ? 'Le rapport sera renvoyé au conseiller juridique.'
+                : 'Le rapport sera renvoyé au chef du DEI.' }}
+        </p>
+        <label class="text-sm font-medium">Motif du rejet *</label>
+        <textarea pTextarea [(ngModel)]="rejectMotif" placeholder="Expliquez ce qui doit être corrigé..."
+            rows="4" class="w-full"></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRejectDialog=false"/>
+        <p-button label="Rejeter le rapport" icon="pi pi-undo" severity="danger"
+            [disabled]="!rejectMotif.trim()" [loading]="actioning" (onClick)="executeReject()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showCgeDialog"
     header="Décision finale CGE"
     [modal]="true" [style]="{width:'500px'}" [draggable]="false">
@@ -1541,16 +1562,22 @@ interface ApiError { error?: { message?: string }; }
         <p-button *ngIf="inv.status==='IN_PROGRESS' && hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
             label="Soumettre rapport" icon="pi pi-file-check" size="small"
             (onClick)="openReportDialog()"/>
-        <p-button *ngIf="inv.status==='COMPLETED' && !inv.deiApprovedAt
-                         && hasRole(['CHEF_DEI','ADMIN_DDIC'])"
-            label="Approuver DEI" icon="pi pi-check" severity="success"
-            size="small" [loading]="actioning" (onClick)="executeApproveDei()"/>
-        <p-button *ngIf="inv.deiApprovedAt && !inv.legalAdvisorApprovedAt
-                         && hasRole(['CONSEILLER_JURIDIQUE','ADMIN_DDIC'])"
+        <p-button *ngIf="peutAgirSurEtape('JURIDIQUE')"
             label="Approuver Juridique" icon="pi pi-shield" severity="success"
             size="small" [loading]="actioning" (onClick)="executeApproveLegal()"/>
-        <p-button *ngIf="inv.legalAdvisorApprovedAt && !inv.cgeApprovedAt
-                         && hasRole(['CGE','ADMIN_DDIC'])"
+        <p-button *ngIf="peutAgirSurEtape('DEI')"
+            label="Approuver DEI" icon="pi pi-check" severity="success"
+            size="small" [loading]="actioning" (onClick)="executeApproveDei()"/>
+        <p-button *ngIf="peutAgirSurEtape('DEI')"
+            label="Rejeter" icon="pi pi-undo" severity="danger" [outlined]="true"
+            size="small" (onClick)="openReject('DEI')"/>
+        <p-button *ngIf="peutAgirSurEtape('CGEA')"
+            label="Approuver CGEA" icon="pi pi-check" severity="success"
+            size="small" [loading]="actioning" (onClick)="executeApproveCgea()"/>
+        <p-button *ngIf="peutAgirSurEtape('CGEA')"
+            label="Rejeter" icon="pi pi-undo" severity="danger" [outlined]="true"
+            size="small" (onClick)="openReject('CGEA')"/>
+        <p-button *ngIf="peutAgirSurEtape('CGE')"
             label="Décision CGE" icon="pi pi-hammer" severity="success"
             size="small" (onClick)="showCgeDialog=true"/>
     </ng-template>
@@ -2760,6 +2787,9 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     showExtendDialog    = false;
     showReportDialog    = false;
     showCgeDialog       = false;
+    showRejectDialog    = false;
+    rejectEtape: EtapeCircuit = 'DEI';
+    rejectMotif         = '';
     showAddMemberDialog = false;
 
     transmission:        TransmissionAutoriteResponse | null = null;
@@ -4732,6 +4762,56 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
             });
     }
 
+    /** Étape du circuit qui attend une décision (juridique, DEI, CGEA ou CGE). */
+    etapeEnAttente(): EtapeCircuit | null {
+        return this.inv ? etapeEnAttente(this.inv) : null;
+    }
+
+    /** Vrai si cette étape attend une décision et que l'utilisateur a le rôle pour la prendre. */
+    peutAgirSurEtape(etape: EtapeCircuit): boolean {
+        return this.etapeEnAttente() === etape && this.hasRole(ROLES_PAR_ETAPE[etape]);
+    }
+
+    openReject(etape: EtapeCircuit): void {
+        if (!peutRejeter(etape)) return;
+        this.rejectEtape = etape;
+        this.rejectMotif = '';
+        this.showRejectDialog = true;
+    }
+
+    executeReject(): void {
+        if (!this.inv || !this.rejectMotif.trim()) return;
+        this.actioning = true;
+        const appel = this.rejectEtape === 'DEI'
+            ? this.investigationService.rejectDei(this.inv.id, this.rejectMotif.trim())
+            : this.investigationService.rejectCgea(this.inv.id, this.rejectMotif.trim());
+        appel.pipe(takeUntil(this.destroy$)).subscribe({
+            next: inv => {
+                this.setInv(inv); this.actioning = false;
+                this.showRejectDialog = false; this.rejectMotif = '';
+                this.messageService.add({
+                    severity: 'info', summary: 'Rapport rejeté',
+                    detail: this.rejectEtape === 'DEI' ? 'Renvoyé au conseiller juridique' : 'Renvoyé au chef du DEI'
+                });
+            },
+            error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+        });
+    }
+
+    executeApproveCgea(): void {
+        if (!this.inv) return;
+        this.actioning = true;
+        this.investigationService.approveCgea(this.inv.id)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: inv => {
+                    this.setInv(inv); this.actioning = false;
+                    this.messageService.add({ severity: 'success', summary: 'Approuvé CGEA' });
+                },
+                error: (err: ApiError) => { this.actioning = false; this.showError(err); }
+            });
+    }
+
     executeApproveLegal(): void {
         if (!this.inv) return;
         this.actioning = true;
@@ -4813,6 +4893,7 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
     }
 
     private buildApprovalSteps(inv: InvestigationResponse): void {
+        const attente = etapeEnAttente(inv);
         this.approvalSteps = [
             {
                 label: "Rapport soumis par l'équipe", icon: 'pi-file',
@@ -4820,19 +4901,24 @@ export class InvestigationDetail implements OnInit, OnChanges, OnDestroy {
                 active: inv.status === 'IN_PROGRESS', date: inv.reportSubmittedAt
             },
             {
-                label: 'Approbation DEI', icon: 'pi-user',
-                delay: '(15 jours ouvrables)', done: !!inv.deiApprovedAt,
-                active: !!inv.reportSubmittedAt && !inv.deiApprovedAt, date: inv.deiApprovedAt
-            },
-            {
                 label: 'Conseiller Juridique', icon: 'pi-shield',
                 delay: '(10 jours ouvrables)', done: !!inv.legalAdvisorApprovedAt,
-                active: !!inv.deiApprovedAt && !inv.legalAdvisorApprovedAt, date: inv.legalAdvisorApprovedAt
+                active: attente === 'JURIDIQUE', date: inv.legalAdvisorApprovedAt
+            },
+            {
+                label: 'Approbation du chef du DEI', icon: 'pi-user',
+                delay: '(7 jours ouvrables)', done: !!inv.deiApprovedAt,
+                active: attente === 'DEI', date: inv.deiApprovedAt
+            },
+            {
+                label: 'Approbation CGEA', icon: 'pi-eye',
+                delay: '', done: !!inv.cgeaApprovedAt,
+                active: attente === 'CGEA', date: inv.cgeaApprovedAt
             },
             {
                 label: 'Décision finale CGE', icon: 'pi-hammer',
                 delay: '(20 jours ouvrables)', done: !!inv.cgeApprovedAt,
-                active: !!inv.legalAdvisorApprovedAt && !inv.cgeApprovedAt, date: inv.cgeApprovedAt
+                active: attente === 'CGE', date: inv.cgeApprovedAt
             }
         ];
     }
