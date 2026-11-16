@@ -60,6 +60,8 @@ import {
     HabilitationSource
 } from '../../../core/services/dossier-habilitation.service';
 import { AgentService } from '../../../core/services/agent.service';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { agentsDuDepartement } from './repartition';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -78,7 +80,7 @@ interface WorkflowStep {
     imports: [
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
-        TextareaModule, ToastModule, SkeletonModule,
+        TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
         ConfirmDialogModule, TooltipModule, SelectModule,
         InputTextModule
     ],
@@ -234,6 +236,9 @@ export class DossierDetail implements OnInit {
     showCreateFicheDialog   = false;
     showAffecterFicheDialog = false;
     showSuiviFicheDialog    = false;
+    showRepartirDialog      = false;
+    repartirOptions: { label: string; value: string }[] = [];
+    repartirAgentIds: string[] = [];
     savingFiche              = false;
 
     ficheCreateForm: FicheAffectationCreateRequest = {
@@ -1724,6 +1729,47 @@ export class DossierDetail implements OnInit {
     canAffecterFiche(): boolean {
         return this.hasRole(['CGEA', 'ADMIN_DDIC'])
             && !!this.ficheAffectation && !this.ficheAffectation.typeDesignation;
+    }
+
+    /** Le chef du département désigné (ou l'administrateur) répartit un dossier affecté à un département. */
+    canRepartirFiche(): boolean {
+        return this.hasRole(['CHEF_DEI', 'CHEF_DAC', 'ADMIN_DDIC'])
+            && this.ficheAffectation?.typeDesignation === 'DEPARTEMENT';
+    }
+
+    openRepartirDialog(): void {
+        this.repartirAgentIds = [];
+        this.showRepartirDialog = true;
+        this.agentService.findActive().subscribe({
+            next: agents => {
+                this.repartirOptions = agentsDuDepartement(agents, this.ficheAffectation?.departementDesigneId)
+                    .map(a => ({ label: `${a.firstName} ${a.lastName} — ${a.matricule}`, value: a.id }));
+            },
+            error: () => {}
+        });
+    }
+
+    saveRepartir(): void {
+        if (!this.dossier || !this.repartirAgentIds.length) return;
+        this.savingFiche = true;
+        this.ficheAffectationService.repartir(this.dossier.id, this.repartirAgentIds).subscribe({
+            next: () => {
+                this.savingFiche = false;
+                this.showRepartirDialog = false;
+                this.messageService.add({
+                    severity: 'success', summary: 'Dossier réparti',
+                    detail: `${this.repartirAgentIds.length} agent(s) habilité(s) et prévenu(s)`
+                });
+                this.loadHabilitations(this.dossier!.id);
+            },
+            error: err => {
+                this.savingFiche = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Répartition impossible'
+                });
+            }
+        });
     }
 
     canSuivreFiche(): boolean {

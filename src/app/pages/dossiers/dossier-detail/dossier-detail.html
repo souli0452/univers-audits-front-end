@@ -338,6 +338,28 @@
     </ng-template>
 </p-dialog>
 
+<p-dialog [(visible)]="showRepartirDialog" header="Répartir le dossier à mon équipe"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="flex flex-col gap-3 py-2">
+        <p class="text-sm text-surface-600">
+            Choisissez les agents de votre département qui traiteront ce dossier. Chacun sera habilité sur le
+            dossier et prévenu ; les autres agents n'y auront pas accès.
+        </p>
+        <label class="text-xs font-medium text-surface-500 block uppercase tracking-wide">Agents *</label>
+        <p-multiselect [(ngModel)]="repartirAgentIds" [options]="repartirOptions"
+            optionLabel="label" optionValue="value" display="chip" [filter]="true"
+            placeholder="Sélectionner les agents..." styleClass="w-full" appendTo="body"/>
+        <p *ngIf="!repartirOptions.length" class="text-xs text-surface-500">
+            Aucun autre agent actif dans ce département.
+        </p>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Annuler" severity="secondary" outlined (onClick)="showRepartirDialog=false"/>
+        <p-button label="Répartir" icon="pi pi-share-alt" [loading]="savingFiche"
+            [disabled]="!repartirAgentIds.length" (onClick)="saveRepartir()"/>
+    </ng-template>
+</p-dialog>
+
 <p-dialog [(visible)]="showSuiviFicheDialog" header="Mettre à jour le suivi"
     [modal]="true" [style]="{width:'520px'}" [draggable]="false">
     <div class="flex flex-col gap-3 py-2">
@@ -1323,6 +1345,8 @@
                         <div class="flex justify-end gap-2">
                             <p-button *ngIf="canAffecterFiche()" icon="pi pi-share-alt" label="Affecter"
                                 severity="contrast" outlined size="small" (onClick)="openAffecterFicheDialog()"/>
+                            <p-button *ngIf="canRepartirFiche()" icon="pi pi-users" label="Répartir à mon équipe"
+                                severity="contrast" outlined size="small" (onClick)="openRepartirDialog()"/>
                             <p-button *ngIf="canSuivreFiche()" icon="pi pi-refresh" label="Mettre à jour le suivi"
                                 severity="secondary" outlined size="small" (onClick)="openSuiviFicheDialog()"/>
                         </div>

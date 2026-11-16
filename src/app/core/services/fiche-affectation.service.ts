@@ -43,6 +43,11 @@ export class FicheAffectationService {
         return this.http.patch<FicheAffectationResponse>(`${this.url(dossierId)}/affectation`, req);
     }
 
+    /** Le chef du département désigné répartit le dossier à des agents de son département. */
+    repartir(dossierId: string, agentIds: string[]): Observable<FicheAffectationResponse> {
+        return this.http.post<FicheAffectationResponse>(`${this.url(dossierId)}/repartition`, { agentIds });
+    }
+
     suivre(dossierId: string, req: FicheAffectationSuiviRequest): Observable<FicheAffectationResponse> {
         return this.http.patch<FicheAffectationResponse>(`${this.url(dossierId)}/suivi`, req);
     }

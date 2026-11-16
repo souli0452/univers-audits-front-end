@@ -26,8 +26,8 @@ export class AgentService {
         return this.http.get<AgentResponse>(`${this.baseUrl}/${id}`);
     }
 
-    findActive(): Observable<{ id: string; firstName: string; lastName: string; email: string; matricule: string }[]> {
-        return this.http.get<{ id: string; firstName: string; lastName: string; email: string; matricule: string }[]>(`${this.baseUrl}/active`);
+    findActive(): Observable<{ id: string; firstName: string; lastName: string; email: string; matricule: string; departementId?: string; departementLabel?: string }[]> {
+        return this.http.get<{ id: string; firstName: string; lastName: string; email: string; matricule: string; departementId?: string; departementLabel?: string }[]>(`${this.baseUrl}/active`);
     }
 
     create(req: CreateAgentRequest): Observable<AgentResponse> {
