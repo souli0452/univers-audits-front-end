@@ -1810,7 +1810,7 @@ interface ApiError { error?: { message?: string }; }
                             <p-button *ngIf="hasRole(['CONTROLEUR_ETAT','ADMIN_DDIC'])"
                                 [label]="plan ? 'Réviser' : 'Soumettre'" icon="pi pi-pencil" size="small" outlined
                                 (onClick)="openPlanDialog()"/>
-                            <p-button *ngIf="plan && !plan.validatedAt && hasRole(['CGEA','ADMIN_DDIC'])"
+                            <p-button *ngIf="plan && !plan.validatedAt && hasRole(['CHEF_DEI','ADMIN_DDIC'])"
                                 label="Valider" icon="pi pi-check" size="small"
                                 [loading]="validatingPlan" (onClick)="executeValidatePlan()"/>
                         </div>
