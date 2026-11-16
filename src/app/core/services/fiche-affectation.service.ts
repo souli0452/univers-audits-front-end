@@ -60,6 +60,6 @@ export class FicheAffectationService {
     }
 
     getConseillersJuridiques(): Observable<AgentSummary[]> {
-        return this.http.get<AgentSummary[]>(`${environment.apiUrl}/agents/by-role/CONSEILLER_JURIDIQUE`);
+        return this.http.get<AgentSummary[]>(`${environment.apiUrl}/agents/conseillers-juridiques`);
     }
 }

@@ -62,6 +62,7 @@ import {
 import { AgentService } from '../../../core/services/agent.service';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { agentsDuDepartement } from './repartition';
+import { etiquetteDe, etiquettesCj } from './etiquettes-cj';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -160,6 +161,8 @@ export class DossierDetail implements OnInit {
     readonly classeEtatDelai  = classeEtatDelai;
     departements:         DepartementOption[]      = [];
     conseillers:          AgentSummary[]           = [];
+    conseillersOptions: { label: string; value: string }[] = [];
+    etiquettesConseillers = new Map<string, string>();
     habilitations:        DossierHabilitationResponse[] = [];
     loadingHabilitations  = false;
     showHabilitationDialog = false;
@@ -392,7 +395,14 @@ export class DossierDetail implements OnInit {
             next: o => { this.observations = o; }, error: () => {}
         });
         this.ficheAffectationService.get(id).subscribe({
-            next: f => { this.ficheAffectation = f; }
+            next: f => {
+                this.ficheAffectation = f;
+                if (f?.typeDesignation === 'AGENT_CJ' && !this.conseillers.length) {
+                    this.ficheAffectationService.getConseillersJuridiques().subscribe({
+                        next: a => this.appliquerConseillers(a), error: () => {}
+                    });
+                }
+            }
         });
         this.etudeOpportuniteService.get(id).subscribe({
             next: e => { this.etudeOpportunite = e; }
@@ -1772,6 +1782,21 @@ export class DossierDetail implements OnInit {
         });
     }
 
+    /** Conseillers juridiques proposés, avec leur étiquette « CJ/initiales » calculée à partir de leur nom. */
+    private appliquerConseillers(liste: AgentSummary[]): void {
+        this.conseillers = liste;
+        this.etiquettesConseillers = etiquettesCj(liste);
+        this.conseillersOptions = liste.map(a => ({
+            value: a.id,
+            label: `${etiquetteDe(this.etiquettesConseillers, a.id)} — ${a.firstName} ${a.lastName}`
+        }));
+    }
+
+    /** « CJ/OR » du conseiller désigné sur la fiche, ou rien si la liste n'est pas (encore) connue. */
+    etiquetteConseillerDesigne(): string {
+        return etiquetteDe(this.etiquettesConseillers, this.ficheAffectation?.agentDesigneId);
+    }
+
     canSuivreFiche(): boolean {
         return !!this.ficheAffectation && !!this.ficheAffectation.typeDesignation;
     }
@@ -1814,7 +1839,7 @@ export class DossierDetail implements OnInit {
         }
         if (this.conseillers.length === 0) {
             this.ficheAffectationService.getConseillersJuridiques().subscribe({
-                next: a => { this.conseillers = a; }, error: () => {}
+                next: a => { this.appliquerConseillers(a); }, error: () => {}
             });
         }
     }
