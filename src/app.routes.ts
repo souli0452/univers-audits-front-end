@@ -78,7 +78,7 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'registre-auditions',
-                canActivate: [roleGuard(['CGE', 'CGEA', 'ADMIN_DDIC'])],
+                canActivate: [roleGuard(['CGE', 'CGEA', 'CHEF_DEI', 'ADMIN_DDIC'])],
                 loadComponent: () =>
                     import('./app/pages/registre-auditions/registre-auditions-list')
                     .then(m => m.RegistreAuditionsList)

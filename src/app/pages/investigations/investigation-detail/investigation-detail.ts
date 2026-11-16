@@ -1542,7 +1542,7 @@ interface ApiError { error?: { message?: string }; }
             label="Soumettre rapport" icon="pi pi-file-check" size="small"
             (onClick)="openReportDialog()"/>
         <p-button *ngIf="inv.status==='COMPLETED' && !inv.deiApprovedAt
-                         && hasRole(['CGEA','ADMIN_DDIC'])"
+                         && hasRole(['CHEF_DEI','ADMIN_DDIC'])"
             label="Approuver DEI" icon="pi pi-check" severity="success"
             size="small" [loading]="actioning" (onClick)="executeApproveDei()"/>
         <p-button *ngIf="inv.deiApprovedAt && !inv.legalAdvisorApprovedAt

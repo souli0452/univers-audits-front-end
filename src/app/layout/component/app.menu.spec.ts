@@ -66,7 +66,7 @@ describe('AppMenu : le CGE et le CGEA ne voient que le métier', () => {
         expect(entree(menu, 'File des notifications')?.visible).not.toBe(false);
     });
 
-    for (const role of ['CGE', 'CGEA']) {
+    for (const role of ['CGE', 'CGEA', 'CHEF_DEI']) {
         it(`« Registre des auditions » est dans la section métier pour ${role}, pas dans l'administration`, () => {
             const menu = menuPour([role]);
             const registre = groupeNomme(menu, 'Investigations')?.items?.find(i => i.label === 'Registre des auditions');
