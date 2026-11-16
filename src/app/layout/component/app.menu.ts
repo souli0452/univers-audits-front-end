@@ -128,7 +128,7 @@ export class AppMenu {
                 {
                     label: 'Registre des auditions',
                     icon: 'pi pi-fw pi-id-card',
-                    visible: this.keycloakService.hasAnyRole(['CGEA', 'ADMIN_DDIC']),
+                    visible: this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']),
                     routerLink: ['/app/registre-auditions']
                 },
                 {

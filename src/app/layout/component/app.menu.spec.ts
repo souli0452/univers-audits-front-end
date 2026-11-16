@@ -66,9 +66,20 @@ describe('AppMenu : le CGE et le CGEA ne voient que le métier', () => {
         expect(entree(menu, 'File des notifications')?.visible).not.toBe(false);
     });
 
-    it("« Registre des auditions » est dans la section métier, pas dans l'administration", () => {
-        const menu = menuPour(['CGEA']);
+    for (const role of ['CGE', 'CGEA']) {
+        it(`« Registre des auditions » est dans la section métier pour ${role}, pas dans l'administration`, () => {
+            const menu = menuPour([role]);
+            const registre = groupeNomme(menu, 'Investigations')?.items?.find(i => i.label === 'Registre des auditions');
 
-        expect(groupeNomme(menu, 'Investigations')?.items?.some(i => i.label === 'Registre des auditions')).toBeTrue();
+            expect(registre).toBeDefined();
+            expect(registre?.visible).not.toBe(false);
+        });
+    }
+
+    it("« Registre des auditions » reste masqué au contrôleur d'État (accès limité au CGE, au CGEA et à l'administrateur)", () => {
+        const menu = menuPour(['CONTROLEUR_ETAT']);
+        const registre = groupeNomme(menu, 'Investigations')?.items?.find(i => i.label === 'Registre des auditions');
+
+        expect(registre?.visible).toBe(false);
     });
 });
