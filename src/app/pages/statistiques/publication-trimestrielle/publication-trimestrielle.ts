@@ -7,7 +7,9 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { StatistiqueService, PublicationTrimestrielle, LignePublication } from '../../../core/services/statistique.service';
-import { PERIODES, nomDuFichier, periodeARapporter, versCsv } from '../../../core/utils/publication-trimestrielle';
+import {
+    FichierExporte, PERIODES, creerClasseurExcel, creerPdf, nomDuFichier, periodeARapporter, versCsv
+} from '../../../core/utils/publication-trimestrielle';
 
 interface TableauAffiche {
     titre: string;
@@ -50,8 +52,14 @@ interface TableauAffiche {
                 <p-select [options]="periodes" optionLabel="label" optionValue="value"
                     [(ngModel)]="periode" (onChange)="charger()" styleClass="w-48" aria-label="Période" />
             </div>
-            <p-button label="Exporter (CSV)" icon="pi pi-download" [outlined]="true"
-                [disabled]="!situation" (onClick)="exporter()" />
+            <div class="flex gap-2" role="group" aria-label="Exporter les chiffres">
+                <p-button label="Excel" icon="pi pi-file-excel" [outlined]="true"
+                    [disabled]="!situation || exportEnCours" (onClick)="exporterExcel()" />
+                <p-button label="PDF" icon="pi pi-file-pdf" [outlined]="true"
+                    [disabled]="!situation || exportEnCours" (onClick)="exporterPdf()" />
+                <p-button label="CSV" icon="pi pi-download" [outlined]="true"
+                    [disabled]="!situation || exportEnCours" (onClick)="exporter()" />
+            </div>
         </div>
     </div>
 
@@ -150,6 +158,7 @@ export class PublicationTrimestrielleComponent implements OnInit {
 
     situation: PublicationTrimestrielle | null = null;
     chargement = false;
+    exportEnCours = false;
     erreur = '';
 
     private readonly depart = periodeARapporter(new Date());
@@ -200,12 +209,41 @@ export class PublicationTrimestrielleComponent implements OnInit {
 
     exporter(): void {
         if (!this.situation) { return; }
-        const blob = new Blob(['﻿' + versCsv(this.situation)], { type: 'text/csv;charset=utf-8' });
+        this.declencher(nomDuFichier(this.situation), 'text/csv;charset=utf-8', '﻿' + versCsv(this.situation));
+    }
+
+    async exporterExcel(): Promise<void> {
+        await this.produire(creerClasseurExcel,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    async exporterPdf(): Promise<void> {
+        await this.produire(creerPdf, 'application/pdf');
+    }
+
+    private async produire(creer: (s: PublicationTrimestrielle) => Promise<FichierExporte>, type: string): Promise<void> {
+        if (!this.situation || this.exportEnCours) { return; }
+        this.exportEnCours = true;
+        try {
+            const fichier = await creer(this.situation);
+            this.declencher(fichier.nom, type, fichier.octets as BlobPart);
+        } catch {
+            this.toast.add({
+                severity: 'error', summary: "L'export a échoué",
+                detail: "Réessayez dans un instant ; si cela continue, utilisez l'export CSV.", life: 6000
+            });
+        } finally {
+            this.exportEnCours = false;
+        }
+    }
+
+    /** Lance le téléchargement d'un fichier généré dans le navigateur. */
+    private declencher(nom: string, type: string, contenu: BlobPart): void {
         const lien = document.createElement('a');
-        lien.href = URL.createObjectURL(blob);
-        lien.download = nomDuFichier(this.situation);
+        lien.href = URL.createObjectURL(new Blob([contenu], { type }));
+        lien.download = nom;
         lien.click();
         URL.revokeObjectURL(lien.href);
-        this.toast.add({ severity: 'success', summary: 'Export prêt', detail: lien.download, life: 3000 });
+        this.toast.add({ severity: 'success', summary: 'Export prêt', detail: nom, life: 3000 });
     }
 }

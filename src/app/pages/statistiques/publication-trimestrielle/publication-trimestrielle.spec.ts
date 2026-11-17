@@ -83,4 +83,53 @@ describe('PublicationTrimestrielleComponent', () => {
         expect(texte).toContain('Impossible de charger la situation de cette période');
         expect(fixture.componentInstance.situation).toBeNull();
     });
+
+    describe('exports', () => {
+        const typeExcel = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+        function declencheur(): jasmine.Spy {
+            service.getPublicationTrimestrielle.and.returnValue(of(situation));
+            creer();
+            return spyOn<any>(fixture.componentInstance, 'declencher');
+        }
+
+        it('exporte en Excel sous le bon nom et le bon type', async () => {
+            const declencher = declencheur();
+
+            await fixture.componentInstance.exporterExcel();
+
+            expect(declencher).toHaveBeenCalledTimes(1);
+            expect(declencher.calls.mostRecent().args[0]).toBe('situation-plaintes-denonciations-2026-T1.xlsx');
+            expect(declencher.calls.mostRecent().args[1]).toBe(typeExcel);
+        });
+
+        it('exporte en PDF sous le bon nom et le bon type', async () => {
+            const declencher = declencheur();
+
+            await fixture.componentInstance.exporterPdf();
+
+            expect(declencher.calls.mostRecent().args[0]).toBe('situation-plaintes-denonciations-2026-T1.pdf');
+            expect(declencher.calls.mostRecent().args[1]).toBe('application/pdf');
+        });
+
+        it("exporte en CSV avec la marque d'ordre des octets pour qu'Excel lise les accents", () => {
+            const declencher = declencheur();
+
+            fixture.componentInstance.exporter();
+
+            expect(declencher.calls.mostRecent().args[0]).toBe('situation-plaintes-denonciations-2026-T1.csv');
+            expect(declencher.calls.mostRecent().args[2]).toMatch(/^﻿Situation des plaintes/);
+        });
+
+        it("propose les trois exports, inactifs tant que rien n'est chargé", () => {
+            service.getPublicationTrimestrielle.and.returnValue(throwError(() => new Error('500')));
+            creer();
+
+            const boutons = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+                .filter(b => /Excel|PDF|CSV/.test(b.textContent ?? ''));
+
+            expect(boutons.length).toBe(3);
+            expect(boutons.every(b => b.disabled)).toBeTrue();
+        });
+    });
 });
