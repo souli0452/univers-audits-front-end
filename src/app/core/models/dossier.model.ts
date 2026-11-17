@@ -145,8 +145,11 @@ export interface DossierCreateRequest {
     submissionMode: SubmissionMode;
     /** Plateforme quand le canal est « Réseaux sociaux » (WHATSAPP, MESSENGER…). */
     socialPlatform?: string;
-    /** Zone d'origine du déclarant (citoyen ou agent) : KADIOGO, GUIRIKO, AUTRES_REGIONS, DIASPORA. */
-    regionOrigine?: string;
+    /** Origine géographique du déclarant (citoyen ou agent) : un pays étranger, ou la région, la province et la commune. */
+    paysOrigine?: string;
+    origineRegionId?: string;
+    origineProvinceId?: string;
+    origineCommuneId?: string;
     /** Nature choisie par l'agent qui enregistre ; le serveur l'ignore pour un dépôt citoyen. */
     natureSaisineChoisie?: string;
     /** Typologie de l'institution mise en cause (agent seulement). */

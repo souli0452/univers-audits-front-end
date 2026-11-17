@@ -15,7 +15,8 @@ import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { TailleTexte } from '../shared/taille-texte';
 import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
-import { REGIONS_ORIGINE } from '../../../core/utils/saisine-categories';
+import { OrigineSaisie } from '../../../core/models/geographie.model';
+import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
 import { AideNumeroVert } from '../shared/aide-numero-vert';
 import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
@@ -27,7 +28,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
         ToastModule, DialogModule, ConfirmDialogModule,
-        TailleTexte, AideNumeroVert, AvantDeSignaler
+        TailleTexte, AideNumeroVert, AvantDeSignaler, OrigineGeographique
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -545,13 +546,9 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
                 <div class="field">
                     <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
-                    <select [formControl]="f['regionOrigine']" class="w-full"
-                        style="border:1.5px solid var(--hair);border-radius:8px;padding:.625rem .75rem;
-                               font-size:.875rem;background:#fff;">
-                        <option [ngValue]="null">Je préfère ne pas préciser</option>
-                        <option *ngFor="let r of regionOptions" [ngValue]="r.value">{{ r.label }}</option>
-                    </select>
-                    <span class="field-hint">Sert uniquement aux statistiques, jamais à vous identifier.</span>
+                    <app-origine-geographique (origineChange)="onOrigine($event)" />
+                    <span class="field-hint">Sert uniquement aux statistiques, jamais à vous identifier.
+                        Si vous restez anonyme, seule la région est conservée.</span>
                 </div>
 
                 <div class="grid2">
@@ -1179,7 +1176,6 @@ export class DepotPlainte {
         object:           ['', [Validators.required, Validators.minLength(10)]],
         description:      ['', Validators.required],
         incidentLocation: [''],
-        regionOrigine:    [null as string | null],
         incidentPeriod:   [''],
         estimatedLoss:    [null]
     });
@@ -1202,7 +1198,12 @@ export class DepotPlainte {
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
-    readonly regionOptions = REGIONS_ORIGINE;
+    /** Origine choisie dans les listes liées ; transmise au serveur au dépôt. */
+    origine: OrigineSaisie = {};
+
+    onOrigine(origine: OrigineSaisie): void {
+        this.origine = origine;
+    }
 
     typeOptions = [
         { label: 'Plainte',      value: 'COMPLAINT',
@@ -1440,6 +1441,13 @@ export class DepotPlainte {
         return this.typeOptions.find(o => o.value === type)?.label || type;
     }
 
+    /** Un dépôt anonyme ne transmet que la région : une province ou une commune pourrait identifier son auteur. */
+    private origineAEnvoyer(anonyme: boolean): OrigineSaisie {
+        if (!anonyme) { return this.origine; }
+        const { origineProvinceId, origineCommuneId, ...regionSeule } = this.origine;
+        return regionSeule;
+    }
+
     submit(): void {
         this.submitting = true;
 
@@ -1456,7 +1464,7 @@ export class DepotPlainte {
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
-            regionOrigine:    this.f['regionOrigine'].value    || undefined,
+            ...this.origineAEnvoyer(isAnonymous),
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {

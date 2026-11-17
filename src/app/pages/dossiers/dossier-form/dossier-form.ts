@@ -15,7 +15,9 @@ import { timer } from 'rxjs';
 import { DossierService } from '../../../core/services/dossier.service';
 import { environment } from '../../../../environments/environment';
 
-import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, REGIONS_ORIGINE, TYPOLOGIES_INSTITUTIONNELLES, libelleDeNature } from '../../../core/utils/saisine-categories';
+import { OrigineSaisie } from '../../../core/models/geographie.model';
+import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
+import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES, libelleDeNature } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossier-form',
     standalone: true,
@@ -23,7 +25,7 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, REGIONS_ORIGINE, TYPOLOGIES_
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, SelectModule, CheckboxModule,
-        InputNumberModule, StepperModule, ToastModule
+        InputNumberModule, StepperModule, ToastModule, OrigineGeographique
     ],
     providers: [MessageService],
     styles: [`
@@ -141,10 +143,7 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, REGIONS_ORIGINE, TYPOLOGIES_
                                         Origine géographique du déclarant
                                         <span class="text-xs font-normal text-surface-400">(facultatif)</span>
                                     </label>
-                                    <p-select [formControl]="f['regionOrigine']"
-                                        [options]="regionOptions"
-                                        optionLabel="label" optionValue="value" [showClear]="true"
-                                        placeholder="Sélectionner" styleClass="w-full" />
+                                    <app-origine-geographique (origineChange)="onOrigine($event)" />
                                 </div>
 
                                 <div class="flex flex-col gap-1.5">
@@ -726,7 +725,6 @@ export class DossierForm {
         natureSaisineChoisie:      [null as string | null],
         submissionMode:            ['IN_PERSON',  Validators.required],
         socialPlatform:            [null as string | null],
-        regionOrigine:             [null as string | null],
         typologieInstitutionnelle: [null as string | null],
         object:           ['',           [Validators.required, Validators.minLength(10)]],
         description:      ['',           Validators.required],
@@ -758,7 +756,6 @@ export class DossierForm {
 
     readonly natureOptions      = CHOIX_NATURE_AGENT;
     readonly plateformeOptions  = MODES_RESEAUX_SOCIAUX;
-    readonly regionOptions      = REGIONS_ORIGINE;
     readonly typologieOptions   = TYPOLOGIES_INSTITUTIONNELLES;
 
     readonly modeOptions = [
@@ -903,7 +900,7 @@ export class DossierForm {
 
         if (courrier) request.numeroCourrier = courrier;
         if (this.f['natureSaisineChoisie'].value)      request.natureSaisineChoisie      = this.f['natureSaisineChoisie'].value;
-        if (this.f['regionOrigine'].value)             request.regionOrigine             = this.f['regionOrigine'].value;
+        Object.assign(request, this.origineAEnvoyer(!!isAnon));
         if (this.f['typologieInstitutionnelle'].value) request.typologieInstitutionnelle = this.f['typologieInstitutionnelle'].value;
         if (this.f['submissionMode'].value === 'SOCIAL_MEDIA' && this.f['socialPlatform'].value) {
             request.socialPlatform = this.f['socialPlatform'].value;
@@ -955,6 +952,20 @@ export class DossierForm {
                 });
             }
         });
+    }
+
+    /** Origine choisie dans les listes liées ; transmise au serveur à l'enregistrement. */
+    origine: OrigineSaisie = {};
+
+    onOrigine(origine: OrigineSaisie): void {
+        this.origine = origine;
+    }
+
+    /** Pour un déclarant anonyme, seule la région est transmise : une commune pourrait l'identifier. */
+    private origineAEnvoyer(anonyme: boolean): OrigineSaisie {
+        if (!anonyme) { return this.origine; }
+        const { origineProvinceId, origineCommuneId, ...regionSeule } = this.origine;
+        return regionSeule;
     }
 
     getTypeLabel(type: string | null): string {
