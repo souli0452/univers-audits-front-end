@@ -116,11 +116,12 @@ describe('OrigineGeographique', () => {
         expect(composant.paysEtranger).toBe('');
     });
 
-    it('explique la panne du référentiel sans bloquer le dépôt', () => {
+    it('disparaît en silence quand le référentiel ne se charge pas : le dépôt continue sans', () => {
         TestBed.resetTestingModule();
         creer({ getArbre: jasmine.createSpy('getArbre').and.returnValue(throwError(() => new Error('500'))) });
 
-        expect((fixture.nativeElement as HTMLElement).textContent).toContain('La liste des localités n\'a pas pu être chargée');
-        expect(selects().length).toBe(1);      // seul le choix du pays reste disponible
+        expect(selects().length).toBe(0);
+        expect(((fixture.nativeElement as HTMLElement).textContent ?? '').trim()).toBe('');
+        expect(emis.length).toBe(0);
     });
 });

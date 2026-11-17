@@ -221,4 +221,14 @@ describe('DepotPlainte', () => {
             expect(request.paysOrigine).toBeUndefined();
         });
     });
+
+    it("n'affiche aucun texte d'aide sous le choix de l'origine géographique", () => {
+        fixture.detectChanges();
+
+        const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
+        expect(texte).toContain("D'où nous écrivez-vous");
+        expect(texte).not.toContain('Sert uniquement aux statistiques');
+        expect(texte).not.toContain('seule la région est conservée');
+        expect(texte).not.toContain("n'a pas pu être chargée");
+    });
 });

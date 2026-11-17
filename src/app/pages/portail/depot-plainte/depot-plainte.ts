@@ -547,8 +547,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                 <div class="field">
                     <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
                     <app-origine-geographique (origineChange)="onOrigine($event)" />
-                    <span class="field-hint">Sert uniquement aux statistiques, jamais à vous identifier.
-                        Si vous restez anonyme, seule la région est conservée.</span>
                 </div>
 
                 <div class="grid2">

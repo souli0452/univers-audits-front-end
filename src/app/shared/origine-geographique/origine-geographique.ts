@@ -9,6 +9,7 @@ let compteur = 0;
 /**
  * D'où écrit le déclarant : Pays → Région → Province → Commune, en listes liées. Tout est facultatif.
  * Pour un autre pays que le Burkina Faso, on demande seulement le pays (diaspora).
+ * Si le référentiel ne se charge pas, le champ disparaît en silence : le dépôt continue sans.
  */
 @Component({
     selector: 'app-origine-geographique',
@@ -24,9 +25,9 @@ let compteur = 0;
             padding: .55rem .75rem; font-size: .875rem; background: #fff; color: inherit;
         }
         select:focus-visible, input:focus-visible { outline: 2px solid #16a34a; outline-offset: 1px; }
-        .aide { font-size: .75rem; color: #6b7280; }
     `],
     template: `
+@if (!chargementEchoue) {
 <div class="grille">
     <div class="champ">
         <label [for]="id + '-pays'">Pays</label>
@@ -43,8 +44,6 @@ let compteur = 0;
             <input type="text" [id]="id + '-etranger'" maxlength="80" autocomplete="off"
                 [ngModel]="paysEtranger" (ngModelChange)="saisirPays($event)" placeholder="Ex. : Côte d'Ivoire" />
         </div>
-    } @else if (chargementEchoue) {
-        <p class="aide">La liste des localités n'a pas pu être chargée ; vous pouvez continuer sans la renseigner.</p>
     } @else {
         <div class="champ">
             <label [for]="id + '-region'">Région</label>
@@ -73,6 +72,7 @@ let compteur = 0;
         }
     }
 </div>
+}
     `
 })
 export class OrigineGeographique implements OnInit {
