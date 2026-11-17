@@ -60,6 +60,9 @@ import {
     HabilitationSource
 } from '../../../core/services/dossier-habilitation.service';
 import { AgentService } from '../../../core/services/agent.service';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { agentsDuDepartement } from './repartition';
+import { etiquetteDe, etiquettesCj } from './etiquettes-cj';
 import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -78,7 +81,7 @@ interface WorkflowStep {
     imports: [
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
-        TextareaModule, ToastModule, SkeletonModule,
+        TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
         ConfirmDialogModule, TooltipModule, SelectModule,
         InputTextModule
     ],
@@ -158,6 +161,8 @@ export class DossierDetail implements OnInit {
     readonly classeEtatDelai  = classeEtatDelai;
     departements:         DepartementOption[]      = [];
     conseillers:          AgentSummary[]           = [];
+    conseillersOptions: { label: string; value: string }[] = [];
+    etiquettesConseillers = new Map<string, string>();
     habilitations:        DossierHabilitationResponse[] = [];
     loadingHabilitations  = false;
     showHabilitationDialog = false;
@@ -234,6 +239,9 @@ export class DossierDetail implements OnInit {
     showCreateFicheDialog   = false;
     showAffecterFicheDialog = false;
     showSuiviFicheDialog    = false;
+    showRepartirDialog      = false;
+    repartirOptions: { label: string; value: string }[] = [];
+    repartirAgentIds: string[] = [];
     savingFiche              = false;
 
     ficheCreateForm: FicheAffectationCreateRequest = {
@@ -387,7 +395,14 @@ export class DossierDetail implements OnInit {
             next: o => { this.observations = o; }, error: () => {}
         });
         this.ficheAffectationService.get(id).subscribe({
-            next: f => { this.ficheAffectation = f; }
+            next: f => {
+                this.ficheAffectation = f;
+                if (f?.typeDesignation === 'AGENT_CJ' && !this.conseillers.length) {
+                    this.ficheAffectationService.getConseillersJuridiques().subscribe({
+                        next: a => this.appliquerConseillers(a), error: () => {}
+                    });
+                }
+            }
         });
         this.etudeOpportuniteService.get(id).subscribe({
             next: e => { this.etudeOpportunite = e; }
@@ -412,9 +427,9 @@ export class DossierDetail implements OnInit {
     openHabilitationDialog(): void {
         this.habilitationForm = { agentId: '', reason: '' };
         if (!this.habilitationAgentOptions.length) {
-            this.agentService.findAll(0, 200).subscribe({
-                next: page => {
-                    this.habilitationAgentOptions = page.content.map(a => ({
+            this.agentService.findActive().subscribe({
+                next: agents => {
+                    this.habilitationAgentOptions = agents.map(a => ({
                         label: `${a.firstName} ${a.lastName} — ${a.matricule}`,
                         value: a.id
                     }));
@@ -480,6 +495,7 @@ export class DossierDetail implements OnInit {
         return ({
             AGENT_IN_CHARGE: 'Chargé du dossier',
             INVESTIGATION_TEAM: "Équipe d'investigation",
+            AFFECTATION: 'Affectation au département',
             MANUAL: 'Octroi manuel'
         } as Record<string, string>)[s] ?? s;
     }
@@ -738,7 +754,7 @@ export class DossierDetail implements OnInit {
 
     canEditDossier(): boolean {
         if (this.isClosed()) return false;
-        if (this.isWhistleblowerProtected() && !this.hasRole(['CGE', 'CGEA'])) return false;
+        if (this.isWhistleblowerProtected() && !this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC'])) return false;
         return this.hasRole([
             'AGENT_BRPD', 'CONTROLEUR_ETAT', 'CONSEILLER_JURIDIQUE',
             'CGEA', 'CGE', 'ADMIN_DDIC'
@@ -1726,6 +1742,62 @@ export class DossierDetail implements OnInit {
             && !!this.ficheAffectation && !this.ficheAffectation.typeDesignation;
     }
 
+    /** Le chef du département désigné (ou l'administrateur) répartit un dossier affecté à un département. */
+    canRepartirFiche(): boolean {
+        return this.hasRole(['CHEF_DEI', 'CHEF_DAC', 'ADMIN_DDIC'])
+            && this.ficheAffectation?.typeDesignation === 'DEPARTEMENT';
+    }
+
+    openRepartirDialog(): void {
+        this.repartirAgentIds = [];
+        this.showRepartirDialog = true;
+        this.agentService.findActive().subscribe({
+            next: agents => {
+                this.repartirOptions = agentsDuDepartement(agents, this.ficheAffectation?.departementDesigneId)
+                    .map(a => ({ label: `${a.firstName} ${a.lastName} — ${a.matricule}`, value: a.id }));
+            },
+            error: () => {}
+        });
+    }
+
+    saveRepartir(): void {
+        if (!this.dossier || !this.repartirAgentIds.length) return;
+        this.savingFiche = true;
+        this.ficheAffectationService.repartir(this.dossier.id, this.repartirAgentIds).subscribe({
+            next: () => {
+                this.savingFiche = false;
+                this.showRepartirDialog = false;
+                this.messageService.add({
+                    severity: 'success', summary: 'Dossier réparti',
+                    detail: `${this.repartirAgentIds.length} agent(s) habilité(s) et prévenu(s)`
+                });
+                this.loadHabilitations(this.dossier!.id);
+            },
+            error: err => {
+                this.savingFiche = false;
+                this.messageService.add({
+                    severity: 'error', summary: 'Erreur',
+                    detail: err.error?.message || 'Répartition impossible'
+                });
+            }
+        });
+    }
+
+    /** Conseillers juridiques proposés, avec leur étiquette « CJ/initiales » calculée à partir de leur nom. */
+    private appliquerConseillers(liste: AgentSummary[]): void {
+        this.conseillers = liste;
+        this.etiquettesConseillers = etiquettesCj(liste);
+        this.conseillersOptions = liste.map(a => ({
+            value: a.id,
+            label: `${etiquetteDe(this.etiquettesConseillers, a.id)} — ${a.firstName} ${a.lastName}`
+        }));
+    }
+
+    /** « CJ/OR » du conseiller désigné sur la fiche, ou rien si la liste n'est pas (encore) connue. */
+    etiquetteConseillerDesigne(): string {
+        return etiquetteDe(this.etiquettesConseillers, this.ficheAffectation?.agentDesigneId);
+    }
+
     canSuivreFiche(): boolean {
         return !!this.ficheAffectation && !!this.ficheAffectation.typeDesignation;
     }
@@ -1768,7 +1840,7 @@ export class DossierDetail implements OnInit {
         }
         if (this.conseillers.length === 0) {
             this.ficheAffectationService.getConseillersJuridiques().subscribe({
-                next: a => { this.conseillers = a; }, error: () => {}
+                next: a => { this.appliquerConseillers(a); }, error: () => {}
             });
         }
     }

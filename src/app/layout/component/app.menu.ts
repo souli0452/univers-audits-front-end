@@ -47,6 +47,12 @@ export class AppMenu {
                     icon: 'pi pi-fw pi-chart-bar',
                     visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/statistiques']
+                },
+                {
+                    label: 'Dépassements par acteur',
+                    icon: 'pi pi-fw pi-exclamation-triangle',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA']),
+                    routerLink: ['/app/statistiques/depassements-par-acteur']
                 }
             ]
         },
@@ -120,6 +126,12 @@ export class AppMenu {
             routerLink: ['/app/rapports/investigations']
         },
                 {
+                    label: 'Registre des auditions',
+                    icon: 'pi pi-fw pi-id-card',
+                    visible: this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'CHEF_DEI', 'ADMIN_DDIC']),
+                    routerLink: ['/app/registre-auditions']
+                },
+                {
                     label: 'Leçons à partager',
                     icon: 'pi pi-fw pi-lightbulb',
                     routerLink: ['/app/lecons-a-partager']
@@ -131,15 +143,8 @@ export class AppMenu {
 
         {
             label: 'Administration',
-            visible: this.keycloakService.hasAnyRole([
-                'ADMIN_DDIC', 'CGE', 'CGEA'
-            ]),
+            visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC']),
             items: [
-                {
-                    label: 'Dépassements par acteur',
-                    icon: 'pi pi-fw pi-exclamation-triangle',
-                    routerLink: ['/app/statistiques/depassements-par-acteur']
-                },
                 {
                     label: 'Agents',
                     icon: 'pi pi-fw pi-users',
@@ -162,12 +167,6 @@ export class AppMenu {
                     routerLink: ['/app/administration/audit']
                 },
                 {
-                    label: 'Registre des auditions',
-                    icon: 'pi pi-fw pi-id-card',
-                    visible: this.keycloakService.hasAnyRole(['CGEA', 'ADMIN_DDIC']),
-                    routerLink: ['/app/registre-auditions']
-                },
-                {
                     label: 'Paramètres du portail',
                     icon: 'pi pi-fw pi-sliders-h',
                     routerLink: ['/app/administration/parametres-portail']
@@ -180,7 +179,7 @@ export class AppMenu {
                 {
                     label: 'File des notifications',
                     icon: 'pi pi-fw pi-bell',
-                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGEA']),
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC']),
                     routerLink: ['/app/administration/notifications-queue']
                 }
                             ]

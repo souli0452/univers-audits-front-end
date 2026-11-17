@@ -124,6 +124,25 @@ export class InvestigationService {
             `${this.baseUrl}/${id}/approve-legal`, {});
     }
 
+    approveCgea(id: string): Observable<InvestigationResponse> {
+        return this.http.patch<InvestigationResponse>(
+            `${this.baseUrl}/${id}/approve-cgea`, {});
+    }
+
+    /** Le chef du DEI renvoie le rapport au conseiller juridique, avec un motif obligatoire. */
+    rejectDei(id: string, motif: string): Observable<InvestigationResponse> {
+        return this.http.patch<InvestigationResponse>(
+            `${this.baseUrl}/${id}/reject-dei`, null,
+            { params: new HttpParams().set('motif', motif) });
+    }
+
+    /** Le CGEA renvoie le rapport au chef du DEI, avec un motif obligatoire. */
+    rejectCgea(id: string, motif: string): Observable<InvestigationResponse> {
+        return this.http.patch<InvestigationResponse>(
+            `${this.baseUrl}/${id}/reject-cgea`, null,
+            { params: new HttpParams().set('motif', motif) });
+    }
+
     approveCge(id: string, reason: string): Observable<InvestigationResponse> {
         return this.http.patch<InvestigationResponse>(
             `${this.baseUrl}/${id}/approve-cge`, null,

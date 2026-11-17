@@ -101,7 +101,8 @@ export class AccesRoles implements OnInit {
             ADMIN_DDIC: 'Administrateur DDIC', AGENT_BRPD: 'Agent BRPD',
             CGE: "Contrôleur Général d'État", CGEA: 'Contrôleur Général Adjoint',
             CONSEILLER_JURIDIQUE: 'Conseiller Juridique', CONTROLEUR_ETAT: "Contrôleur d'État",
-            MEMBRE_CTADP: 'Membre CTADP', DCP: 'DCP'
+            MEMBRE_CTADP: 'Membre CTADP', DCP: 'DCP',
+            CHEF_DEI: 'Chef du DEI', CHEF_DAC: 'Chef du DAC'
         };
         return labels[role] || role;
     }

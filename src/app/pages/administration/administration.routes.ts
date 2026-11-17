@@ -53,7 +53,7 @@ export default [
     },
     {
       path: 'notifications-queue',
-      canActivate: [roleGuard(['ADMIN_DDIC', 'CGEA'])],
+      canActivate: [roleGuard(['ADMIN_DDIC'])],
       loadComponent: () =>
        import('./notifications-queue/notifications-queue')
          .then(m => m.NotificationsQueue)

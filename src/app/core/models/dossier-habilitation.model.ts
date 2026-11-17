@@ -1,6 +1,6 @@
 import { AgentSummaryResponse } from './dossier.model';
 
-export type HabilitationSource = 'AGENT_IN_CHARGE' | 'INVESTIGATION_TEAM' | 'MANUAL';
+export type HabilitationSource = 'AGENT_IN_CHARGE' | 'INVESTIGATION_TEAM' | 'MANUAL' | 'AFFECTATION';
 
 export interface DossierHabilitationResponse {
     id: string;

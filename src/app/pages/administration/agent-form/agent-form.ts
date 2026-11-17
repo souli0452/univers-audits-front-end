@@ -297,7 +297,9 @@ export class AgentForm implements OnInit {
         CGEA:                 "Contrôleur Général Adjoint",
         CONSEILLER_JURIDIQUE: "Conseiller Juridique",
         CONTROLEUR_ETAT:      "Contrôleur d'État",
-        MEMBRE_CTADP:         "Membre CTADP"
+        MEMBRE_CTADP:         "Membre CTADP",
+        CHEF_DEI:             "Chef du DEI",
+        CHEF_DAC:             "Chef du DAC"
     };
 
     private rolePermissions: Record<string, { label: string; icon: string }> = {
@@ -307,7 +309,9 @@ export class AgentForm implements OnInit {
         CGEA:                 { label: "Supervision CGEA",         icon: "pi pi-eye" },
         CONSEILLER_JURIDIQUE: { label: "Étude opportunité",        icon: "pi pi-search" },
         CONTROLEUR_ETAT:      { label: "Enquêtes terrain",         icon: "pi pi-map-marker" },
-        MEMBRE_CTADP:         { label: "Revue CTADP",              icon: "pi pi-users" }
+        MEMBRE_CTADP:         { label: "Revue CTADP",              icon: "pi pi-users" },
+        CHEF_DEI:             { label: "Approbation du chef du DEI", icon: "pi pi-briefcase" },
+        CHEF_DAC:             { label: "Chef du DAC",              icon: "pi pi-briefcase" }
     };
 
     gradeOptions = [

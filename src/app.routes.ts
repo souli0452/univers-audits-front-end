@@ -60,7 +60,7 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'administration',
-                canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA'])],
+                canActivate: [roleGuard(['ADMIN_DDIC'])],
                 loadChildren: () =>
                     import('./app/pages/administration/administration.routes')
             },
@@ -78,7 +78,7 @@ export const appRoutes: Routes = [
             },
             {
                 path: 'registre-auditions',
-                canActivate: [roleGuard(['CGEA', 'ADMIN_DDIC'])],
+                canActivate: [roleGuard(['CGE', 'CGEA', 'CHEF_DEI', 'ADMIN_DDIC'])],
                 loadComponent: () =>
                     import('./app/pages/registre-auditions/registre-auditions-list')
                     .then(m => m.RegistreAuditionsList)
