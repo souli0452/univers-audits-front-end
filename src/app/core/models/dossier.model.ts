@@ -141,8 +141,19 @@ export interface DossierResponse {
 }
 
 export interface DossierCreateRequest {
-    type: TypeSaisine;
+    type?: TypeSaisine;
     submissionMode: SubmissionMode;
+    /** Plateforme quand le canal est « Réseaux sociaux » (WHATSAPP, MESSENGER…). */
+    socialPlatform?: string;
+    /** Origine géographique du déclarant (citoyen ou agent) : un pays étranger, ou la région, la province et la commune. */
+    paysOrigine?: string;
+    origineRegionId?: string;
+    origineProvinceId?: string;
+    origineCommuneId?: string;
+    /** Nature choisie par l'agent qui enregistre ; le serveur l'ignore pour un dépôt citoyen. */
+    natureSaisineChoisie?: string;
+    /** Typologie de l'institution mise en cause (agent seulement). */
+    typologieInstitutionnelle?: string;
     object: string;
     description?: string;
     incidentLocation?: string;

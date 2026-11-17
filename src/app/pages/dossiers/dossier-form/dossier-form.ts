@@ -15,6 +15,9 @@ import { timer } from 'rxjs';
 import { DossierService } from '../../../core/services/dossier.service';
 import { environment } from '../../../../environments/environment';
 
+import { OrigineSaisie } from '../../../core/models/geographie.model';
+import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
+import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES, libelleDeNature } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossier-form',
     standalone: true,
@@ -22,7 +25,7 @@ import { environment } from '../../../../environments/environment';
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, SelectModule, CheckboxModule,
-        InputNumberModule, StepperModule, ToastModule
+        InputNumberModule, StepperModule, ToastModule, OrigineGeographique
     ],
     providers: [MessageService],
     styles: [`
@@ -96,18 +99,15 @@ import { environment } from '../../../../environments/environment';
 
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
-                                        Type de saisine <span class="req">*</span>
+                                        Nature du dossier
+                                        <span class="text-xs font-normal text-surface-400">(facultatif)</span>
                                     </label>
-                                    <p-select [formControl]="f['type']"
-                                        [options]="typeOptions"
-                                        optionLabel="label" optionValue="value"
-                                        placeholder="Sélectionner" styleClass="w-full"
-                                        [class.ng-invalid]="f['type'].invalid && f['type'].touched"
-                                        [class.ng-dirty]="f['type'].invalid && f['type'].touched" />
-                                    <small class="error-msg"
-                                        *ngIf="f['type'].invalid && f['type'].touched">
-                                        <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                                        Sélection obligatoire
+                                    <p-select [formControl]="f['natureSaisineChoisie']"
+                                        [options]="natureOptions"
+                                        optionLabel="label" optionValue="value" [showClear]="true"
+                                        placeholder="Déduite de la qualité du déclarant" styleClass="w-full" />
+                                    <small class="text-xs text-surface-400">
+                                        Laissez vide pour une plainte (victime) ou une dénonciation (témoin).
                                     </small>
                                 </div>
 
@@ -126,6 +126,35 @@ import { environment } from '../../../../environments/environment';
                                         <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
                                         Sélection obligatoire
                                     </small>
+                                </div>
+
+                                <div class="flex flex-col gap-1.5" *ngIf="f['submissionMode'].value === 'SOCIAL_MEDIA'">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                        Plateforme
+                                    </label>
+                                    <p-select [formControl]="f['socialPlatform']"
+                                        [options]="plateformeOptions"
+                                        optionLabel="label" optionValue="value" [showClear]="true"
+                                        placeholder="WhatsApp, Messenger…" styleClass="w-full" />
+                                </div>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                        Origine géographique du déclarant
+                                        <span class="text-xs font-normal text-surface-400">(facultatif)</span>
+                                    </label>
+                                    <app-origine-geographique (origineChange)="onOrigine($event)" />
+                                </div>
+
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
+                                        Type d'institution mise en cause
+                                        <span class="text-xs font-normal text-surface-400">(facultatif)</span>
+                                    </label>
+                                    <p-select [formControl]="f['typologieInstitutionnelle']"
+                                        [options]="typologieOptions"
+                                        optionLabel="label" optionValue="value" [showClear]="true"
+                                        placeholder="Sélectionner" styleClass="w-full" />
                                 </div>
 
                                 <div class="flex flex-col gap-1.5"
@@ -459,7 +488,7 @@ import { environment } from '../../../../environments/environment';
                                         <div>
                                             <div class="text-xs text-surface-400 uppercase tracking-wide">Type</div>
                                             <div class="font-medium text-surface-900 dark:text-surface-0 text-sm mt-0.5">
-                                                {{ getTypeLabel(f['type'].value) }}
+                                                {{ f['natureSaisineChoisie'].value ? getTypeLabel(f['natureSaisineChoisie'].value) : 'Déduite de la qualité du déclarant' }}
                                             </div>
                                         </div>
                                     </div>
@@ -647,18 +676,6 @@ import { environment } from '../../../../environments/environment';
                 </div>
             </div>
 
-            <div class="bg-amber-50 dark:bg-amber-950 rounded-2xl p-5 border
-                        border-amber-200 dark:border-amber-800">
-                <h4 class="font-semibold text-amber-800 dark:text-amber-200
-                           mb-2 flex items-center gap-2 text-sm">
-                    <i class="pi pi-shield text-amber-600"></i>
-                    Confidentialité garantie
-                </h4>
-                <p class="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
-                    Toutes les informations sont protégées conformément à la loi sur la protection des lanceurs d'alerte.
-                </p>
-            </div>
-
         </div>
 
     </div>
@@ -693,8 +710,10 @@ export class DossierForm {
     ];
 
     dossierForm = this.fb.group({
-        type:             ['COMPLAINT',  Validators.required],
-        submissionMode:   ['IN_PERSON',  Validators.required],
+        natureSaisineChoisie:      [null as string | null],
+        submissionMode:            ['IN_PERSON',  Validators.required],
+        socialPlatform:            [null as string | null],
+        typologieInstitutionnelle: [null as string | null],
         object:           ['',           [Validators.required, Validators.minLength(10)]],
         description:      ['',           Validators.required],
         incidentLocation: [''],
@@ -723,12 +742,9 @@ export class DossierForm {
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
-    readonly typeOptions = [
-        { label: 'Plainte',      value: 'COMPLAINT'     },
-        { label: 'Dénonciation', value: 'DENUNCIATION'  },
-        { label: 'Auto-saisine', value: 'AUTO_REFERRAL' },
-        { label: 'Anonyme',      value: 'ANONYMOUS'     }
-    ];
+    readonly natureOptions      = CHOIX_NATURE_AGENT;
+    readonly plateformeOptions  = MODES_RESEAUX_SOCIAUX;
+    readonly typologieOptions   = TYPOLOGIES_INSTITUTIONNELLES;
 
     readonly modeOptions = [
         { label: 'Guichet BRPD',      value: 'IN_PERSON'     },
@@ -854,7 +870,6 @@ export class DossierForm {
               };
 
         const request: any = {
-            type:           this.f['type'].value,
             submissionMode: this.f['submissionMode'].value,
             object:         this.f['object'].value,
             description:    this.f['description'].value,
@@ -872,11 +887,18 @@ export class DossierForm {
             ? cleanStr(this.f['numeroCourrier'].value) : undefined;
 
         if (courrier) request.numeroCourrier = courrier;
+        if (this.f['natureSaisineChoisie'].value)      request.natureSaisineChoisie      = this.f['natureSaisineChoisie'].value;
+        Object.assign(request, this.origineAEnvoyer(!!isAnon));
+        if (this.f['typologieInstitutionnelle'].value) request.typologieInstitutionnelle = this.f['typologieInstitutionnelle'].value;
+        if (this.f['submissionMode'].value === 'SOCIAL_MEDIA' && this.f['socialPlatform'].value) {
+            request.socialPlatform = this.f['socialPlatform'].value;
+        }
         if (loc)  request.incidentLocation = loc;
         if (per)  request.incidentPeriod   = per;
         if (loss) request.estimatedLoss    = loss;
 
-        this.dossierService.submit(request).subscribe({
+        // Route des agents (permission d'enregistrement) : seule elle prend en compte la nature choisie et la typologie.
+        this.dossierService.create(request).subscribe({
             next: dossier => {
                 this.submitting    = false;
                 this.submitSuccess = true;
@@ -920,9 +942,23 @@ export class DossierForm {
         });
     }
 
+    /** Origine choisie dans les listes liées ; transmise au serveur à l'enregistrement. */
+    origine: OrigineSaisie = {};
+
+    onOrigine(origine: OrigineSaisie): void {
+        this.origine = origine;
+    }
+
+    /** Pour un déclarant anonyme, seule la région est transmise : une commune pourrait l'identifier. */
+    private origineAEnvoyer(anonyme: boolean): OrigineSaisie {
+        if (!anonyme) { return this.origine; }
+        const { origineProvinceId, origineCommuneId, ...regionSeule } = this.origine;
+        return regionSeule;
+    }
+
     getTypeLabel(type: string | null): string {
         if (!type) return '';
-        return this.typeOptions.find(o => o.value === type)?.label || type;
+        return libelleDeNature(type);
     }
 
     getModeLabel(mode: string | null): string {

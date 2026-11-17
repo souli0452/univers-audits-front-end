@@ -95,3 +95,38 @@ export interface ActeurEtapeDepassement {
     acteur: string;
     etapes: EtapeDepassement[];
 }
+
+/** Ligne d'un tableau de la situation trimestrielle : nombre de dossiers et part du total (%). */
+export interface LignePublication {
+    code:    string;
+    libelle: string;
+    nombre:  number;
+    taux:    number;
+}
+
+/** Phase du circuit de traitement, avec le délai moyen quand l'application le mesure. */
+export interface PhasePublication {
+    code:             string;
+    libelle:          string;
+    nombre:           number;
+    delaiMoyenJours:  number | null;
+}
+
+/** « Situation des plaintes et dénonciations » d'un trimestre, d'un semestre ou d'une année : huit tableaux d'agrégats, sans donnée personnelle. */
+export interface PublicationTrimestrielle {
+    annee:                       number;
+    codePeriode:                 string;
+    periode:                     string;
+    genereLe:                    string;
+    total:                       number;
+    categories:                  LignePublication[];
+    modesDeSaisine:              LignePublication[];
+    typologiesInstitutionnelles: LignePublication[];
+    allegations:                 LignePublication[];
+    traitement:                  LignePublication[];
+    enjeuxFinanciers:            number;
+    recevabilite:                LignePublication[];
+    originesGeographiques:       LignePublication[];
+    velocite:                    PhasePublication[];
+    notes:                       string[];
+}

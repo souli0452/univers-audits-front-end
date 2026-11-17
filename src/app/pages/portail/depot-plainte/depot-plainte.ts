@@ -15,6 +15,8 @@ import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { TailleTexte } from '../shared/taille-texte';
 import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { OrigineSaisie } from '../../../core/models/geographie.model';
+import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
 import { AideNumeroVert } from '../shared/aide-numero-vert';
 import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
@@ -26,7 +28,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
         ToastModule, DialogModule, ConfirmDialogModule,
-        TailleTexte, AideNumeroVert, AvantDeSignaler
+        TailleTexte, AideNumeroVert, AvantDeSignaler, OrigineGeographique
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -540,6 +542,11 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                             {{ f['description'].value?.length || 0 }} caractères
                         </span>
                     </div>
+                </div>
+
+                <div class="field">
+                    <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
+                    <app-origine-geographique (origineChange)="onOrigine($event)" />
                 </div>
 
                 <div class="grid2">
@@ -1114,7 +1121,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         </div>
 
         <div class="page-foot">
-            <i class="pi pi-shield"></i>
             ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
         </div>
 
@@ -1188,6 +1194,13 @@ export class DepotPlainte {
 
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
+
+    /** Origine choisie dans les listes liées ; transmise au serveur au dépôt. */
+    origine: OrigineSaisie = {};
+
+    onOrigine(origine: OrigineSaisie): void {
+        this.origine = origine;
+    }
 
     typeOptions = [
         { label: 'Plainte',      value: 'COMPLAINT',
@@ -1425,6 +1438,13 @@ export class DepotPlainte {
         return this.typeOptions.find(o => o.value === type)?.label || type;
     }
 
+    /** Un dépôt anonyme ne transmet que la région : une province ou une commune pourrait identifier son auteur. */
+    private origineAEnvoyer(anonyme: boolean): OrigineSaisie {
+        if (!anonyme) { return this.origine; }
+        const { origineProvinceId, origineCommuneId, ...regionSeule } = this.origine;
+        return regionSeule;
+    }
+
     submit(): void {
         this.submitting = true;
 
@@ -1441,6 +1461,7 @@ export class DepotPlainte {
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
+            ...this.origineAEnvoyer(isAnonymous),
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {

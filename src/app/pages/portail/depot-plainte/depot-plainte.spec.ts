@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { DepotPlainte } from './depot-plainte';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
+import { GeographieService } from '../../../core/services/geographie.service';
 
 describe('DepotPlainte', () => {
     let fixture: ComponentFixture<DepotPlainte>;
@@ -24,7 +25,8 @@ describe('DepotPlainte', () => {
                 provideRouter([]),
                 provideNoopAnimations(),
                 { provide: DossierService, useValue: dossierService },
-                { provide: AttachmentService, useValue: attachmentService }
+                { provide: AttachmentService, useValue: attachmentService },
+                { provide: GeographieService, useValue: { getArbre: () => of({ code: 'BF', libelle: 'Burkina Faso', regions: [] }) } }
             ]
         });
         fixture = TestBed.createComponent(DepotPlainte);
@@ -176,5 +178,65 @@ describe('DepotPlainte', () => {
             expect(component.attachments.length).toBe(5);
             expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ summary: 'Nombre de fichiers limité' }));
         });
+    });
+
+    describe('origine géographique', () => {
+        it('envoie la région, la province et la commune choisies quand le dépôt n\'est pas anonyme', () => {
+            component.onOrigine({ origineRegionId: 'r1', origineProvinceId: 'p1', origineCommuneId: 'c1' });
+            component.fd['firstName'].setValue('Awa');
+
+            component.submit();
+
+            const request = dossierService.submit.calls.mostRecent().args[0];
+            expect(request.origineRegionId).toBe('r1');
+            expect(request.origineProvinceId).toBe('p1');
+            expect(request.origineCommuneId).toBe('c1');
+        });
+
+        it('ne garde que la région pour un dépôt anonyme : une commune pourrait identifier le lanceur d\'alerte', () => {
+            component.onOrigine({ origineRegionId: 'r1', origineProvinceId: 'p1', origineCommuneId: 'c1' });
+
+            component.setAnonymous();
+            component.submit();
+
+            const request = dossierService.submit.calls.mostRecent().args[0];
+            expect(request.origineRegionId).toBe('r1');
+            expect(request.origineProvinceId).toBeUndefined();
+            expect(request.origineCommuneId).toBeUndefined();
+        });
+
+        it('envoie le pays pour un déclarant à l\'étranger', () => {
+            component.onOrigine({ paysOrigine: 'France' });
+
+            component.submit();
+
+            expect(dossierService.submit.calls.mostRecent().args[0].paysOrigine).toBe('France');
+        });
+
+        it('n\'envoie aucune origine quand rien n\'est choisi', () => {
+            component.submit();
+
+            const request = dossierService.submit.calls.mostRecent().args[0];
+            expect(request.origineRegionId).toBeUndefined();
+            expect(request.paysOrigine).toBeUndefined();
+        });
+    });
+
+    it("n'affiche aucun texte d'aide sous le choix de l'origine géographique", () => {
+        fixture.detectChanges();
+
+        const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
+        expect(texte).toContain("D'où nous écrivez-vous");
+        expect(texte).not.toContain('Sert uniquement aux statistiques');
+        expect(texte).not.toContain('seule la région est conservée');
+        expect(texte).not.toContain("n'a pas pu être chargée");
+    });
+
+    it("le pied de page de la page de dépôt n'a pas d'icône devant « ASCE-LC »", () => {
+        fixture.detectChanges();
+
+        const pied = (fixture.nativeElement as HTMLElement).querySelector('.page-foot')!;
+        expect(pied.textContent).toContain("ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso");
+        expect(pied.querySelector('i, img, svg')).toBeNull();
     });
 });

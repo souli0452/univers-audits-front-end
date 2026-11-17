@@ -10,6 +10,13 @@ export default [
             .then(m => m.StatistiquesDashboard)
     },
     {
+        path: 'publication',
+        canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP'])],
+        loadComponent: () =>
+            import('./publication-trimestrielle/publication-trimestrielle')
+            .then(m => m.PublicationTrimestrielleComponent)
+    },
+    {
         path: 'depassements-par-acteur',
         canActivate: [roleGuard(['ADMIN_DDIC', 'CGE', 'CGEA'])],
         loadComponent: () =>

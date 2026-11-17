@@ -4,12 +4,13 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SKIP_AUTH } from '../interceptors/skip-auth.context';
 import {
-    MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, ActeurEtapeDepassement
+    MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, ActeurEtapeDepassement,
+    PublicationTrimestrielle
 } from '../models/statistique.model';
 
 export type {
     MonthlyCount, StatistiqueResponse, PublicStats, ActeurDepassement, DepassementItem,
-    ActeurEtapeDepassement, EtapeDepassement
+    ActeurEtapeDepassement, EtapeDepassement, PublicationTrimestrielle, LignePublication, PhasePublication
 } from '../models/statistique.model';
 
 
@@ -41,6 +42,12 @@ export class StatistiqueService {
         return this.http.get<StatistiqueResponse>(
             `${this.baseUrl}/quarterly`, { params }
         );
+    }
+
+    /** Les huit tableaux de la « Situation des plaintes et dénonciations » (période : T1 à T4, S1, S2 ou ANNEE). */
+    getPublicationTrimestrielle(year: number, period: string): Observable<PublicationTrimestrielle> {
+        const params = new HttpParams().set('year', year).set('period', period);
+        return this.http.get<PublicationTrimestrielle>(`${this.baseUrl}/publication`, { params });
     }
 
     getAnnualStats(year: number): Observable<StatistiqueResponse> {

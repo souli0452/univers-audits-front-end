@@ -19,6 +19,7 @@ import { isToday as isTodayUtil } from '../../../core/utils/date';
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
 
+import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossiers-list',
     standalone: true,
@@ -529,10 +530,9 @@ export class DossiersList implements OnInit {
     ];
 
     readonly typeOptions = [
-        { label: 'Plainte',      value: 'COMPLAINT'     },
-        { label: 'Dénonciation', value: 'DENUNCIATION'  },
-        { label: 'Auto-saisine', value: 'AUTO_REFERRAL' },
-        { label: 'Anonyme',      value: 'ANONYMOUS'     }
+        ...CHOIX_NATURE_AGENT,
+        { label: libelleDeNature('SIGNALEMENT'), value: 'SIGNALEMENT' },
+        { label: libelleDeNature('AUTO_SAISINE'), value: 'AUTO_SAISINE' }
     ];
 
     readonly anonymatOptions = [
@@ -728,14 +728,15 @@ export class DossiersList implements OnInit {
     }
 
     getTypeLabel(t: string): string {
-        return { COMPLAINT:'Plainte', DENUNCIATION:'Dénonciation',
-                 AUTO_REFERRAL:'Auto-saisine', ANONYMOUS:'Anonyme' }[t] || t;
+        return libelleDeNature(t);
     }
 
     getTypeIcon(t: string): string {
-        return { COMPLAINT:'pi pi-exclamation-circle',
-                 DENUNCIATION:'pi pi-megaphone',
-                 AUTO_REFERRAL:'pi pi-search',
+        return { PLAINTE:'pi pi-exclamation-circle', COMPLAINT:'pi pi-exclamation-circle',
+                 DENONCIATION:'pi pi-megaphone', DENUNCIATION:'pi pi-megaphone',
+                 PLAINTE_DENONCIATION:'pi pi-bullseye',
+                 DEMANDE_INTERVENTION:'pi pi-send',
+                 SIGNALEMENT:'pi pi-building', AUTO_SAISINE:'pi pi-search', AUTO_REFERRAL:'pi pi-search',
                  ANONYMOUS:'pi pi-eye-slash' }[t] || 'pi pi-file';
     }
 
