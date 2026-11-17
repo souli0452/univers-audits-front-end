@@ -676,18 +676,6 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
                 </div>
             </div>
 
-            <div class="bg-amber-50 dark:bg-amber-950 rounded-2xl p-5 border
-                        border-amber-200 dark:border-amber-800">
-                <h4 class="font-semibold text-amber-800 dark:text-amber-200
-                           mb-2 flex items-center gap-2 text-sm">
-                    <i class="pi pi-shield text-amber-600"></i>
-                    Confidentialité garantie
-                </h4>
-                <p class="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
-                    Toutes les informations sont protégées conformément à la loi sur la protection des lanceurs d'alerte.
-                </p>
-            </div>
-
         </div>
 
     </div>

@@ -7,6 +7,7 @@ import { GeographieService } from '../../../core/services/geographie.service';
 import { DossierService } from '../../../core/services/dossier.service';
 
 describe('DossierForm (enregistrement par un agent)', () => {
+    let fixture: ComponentFixture<DossierForm>;
     let component: DossierForm;
     let dossierService: { create: jasmine.Spy; submit: jasmine.Spy };
 
@@ -20,7 +21,7 @@ describe('DossierForm (enregistrement par un agent)', () => {
             providers: [provideRouter([]), provideNoopAnimations(), { provide: DossierService, useValue: dossierService },
                 { provide: GeographieService, useValue: { getArbre: () => of({ code: 'BF', libelle: 'Burkina Faso', regions: [] }) } }]
         });
-        const fixture: ComponentFixture<DossierForm> = TestBed.createComponent(DossierForm);
+        fixture = TestBed.createComponent(DossierForm);
         component = fixture.componentInstance;
         component.dossierForm.patchValue({
             object: 'Demande reçue par Messenger',
@@ -89,5 +90,13 @@ describe('DossierForm (enregistrement par un agent)', () => {
         expect(demande.origineRegionId).toBe('r-gui');
         expect(demande.origineProvinceId).toBeUndefined();
         expect(demande.origineCommuneId).toBeUndefined();
+    });
+
+    it("n'affiche pas l'encart « Confidentialité garantie » sur la page", () => {
+        fixture.detectChanges();
+
+        const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
+        expect(texte).not.toContain('Confidentialité garantie');
+        expect(texte).not.toContain('Toutes les informations sont protégées');
     });
 });
