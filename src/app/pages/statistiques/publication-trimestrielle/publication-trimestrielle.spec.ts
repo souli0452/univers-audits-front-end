@@ -3,10 +3,10 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { PublicationTrimestrielleComponent } from './publication-trimestrielle';
 import { StatistiqueService, PublicationTrimestrielle } from '../../../core/services/statistique.service';
-import { trimestreARapporter } from '../../../core/utils/publication-trimestrielle';
+import { periodeARapporter } from '../../../core/utils/publication-trimestrielle';
 
 const situation: PublicationTrimestrielle = {
-    annee: 2026, trimestre: 1, periode: 'T1 2026', genereLe: '2026-04-02T08:00:00Z', total: 74,
+    annee: 2026, codePeriode: 'T1', periode: 'T1 2026', genereLe: '2026-04-02T08:00:00Z', total: 74,
     categories: [{ code: 'DENONCIATION', libelle: 'Dénonciations', nombre: 54, taux: 72.97 }],
     modesDeSaisine: [{ code: 'WHATSAPP', libelle: 'WhatsApp', nombre: 23, taux: 31.08 },
                      { code: 'MESSENGER', libelle: 'Par Messenger', nombre: 1, taux: 1.35 }],
@@ -14,7 +14,8 @@ const situation: PublicationTrimestrielle = {
     traitement: [{ code: 'STOCK', libelle: 'Stock en instance', nombre: 51, taux: 68.92 }],
     enjeuxFinanciers: 7000000000, recevabilite: [], originesGeographiques: [],
     velocite: [{ code: 'INVESTIGATION', libelle: "Phase d'investigation", nombre: 18, delaiMoyenJours: 45 },
-               { code: 'CLOTURES', libelle: 'Dossiers clôturés', nombre: 5, delaiMoyenJours: null }],
+               { code: 'CLOTURES', libelle: 'Dossiers clôturés', nombre: 5, delaiMoyenJours: null },
+               { code: 'STOCK', libelle: 'Stock en instance', nombre: 51, delaiMoyenJours: null }],
     notes: ['La transmission à la Cour des comptes n\'est pas encore suivie par l\'application.']
 };
 
@@ -37,11 +38,11 @@ describe('PublicationTrimestrielleComponent', () => {
 
     it('charge par défaut le dernier trimestre terminé', () => {
         service.getPublicationTrimestrielle.and.returnValue(of(situation));
-        const attendu = trimestreARapporter(new Date());
+        const attendu = periodeARapporter(new Date());
 
         creer();
 
-        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(attendu.annee, attendu.trimestre);
+        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(attendu.annee, attendu.periode);
     });
 
     it('affiche le total, les tableaux, WhatsApp et Messenger séparés, et le délai non mesuré', () => {
@@ -58,18 +59,19 @@ describe('PublicationTrimestrielleComponent', () => {
         expect(texte).toContain('Enjeux financiers estimés');
         expect(texte).toContain('non mesuré');
         expect(texte).toContain('Cour des comptes');
+        expect(texte).toContain('Stock en instance');
     });
 
-    it('recharge quand on change de trimestre', () => {
+    it('recharge quand on change de période, y compris pour un semestre ou une année', () => {
         service.getPublicationTrimestrielle.and.returnValue(of(situation));
         creer();
         service.getPublicationTrimestrielle.calls.reset();
 
         fixture.componentInstance.annee = 2025;
-        fixture.componentInstance.trimestre = 4;
+        fixture.componentInstance.periode = 'S2';
         fixture.componentInstance.charger();
 
-        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(2025, 4);
+        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(2025, 'S2');
     });
 
     it('explique la panne au lieu de rester vide, et désactive l\'export', () => {
@@ -78,7 +80,7 @@ describe('PublicationTrimestrielleComponent', () => {
         creer();
         const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
 
-        expect(texte).toContain('Impossible de charger la situation de ce trimestre');
+        expect(texte).toContain('Impossible de charger la situation de cette période');
         expect(fixture.componentInstance.situation).toBeNull();
     });
 });

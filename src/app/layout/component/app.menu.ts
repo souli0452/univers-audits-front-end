@@ -49,7 +49,7 @@ export class AppMenu {
                     routerLink: ['/app/statistiques']
                 },
                 {
-                    label: 'Publication trimestrielle',
+                    label: 'Chiffres à publier',
                     icon: 'pi pi-fw pi-file-export',
                     visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
                     routerLink: ['/app/statistiques/publication']

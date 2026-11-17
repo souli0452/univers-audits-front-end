@@ -1,8 +1,8 @@
 import { PublicationTrimestrielle } from '../models/statistique.model';
-import { trimestreARapporter, versCsv, nomDuFichier } from './publication-trimestrielle';
+import { PERIODES, periodeARapporter, versCsv, nomDuFichier } from './publication-trimestrielle';
 
 const situation = (surcharge: Partial<PublicationTrimestrielle> = {}): PublicationTrimestrielle => ({
-    annee: 2026, trimestre: 1, periode: 'T1 2026', genereLe: '2026-04-02T08:00:00Z', total: 74,
+    annee: 2026, codePeriode: 'T1', periode: 'T1 2026', genereLe: '2026-04-02T08:00:00Z', total: 74,
     categories: [{ code: 'DENONCIATION', libelle: 'Dénonciations', nombre: 54, taux: 72.97 }],
     modesDeSaisine: [{ code: 'WHATSAPP', libelle: 'WhatsApp', nombre: 23, taux: 31.08 }],
     typologiesInstitutionnelles: [], allegations: [],
@@ -15,15 +15,19 @@ const situation = (surcharge: Partial<PublicationTrimestrielle> = {}): Publicati
 });
 
 describe('publication-trimestrielle', () => {
-    describe('trimestreARapporter', () => {
+    it('propose les trimestres, les deux semestres et l\'année', () => {
+        expect(PERIODES.map(p => p.value)).toEqual(['T1', 'T2', 'T3', 'T4', 'S1', 'S2', 'ANNEE']);
+    });
+
+    describe('periodeARapporter', () => {
         it('propose le dernier trimestre terminé', () => {
-            expect(trimestreARapporter(new Date(2026, 4, 12))).toEqual({ annee: 2026, trimestre: 1 });   // mai → T1
-            expect(trimestreARapporter(new Date(2026, 9, 3))).toEqual({ annee: 2026, trimestre: 3 });    // octobre → T3
+            expect(periodeARapporter(new Date(2026, 4, 12))).toEqual({ annee: 2026, periode: 'T1' });   // mai → T1
+            expect(periodeARapporter(new Date(2026, 9, 3))).toEqual({ annee: 2026, periode: 'T3' });    // octobre → T3
         });
 
         it("revient au T4 de l'année précédente en janvier, février et mars", () => {
-            expect(trimestreARapporter(new Date(2026, 0, 15))).toEqual({ annee: 2025, trimestre: 4 });
-            expect(trimestreARapporter(new Date(2026, 2, 31))).toEqual({ annee: 2025, trimestre: 4 });
+            expect(periodeARapporter(new Date(2026, 0, 15))).toEqual({ annee: 2025, periode: 'T4' });
+            expect(periodeARapporter(new Date(2026, 2, 31))).toEqual({ annee: 2025, periode: 'T4' });
         });
     });
 
@@ -89,5 +93,6 @@ describe('publication-trimestrielle', () => {
 
     it('nomDuFichier est stable et sans espace', () => {
         expect(nomDuFichier(situation())).toBe('situation-plaintes-denonciations-2026-T1.csv');
+        expect(nomDuFichier(situation({ codePeriode: 'ANNEE' }))).toBe('situation-plaintes-denonciations-2026-ANNEE.csv');
     });
 });

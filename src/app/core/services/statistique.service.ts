@@ -44,9 +44,9 @@ export class StatistiqueService {
         );
     }
 
-    /** Les huit tableaux de la « Situation des plaintes et dénonciations » du trimestre. */
-    getPublicationTrimestrielle(year: number, quarter: number): Observable<PublicationTrimestrielle> {
-        const params = new HttpParams().set('year', year).set('quarter', quarter);
+    /** Les huit tableaux de la « Situation des plaintes et dénonciations » (période : T1 à T4, S1, S2 ou ANNEE). */
+    getPublicationTrimestrielle(year: number, period: string): Observable<PublicationTrimestrielle> {
+        const params = new HttpParams().set('year', year).set('period', period);
         return this.http.get<PublicationTrimestrielle>(`${this.baseUrl}/publication`, { params });
     }
 

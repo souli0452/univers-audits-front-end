@@ -7,7 +7,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { StatistiqueService, PublicationTrimestrielle, LignePublication } from '../../../core/services/statistique.service';
-import { nomDuFichier, trimestreARapporter, versCsv } from '../../../core/utils/publication-trimestrielle';
+import { PERIODES, nomDuFichier, periodeARapporter, versCsv } from '../../../core/utils/publication-trimestrielle';
 
 interface TableauAffiche {
     titre: string;
@@ -33,9 +33,9 @@ interface TableauAffiche {
 
     <div class="flex items-start justify-between flex-wrap gap-3">
         <div>
-            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">Publication trimestrielle</h1>
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0">Chiffres à publier</h1>
             <p class="text-surface-500 text-sm mt-1 max-w-2xl">
-                Chiffres de la « Situation des plaintes et dénonciations » à communiquer chaque trimestre.
+                Chiffres de la « Situation des plaintes et dénonciations » pour un trimestre, un semestre ou l'année.
                 Ce sont des totaux : aucun nom, aucune identité, aucun détail de dossier.
             </p>
         </div>
@@ -46,9 +46,9 @@ interface TableauAffiche {
                     styleClass="w-32" aria-label="Année" />
             </div>
             <div class="flex flex-col gap-1">
-                <label class="text-xs text-surface-500">Trimestre</label>
-                <p-select [options]="trimestres" optionLabel="label" optionValue="value"
-                    [(ngModel)]="trimestre" (onChange)="charger()" styleClass="w-40" aria-label="Trimestre" />
+                <label class="text-xs text-surface-500">Période</label>
+                <p-select [options]="periodes" optionLabel="label" optionValue="value"
+                    [(ngModel)]="periode" (onChange)="charger()" styleClass="w-48" aria-label="Période" />
             </div>
             <p-button label="Exporter (CSV)" icon="pi pi-download" [outlined]="true"
                 [disabled]="!situation" (onClick)="exporter()" />
@@ -152,17 +152,12 @@ export class PublicationTrimestrielleComponent implements OnInit {
     chargement = false;
     erreur = '';
 
-    private readonly depart = trimestreARapporter(new Date());
+    private readonly depart = periodeARapporter(new Date());
     annee = this.depart.annee;
-    trimestre = this.depart.trimestre;
+    periode = this.depart.periode;
 
     readonly annees = Array.from({ length: 4 }, (_, i) => new Date().getFullYear() - i);
-    readonly trimestres = [
-        { label: 'T1 (janv. – mars)', value: 1 },
-        { label: 'T2 (avr. – juin)', value: 2 },
-        { label: 'T3 (juil. – sept.)', value: 3 },
-        { label: 'T4 (oct. – déc.)', value: 4 }
-    ];
+    readonly periodes = PERIODES;
 
     ngOnInit(): void {
         this.charger();
@@ -171,12 +166,12 @@ export class PublicationTrimestrielleComponent implements OnInit {
     charger(): void {
         this.chargement = true;
         this.erreur = '';
-        this.service.getPublicationTrimestrielle(this.annee, this.trimestre).subscribe({
+        this.service.getPublicationTrimestrielle(this.annee, this.periode).subscribe({
             next: s => { this.situation = s; this.chargement = false; },
             error: () => {
                 this.situation = null;
                 this.chargement = false;
-                this.erreur = 'Impossible de charger la situation de ce trimestre. Réessayez dans un instant.';
+                this.erreur = 'Impossible de charger la situation de cette période. Réessayez dans un instant.';
             }
         });
     }

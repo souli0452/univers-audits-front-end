@@ -1,16 +1,27 @@
 import { LignePublication, PublicationTrimestrielle } from '../models/statistique.model';
 import { xlsxSafe } from './xlsx-safe';
 
+/** Périodes publiables : codes attendus par le serveur. */
+export const PERIODES: { label: string; value: string }[] = [
+    { label: 'T1 (janv. – mars)',   value: 'T1' },
+    { label: 'T2 (avr. – juin)',    value: 'T2' },
+    { label: 'T3 (juil. – sept.)',  value: 'T3' },
+    { label: 'T4 (oct. – déc.)',    value: 'T4' },
+    { label: 'S1 (1er semestre)',   value: 'S1' },
+    { label: 'S2 (2e semestre)',    value: 'S2' },
+    { label: "Année entière",       value: 'ANNEE' }
+];
+
 /** Dernier trimestre terminé : celui qu'on publie normalement (en mai, le T1 ; en janvier, le T4 de l'an dernier). */
-export function trimestreARapporter(maintenant: Date): { annee: number; trimestre: number } {
+export function periodeARapporter(maintenant: Date): { annee: number; periode: string } {
     const courant = Math.floor(maintenant.getMonth() / 3) + 1;
     return courant === 1
-        ? { annee: maintenant.getFullYear() - 1, trimestre: 4 }
-        : { annee: maintenant.getFullYear(), trimestre: courant - 1 };
+        ? { annee: maintenant.getFullYear() - 1, periode: 'T4' }
+        : { annee: maintenant.getFullYear(), periode: 'T' + (courant - 1) };
 }
 
 export function nomDuFichier(s: PublicationTrimestrielle): string {
-    return `situation-plaintes-denonciations-${s.annee}-T${s.trimestre}.csv`;
+    return `situation-plaintes-denonciations-${s.annee}-${s.codePeriode}.csv`;
 }
 
 const virgule = (n: number): string => String(n).replace('.', ',');

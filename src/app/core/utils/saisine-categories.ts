@@ -21,12 +21,12 @@ export const REGIONS_ORIGINE: Choix[] = [
 
 export const TYPOLOGIES_INSTITUTIONNELLES: Choix[] = [
     { label: 'Ministères et administrations centrales',     value: 'MINISTERES_ADMINISTRATIONS_CENTRALES' },
-    { label: 'Établissements publics',                      value: 'ETABLISSEMENTS_PUBLICS' },
-    { label: "Sociétés d'État",                             value: 'SOCIETES_D_ETAT' },
-    { label: 'Projets et programmes',                       value: 'PROJETS_PROGRAMMES' },
+    { label: "Établissements publics de l'État et entités assimilées",                      value: 'ETABLISSEMENTS_PUBLICS' },
+    { label: "Sociétés d'État et entreprises publiques",                             value: 'SOCIETES_D_ETAT' },
+    { label: 'Projets, programmes de développement',                       value: 'PROJETS_PROGRAMMES' },
     { label: 'Fonds de financement',                        value: 'FONDS_FINANCEMENT' },
-    { label: 'Collectivités territoriales',                 value: 'COLLECTIVITES_TERRITORIALES' },
-    { label: 'Autres',                                      value: 'AUTRES' }
+    { label: 'Collectivités territoriales et services déconcentrés',                 value: 'COLLECTIVITES_TERRITORIALES' },
+    { label: 'Autres secteurs privés ou transversaux',                                      value: 'AUTRES' }
 ];
 
 /** Plateformes proposées quand le canal de réception est « Réseaux sociaux ». */

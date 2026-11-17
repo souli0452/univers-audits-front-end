@@ -112,10 +112,10 @@ export interface PhasePublication {
     delaiMoyenJours:  number | null;
 }
 
-/** « Situation des plaintes et dénonciations » d'un trimestre : huit tableaux d'agrégats, sans donnée personnelle. */
+/** « Situation des plaintes et dénonciations » d'un trimestre, d'un semestre ou d'une année : huit tableaux d'agrégats, sans donnée personnelle. */
 export interface PublicationTrimestrielle {
     annee:                       number;
-    trimestre:                   number;
+    codePeriode:                 string;
     periode:                     string;
     genereLe:                    string;
     total:                       number;
