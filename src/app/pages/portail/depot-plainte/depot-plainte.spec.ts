@@ -231,4 +231,12 @@ describe('DepotPlainte', () => {
         expect(texte).not.toContain('seule la région est conservée');
         expect(texte).not.toContain("n'a pas pu être chargée");
     });
+
+    it("le pied de page de la page de dépôt n'a pas d'icône devant « ASCE-LC »", () => {
+        fixture.detectChanges();
+
+        const pied = (fixture.nativeElement as HTMLElement).querySelector('.page-foot')!;
+        expect(pied.textContent).toContain("ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso");
+        expect(pied.querySelector('i, img, svg')).toBeNull();
+    });
 });

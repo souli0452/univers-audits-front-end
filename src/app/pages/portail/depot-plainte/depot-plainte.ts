@@ -1121,7 +1121,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         </div>
 
         <div class="page-foot">
-            <i class="pi pi-shield"></i>
             ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
         </div>
 
