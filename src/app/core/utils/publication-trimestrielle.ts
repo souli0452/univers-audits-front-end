@@ -15,10 +15,19 @@ export function nomDuFichier(s: PublicationTrimestrielle): string {
 
 const virgule = (n: number): string => String(n).replace('.', ',');
 
+/**
+ * Cellule de texte CSV : neutralise une formule en tête, puis met entre guillemets (RFC 4180) si la valeur contient
+ * un séparateur, un guillemet ou un saut de ligne, pour qu'elle ne déborde jamais sur la cellule voisine.
+ */
+function cellule(valeur: string): string {
+    const sure = xlsxSafe(valeur);
+    return /[;"\r\n]/.test(sure) ? `"${sure.replace(/"/g, '""')}"` : sure;
+}
+
 function tableau(titre: string, lignes: LignePublication[]): string[] {
     return [
         titre + ';Nombre;Part',
-        ...lignes.map(l => `${xlsxSafe(l.libelle)};${l.nombre};${virgule(l.taux)} %`),
+        ...lignes.map(l => `${cellule(l.libelle)};${l.nombre};${virgule(l.taux)} %`),
         ''
     ];
 }
@@ -29,7 +38,7 @@ function tableau(titre: string, lignes: LignePublication[]): string[] {
  */
 export function versCsv(s: PublicationTrimestrielle): string {
     const lignes: string[] = [
-        `Situation des plaintes et dénonciations;${s.periode}`,
+        `Situation des plaintes et dénonciations;${cellule(s.periode)}`,
         `Total des dossiers enregistrés;${s.total}`,
         '',
         ...tableau('Catégories', s.categories),
@@ -42,10 +51,10 @@ export function versCsv(s: PublicationTrimestrielle): string {
         ...tableau('Recevabilité', s.recevabilite),
         ...tableau("Origine géographique", s.originesGeographiques),
         'Vélocité du traitement;Dossiers;Délai moyen',
-        ...s.velocite.map(p => `${xlsxSafe(p.libelle)};${p.nombre};` +
+        ...s.velocite.map(p => `${cellule(p.libelle)};${p.nombre};` +
             (p.delaiMoyenJours == null ? 'non mesuré' : `${virgule(p.delaiMoyenJours)} jours`)),
         '',
-        ...s.notes
+        ...s.notes.map(cellule)
     ];
     return lignes.join('\r\n');
 }

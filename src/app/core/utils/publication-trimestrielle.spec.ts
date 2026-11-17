@@ -57,6 +57,29 @@ describe('publication-trimestrielle', () => {
             expect(csv).toContain("'=SOMME(A1:A9);1;1,35 %");
         });
 
+        it('met entre guillemets un libellé qui contient un séparateur, un guillemet ou un saut de ligne', () => {
+            const csv = versCsv(situation({
+                allegations: [
+                    { code: 'A', libelle: 'a;=cmd|x', nombre: 1, taux: 1 },
+                    { code: 'B', libelle: 'dit "oui"', nombre: 2, taux: 2 },
+                    { code: 'C', libelle: 'ligne1\n=ligne2', nombre: 3, taux: 3 },
+                    { code: 'D', libelle: '=1+1;x', nombre: 4, taux: 4 }
+                ]
+            }));
+
+            expect(csv).toContain('"a;=cmd|x";1;1 %');
+            expect(csv).toContain('"dit ""oui""";2;2 %');
+            expect(csv).toContain('"ligne1\n=ligne2";3;3 %');
+            expect(csv).toContain(`"'=1+1;x";4;4 %`);
+        });
+
+        it('applique la même protection à la période et aux notes', () => {
+            const csv = versCsv(situation({ periode: '=T1;2026', notes: ['=HYPERLINK("http://x");y'] }));
+
+            expect(csv).toContain(`Situation des plaintes et dénonciations;"'=T1;2026"`);
+            expect(csv).toContain(`"'=HYPERLINK(""http://x"");y"`);
+        });
+
         it('place les notes de lecture à la fin', () => {
             const csv = versCsv(situation());
 
