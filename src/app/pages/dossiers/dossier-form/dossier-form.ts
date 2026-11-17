@@ -912,7 +912,8 @@ export class DossierForm {
         if (per)  request.incidentPeriod   = per;
         if (loss) request.estimatedLoss    = loss;
 
-        this.dossierService.submit(request).subscribe({
+        // Route des agents (permission d'enregistrement) : seule elle prend en compte la nature choisie et la typologie.
+        this.dossierService.create(request).subscribe({
             next: dossier => {
                 this.submitting    = false;
                 this.submitSuccess = true;
