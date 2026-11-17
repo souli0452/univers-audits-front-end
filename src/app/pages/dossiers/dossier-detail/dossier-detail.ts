@@ -75,6 +75,7 @@ interface WorkflowStep {
     date?: string; active: boolean; completed: boolean;
 }
 
+import { libelleDeNature } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossier-detail',
     standalone: true,
@@ -1698,11 +1699,7 @@ export class DossierDetail implements OnInit {
     }
 
     getTypeLabel(type: string): string {
-        const l: Record<string, string> = {
-            COMPLAINT: 'Plainte', DENUNCIATION: 'Dénonciation',
-            AUTO_REFERRAL: 'Auto-saisine', ANONYMOUS: 'Anonyme'
-        };
-        return l[type] || type;
+        return libelleDeNature(type);
     }
 
     getModeLabel(mode: string): string {

@@ -49,6 +49,12 @@ export class AppMenu {
                     routerLink: ['/app/statistiques']
                 },
                 {
+                    label: 'Publication trimestrielle',
+                    icon: 'pi pi-fw pi-file-export',
+                    visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA', 'DCP']),
+                    routerLink: ['/app/statistiques/publication']
+                },
+                {
                     label: 'Dépassements par acteur',
                     icon: 'pi pi-fw pi-exclamation-triangle',
                     visible: this.keycloakService.hasAnyRole(['ADMIN_DDIC', 'CGE', 'CGEA']),

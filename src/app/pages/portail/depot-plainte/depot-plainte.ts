@@ -15,6 +15,7 @@ import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { TailleTexte } from '../shared/taille-texte';
 import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { REGIONS_ORIGINE } from '../../../core/utils/saisine-categories';
 import { AideNumeroVert } from '../shared/aide-numero-vert';
 import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
@@ -540,6 +541,17 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                             {{ f['description'].value?.length || 0 }} caractères
                         </span>
                     </div>
+                </div>
+
+                <div class="field">
+                    <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
+                    <select [formControl]="f['regionOrigine']" class="w-full"
+                        style="border:1.5px solid var(--hair);border-radius:8px;padding:.625rem .75rem;
+                               font-size:.875rem;background:#fff;">
+                        <option [ngValue]="null">Je préfère ne pas préciser</option>
+                        <option *ngFor="let r of regionOptions" [ngValue]="r.value">{{ r.label }}</option>
+                    </select>
+                    <span class="field-hint">Sert uniquement aux statistiques, jamais à vous identifier.</span>
                 </div>
 
                 <div class="grid2">
@@ -1167,6 +1179,7 @@ export class DepotPlainte {
         object:           ['', [Validators.required, Validators.minLength(10)]],
         description:      ['', Validators.required],
         incidentLocation: [''],
+        regionOrigine:    [null as string | null],
         incidentPeriod:   [''],
         estimatedLoss:    [null]
     });
@@ -1188,6 +1201,8 @@ export class DepotPlainte {
 
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
+
+    readonly regionOptions = REGIONS_ORIGINE;
 
     typeOptions = [
         { label: 'Plainte',      value: 'COMPLAINT',
@@ -1441,6 +1456,7 @@ export class DepotPlainte {
             object:           this.f['object'].value!,
             description:      this.f['description'].value     || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
+            regionOrigine:    this.f['regionOrigine'].value    || undefined,
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
             declarantData: {

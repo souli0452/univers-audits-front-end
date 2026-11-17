@@ -1,0 +1,84 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { of, throwError } from 'rxjs';
+import { PublicationTrimestrielleComponent } from './publication-trimestrielle';
+import { StatistiqueService, PublicationTrimestrielle } from '../../../core/services/statistique.service';
+import { trimestreARapporter } from '../../../core/utils/publication-trimestrielle';
+
+const situation: PublicationTrimestrielle = {
+    annee: 2026, trimestre: 1, periode: 'T1 2026', genereLe: '2026-04-02T08:00:00Z', total: 74,
+    categories: [{ code: 'DENONCIATION', libelle: 'Dénonciations', nombre: 54, taux: 72.97 }],
+    modesDeSaisine: [{ code: 'WHATSAPP', libelle: 'WhatsApp', nombre: 23, taux: 31.08 },
+                     { code: 'MESSENGER', libelle: 'Par Messenger', nombre: 1, taux: 1.35 }],
+    typologiesInstitutionnelles: [], allegations: [],
+    traitement: [{ code: 'STOCK', libelle: 'Stock en instance', nombre: 51, taux: 68.92 }],
+    enjeuxFinanciers: 7000000000, recevabilite: [], originesGeographiques: [],
+    velocite: [{ code: 'INVESTIGATION', libelle: "Phase d'investigation", nombre: 18, delaiMoyenJours: 45 },
+               { code: 'CLOTURES', libelle: 'Dossiers clôturés', nombre: 5, delaiMoyenJours: null }],
+    notes: ['La transmission à la Cour des comptes n\'est pas encore suivie par l\'application.']
+};
+
+describe('PublicationTrimestrielleComponent', () => {
+    let fixture: ComponentFixture<PublicationTrimestrielleComponent>;
+    let service: jasmine.SpyObj<StatistiqueService>;
+
+    function creer(): void {
+        fixture = TestBed.createComponent(PublicationTrimestrielleComponent);
+        fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+        service = jasmine.createSpyObj<StatistiqueService>('StatistiqueService', ['getPublicationTrimestrielle']);
+        TestBed.configureTestingModule({
+            imports: [PublicationTrimestrielleComponent, NoopAnimationsModule],
+            providers: [{ provide: StatistiqueService, useValue: service }]
+        });
+    });
+
+    it('charge par défaut le dernier trimestre terminé', () => {
+        service.getPublicationTrimestrielle.and.returnValue(of(situation));
+        const attendu = trimestreARapporter(new Date());
+
+        creer();
+
+        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(attendu.annee, attendu.trimestre);
+    });
+
+    it('affiche le total, les tableaux, WhatsApp et Messenger séparés, et le délai non mesuré', () => {
+        service.getPublicationTrimestrielle.and.returnValue(of(situation));
+
+        creer();
+        const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+        expect(texte).toContain('74');
+        expect(texte).toContain('dossiers enregistrés au T1 2026');
+        expect(texte).toContain('Dénonciations');
+        expect(texte).toContain('WhatsApp');
+        expect(texte).toContain('Par Messenger');
+        expect(texte).toContain('Enjeux financiers estimés');
+        expect(texte).toContain('non mesuré');
+        expect(texte).toContain('Cour des comptes');
+    });
+
+    it('recharge quand on change de trimestre', () => {
+        service.getPublicationTrimestrielle.and.returnValue(of(situation));
+        creer();
+        service.getPublicationTrimestrielle.calls.reset();
+
+        fixture.componentInstance.annee = 2025;
+        fixture.componentInstance.trimestre = 4;
+        fixture.componentInstance.charger();
+
+        expect(service.getPublicationTrimestrielle).toHaveBeenCalledWith(2025, 4);
+    });
+
+    it('explique la panne au lieu de rester vide, et désactive l\'export', () => {
+        service.getPublicationTrimestrielle.and.returnValue(throwError(() => new Error('500')));
+
+        creer();
+        const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+        expect(texte).toContain('Impossible de charger la situation de ce trimestre');
+        expect(fixture.componentInstance.situation).toBeNull();
+    });
+});
