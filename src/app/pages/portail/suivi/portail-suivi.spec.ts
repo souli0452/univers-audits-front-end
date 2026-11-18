@@ -38,4 +38,11 @@ describe('PortailSuivi', () => {
         expect(el.textContent).not.toMatch(/80 00 11 (11|57)/);
         expect(el.innerHTML).not.toContain('80001157');
     });
+
+    it("propose un retour à l'accueil du portail", () => {
+        const retour = Array.from(el.querySelectorAll('a')).find(a => /Retour à l.accueil/.test(a.textContent ?? ''));
+
+        expect(retour).toBeDefined();
+        expect(retour!.getAttribute('href')).toMatch(/\/portail$/);
+    });
 });

@@ -76,6 +76,7 @@ interface WorkflowStep {
 }
 
 import { libelleDeNature } from '../../../core/utils/saisine-categories';
+import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 @Component({
     selector: 'app-dossier-detail',
     standalone: true,
@@ -83,7 +84,7 @@ import { libelleDeNature } from '../../../core/utils/saisine-categories';
         CommonModule, RouterModule, FormsModule,
         ButtonModule, TagModule, DialogModule,
         TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
-        ConfirmDialogModule, TooltipModule, SelectModule,
+        ConfirmDialogModule, TooltipModule, SelectModule, DureeAudio,
         InputTextModule
     ],
     providers: [MessageService, ConfirmationService],

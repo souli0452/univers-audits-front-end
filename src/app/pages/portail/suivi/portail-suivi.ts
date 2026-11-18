@@ -163,7 +163,15 @@ import { DossierResponse } from '../../../core/models/dossier.model';
 <div class="page">
 <div class="wrap">
 
-    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem;color:var(--ink);"><app-taille-texte /></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;color:var(--ink);">
+        <a routerLink="/portail"
+            style="color:var(--green);font-weight:700;font-size:.85rem;text-decoration:none;
+                   display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .25rem;">
+            <i class="pi pi-arrow-left" style="font-size:.75rem;"></i>
+            Retour à l'accueil
+        </a>
+        <app-taille-texte />
+    </div>
 
     <!-- Logo -->
     <div style="text-align:center;margin-bottom:1.75rem;animation:slide-up .3s ease;">

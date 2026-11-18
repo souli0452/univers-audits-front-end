@@ -239,4 +239,84 @@ describe('DepotPlainte', () => {
         expect(pied.textContent).toContain("ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso");
         expect(pied.querySelector('i, img, svg')).toBeNull();
     });
+
+    describe("aucune promesse de SMS tant que l'envoi est désactivé", () => {
+        function texte(): string {
+            fixture.detectChanges();
+            return (fixture.nativeElement as HTMLElement).textContent ?? '';
+        }
+
+        it("n'écrit jamais « SMS » aux étapes du formulaire", () => {
+            component.fd['phoneNumber'].setValue('+226 70 00 00 00');
+            component.fd['email'].setValue('awa@example.com');
+            component.fd['dataProcessingConsent'].setValue(true);
+
+            for (const etape of [1, 2, 3]) {
+                component.currentStep = etape;
+                expect(texte()).withContext('étape ' + etape).not.toMatch(/sms/i);
+            }
+        });
+
+        it("annonce une notification par e-mail quand une adresse est donnée", () => {
+            component.fd['email'].setValue('awa@example.com');
+            component.fd['dataProcessingConsent'].setValue(true);
+            component.currentStep = 3;
+
+            const t = texte();
+            expect(t).toContain('Notifications prévues');
+            expect(t).toContain('awa@example.com');
+        });
+
+        it("dit clairement qu'aucune notification ne sera envoyée sans e-mail, et de garder le code", () => {
+            component.fd['phoneNumber'].setValue('+226 70 00 00 00');
+            component.fd['email'].setValue('');
+            component.fd['dataProcessingConsent'].setValue(true);
+            component.currentStep = 3;
+
+            const t = texte();
+            expect(t).toContain('Aucune notification');
+            expect(t).toContain('code de suivi');
+        });
+
+        it("l'écran de succès ne parle pas de SMS", () => {
+            component.fd['phoneNumber'].setValue('+226 70 00 00 00');
+            component.createdAccessCode = 'ABCD1234';
+            component.showSuccess = true;
+
+            expect(texte()).not.toMatch(/sms/i);
+        });
+    });
+
+    describe('période approximative', () => {
+        it('se choisit par un sélecteur de mois (calendrier ou saisie)', () => {
+            fixture.detectChanges();
+
+            const champ = (fixture.nativeElement as HTMLElement).querySelector('input[type="month"]') as HTMLInputElement;
+            expect(champ).not.toBeNull();
+            expect(champ.max).toMatch(/^\d{4}-\d{2}$/);          // jamais dans le futur
+        });
+
+        it("garde un texte lisible pour l'agent : « Janvier 2025 »", () => {
+            component.onPeriode('2025-01');
+            expect(component.f['incidentPeriod'].value).toBe('Janvier 2025');
+
+            component.onPeriode('2024-12');
+            expect(component.f['incidentPeriod'].value).toBe('Décembre 2024');
+        });
+
+        it("vide la période quand on efface le mois", () => {
+            component.onPeriode('2025-03');
+            component.onPeriode('');
+
+            expect(component.f['incidentPeriod'].value).toBe('');
+        });
+
+        it('envoie la période au serveur', () => {
+            component.onPeriode('2025-06');
+
+            component.submit();
+
+            expect(dossierService.submit.calls.mostRecent().args[0].incidentPeriod).toBe('Juin 2025');
+        });
+    });
 });

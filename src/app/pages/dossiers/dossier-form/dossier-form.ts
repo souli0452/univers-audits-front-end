@@ -339,7 +339,7 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
                                         <label class="text-sm font-semibold text-surface-700 dark:text-surface-200">
                                             Téléphone
                                             <span class="text-surface-400 font-normal text-xs ml-1">
-                                                (code envoyé par SMS)
+                                                (pour joindre le déclarant)
                                             </span>
                                         </label>
                                         <input pInputText [formControl]="fd['phoneNumber']"
@@ -556,11 +556,6 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
                                                     + ' ' + (fd['lastName'].value || ''))
                                                     .trim() || 'Non renseigné') }}
                                             </div>
-                                            <div *ngIf="!fd['anonymous'].value && fd['phoneNumber'].value"
-                                                class="text-xs text-green-600 mt-1 flex items-center gap-1">
-                                                <i class="pi pi-mobile text-xs"></i>
-                                                SMS → {{ fd['phoneNumber'].value }}
-                                            </div>
                                             <div *ngIf="!fd['anonymous'].value && fd['email'].value"
                                                 class="text-xs text-green-600 mt-0.5 flex items-center gap-1">
                                                 <i class="pi pi-envelope text-xs"></i>
@@ -587,11 +582,6 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
                                         <span class="font-mono font-bold bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded ml-1">
                                             {{ accessCode }}
                                         </span>
-                                    </div>
-                                    <div *ngIf="fd['phoneNumber'].value"
-                                        class="text-xs text-green-600 mt-1 flex items-center gap-1">
-                                        <i class="pi pi-mobile text-xs"></i>
-                                        SMS envoyé au {{ fd['phoneNumber'].value }}
                                     </div>
                                     <div *ngIf="fd['email'].value"
                                         class="text-xs text-green-600 mt-0.5 flex items-center gap-1">
@@ -703,7 +693,7 @@ export class DossierForm {
 
     readonly afterSubmitItems = [
         "Code de suivi généré",
-        'SMS / Email envoyé au déclarant',
+        'E-mail envoyé au déclarant (s\'il a donné une adresse)',
         'Numéro officiel attribué',
         'Récépissé remis au déclarant',
         'Délai de traitement : 7 jours'
