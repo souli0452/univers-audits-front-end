@@ -14,6 +14,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 
+import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 @Component({
     selector: 'app-portail-vocal',
     standalone: true,
@@ -21,7 +22,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
         CommonModule, RouterModule, FormsModule,
         ButtonModule, InputTextModule, ToastModule,
         DialogModule, ConfirmDialogModule,
-        TagModule, DividerModule, MessageModule
+        TagModule, DividerModule, MessageModule, DureeAudio
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -445,7 +446,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
                     <span style="background:var(--mist);color:var(--green);font-size:.75rem;
                         font-weight:700;padding:4px 10px;border-radius:20px;">OK</span>
                 </div>
-                <audio [src]="audioUrl" controls
+                <audio appDureeAudio [src]="audioUrl" controls
                     style="width:100%;margin-bottom:.75rem;border-radius:8px;"></audio>
                 <p-button label="Recommencer" icon="pi pi-refresh"
                     severity="secondary" outlined (onClick)="deleteAudio()" />

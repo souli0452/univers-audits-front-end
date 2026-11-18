@@ -14,6 +14,7 @@ import { AttachmentService } from '../../../core/services/attachment.service';
 
 const MAX_DURATION_SECONDS = 600; 
 
+import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 @Component({
     selector: 'app-dossier-audio',
     standalone: true,
@@ -21,7 +22,7 @@ const MAX_DURATION_SECONDS = 600;
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, SelectModule,
         InputTextModule, TextareaModule, ToastModule,
-        DatePickerModule
+        DatePickerModule, DureeAudio
     ],
     providers: [MessageService],
     template: `
@@ -206,7 +207,7 @@ const MAX_DURATION_SECONDS = 600;
                             <i class="pi pi-volume-up"></i>
                             Écoute du témoignage
                         </div>
-                        <audio [src]="audioUrl" controls class="w-full"
+                        <audio appDureeAudio [src]="audioUrl" controls class="w-full"
                             style="height:40px;"></audio>
                     </div>
 

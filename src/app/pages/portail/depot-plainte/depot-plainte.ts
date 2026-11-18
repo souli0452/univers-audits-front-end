@@ -17,6 +17,7 @@ import { TailleTexte } from '../shared/taille-texte';
 import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
 import { OrigineSaisie } from '../../../core/models/geographie.model';
 import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
+import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 import { AideNumeroVert } from '../shared/aide-numero-vert';
 import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
@@ -28,7 +29,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
         ToastModule, DialogModule, ConfirmDialogModule,
-        TailleTexte, AideNumeroVert, AvantDeSignaler, OrigineGeographique
+        TailleTexte, AideNumeroVert, AvantDeSignaler, OrigineGeographique, DureeAudio
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -384,16 +385,16 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                 Notez ce code ou prenez une photo
             </div>
         </div>
-        <div class="notif-row" *ngIf="fd['phoneNumber'].value || fd['email'].value">
-            <div *ngIf="fd['phoneNumber'].value" class="notif-badge sms">
-                <i class="pi pi-mobile" style="font-size:.85rem;"></i>
-                SMS envoyé au {{ fd['phoneNumber'].value }}
-            </div>
-            <div *ngIf="fd['email'].value" class="notif-badge email">
+        <div class="notif-row" *ngIf="fd['email'].value && !fd['anonymous'].value">
+            <div class="notif-badge email">
                 <i class="pi pi-envelope" style="font-size:.85rem;"></i>
                 Email envoyé à {{ fd['email'].value }}
             </div>
         </div>
+        <p *ngIf="!fd['email'].value || fd['anonymous'].value"
+            style="font-size:.8rem;color:var(--ink-60);text-align:center;margin:.5rem 0 0;">
+            Aucune notification ne vous sera envoyée : conservez bien votre code de suivi.
+        </p>
         <div style="background:rgba(255,216,0,.1);border:1px solid var(--yellow);border-radius:12px;
                     padding:.875rem;font-size:.8rem;color:var(--ink);text-align:left;margin-top:.75rem;">
             <i class="pi pi-info-circle" style="color:var(--ink);margin-right:6px;"></i>
@@ -575,7 +576,12 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                                 placeholder="Ex: Janvier 2024, ou De 2022 à 2023, ou Depuis 6 mois"
                                 style="border:none;outline:none;background:transparent;
                                        padding:.625rem 0;flex:1;font-size:.875rem;" />
+                            <input type="month" [max]="moisMaximum" (change)="onPeriode($any($event.target).value)"
+                                aria-label="Choisir un mois dans le calendrier"
+                                style="border:1px solid var(--hair);border-radius:6px;padding:.25rem .4rem;
+                                       font-size:.8rem;background:#fff;color:var(--ink);max-width:9.5rem;" />
                         </div>
+                        <span class="field-hint">Saisissez librement, ou choisissez un mois dans le calendrier.</span>
                     </div>
                 </div>
 
@@ -629,7 +635,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                                 </div>
                             </div>
                         </div>
-                        <audio [src]="audioUrl" controls
+                        <audio appDureeAudio [src]="audioUrl" controls
                             style="width:100%;border-radius:8px;margin-bottom:.625rem;">
                         </audio>
                         <p-button label="Supprimer et recommencer" icon="pi pi-trash"
@@ -808,10 +814,10 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                             placeholder="Votre nom" class="w-full" />
                     </div>
                     <div class="field">
-                        <label>Téléphone <span class="opt">— recommandé</span></label>
+                        <label>Téléphone <span class="opt">— optionnel</span></label>
                         <input pInputText [formControl]="fd['phoneNumber']"
                             placeholder="+226 XX XX XX XX" class="w-full" />
-                        <span class="field-hint">Pour recevoir votre code par SMS</span>
+                        <span class="field-hint">Pour que l'ASCE-LC puisse vous joindre si besoin</span>
                     </div>
                     <div class="field">
                         <label>Email <span class="opt">— optionnel</span></label>
@@ -1077,20 +1083,20 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                     </div>
                 </div>
 
-                <div *ngIf="!fd['anonymous'].value
-                            && (fd['phoneNumber'].value || fd['email'].value)"
+                <div *ngIf="!fd['anonymous'].value && !fd['email'].value"
+                    style="background:var(--mist);border:1.5px solid var(--hair);
+                           border-radius:12px;padding:.875rem;font-size:.8rem;color:var(--ink-60);line-height:1.6;">
+                    <strong style="color:var(--ink);">Aucune notification</strong> ne vous sera envoyée, faute d'adresse e-mail.
+                    Conservez bien votre <strong>code de suivi</strong> : c'est lui qui permet de suivre votre dossier.
+                </div>
+
+                <div *ngIf="!fd['anonymous'].value && fd['email'].value"
                     style="background:var(--mist);border:1.5px solid var(--green);
                            border-radius:12px;padding:.875rem;">
                     <div style="font-size:.75rem;font-weight:800;color:var(--green);
                         letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;">
                         <i class="pi pi-send" style="margin-right:4px;"></i>
                         Notifications prévues
-                    </div>
-                    <div *ngIf="fd['phoneNumber'].value"
-                        style="font-size:.8rem;color:var(--green);display:flex;
-                               align-items:center;gap:.5rem;">
-                        <i class="pi pi-mobile" style="font-size:.8rem;"></i>
-                        SMS → {{ fd['phoneNumber'].value }}
                     </div>
                     <div *ngIf="fd['email'].value"
                         style="font-size:.8rem;color:var(--green);display:flex;
@@ -1200,6 +1206,24 @@ export class DepotPlainte {
 
     onOrigine(origine: OrigineSaisie): void {
         this.origine = origine;
+    }
+
+    /** Mois le plus récent que l'on puisse choisir : le mois en cours. */
+    readonly moisMaximum = (() => {
+        const maintenant = new Date();
+        return `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}`;
+    })();
+
+    /** Mois choisi dans le calendrier (AAAA-MM) : écrit sous forme lisible, modifiable ensuite (« De 2022 à 2023 »…). */
+    onPeriode(mois: string): void {
+        const correspondance = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(mois ?? '');
+        if (!correspondance) {
+            this.f['incidentPeriod'].setValue('');
+            return;
+        }
+        const nom = new Date(Number(correspondance[1]), Number(correspondance[2]) - 1, 1)
+            .toLocaleDateString('fr-FR', { month: 'long' });
+        this.f['incidentPeriod'].setValue(`${nom.charAt(0).toUpperCase()}${nom.slice(1)} ${correspondance[1]}`);
     }
 
     typeOptions = [

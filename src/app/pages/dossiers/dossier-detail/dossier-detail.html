@@ -1471,7 +1471,7 @@
                             </div>
                             <div *ngIf="previewId === att.id">
                                 <div *ngIf="isAudio(att)" class="p-3 bg-white dark:bg-surface-800">
-                                    <audio [src]="getBlobUrl(att.id)" controls class="w-full" style="height:36px;"></audio>
+                                    <audio appDureeAudio [src]="getBlobUrl(att.id)" controls class="w-full" style="height:36px;"></audio>
                                 </div>
                                 <div *ngIf="isImage(att)" class="bg-surface-900 flex items-center justify-center p-2">
                                     <img [src]="getBlobUrl(att.id)" class="max-w-full object-contain rounded" style="max-height:380px;" alt="Pièce jointe"/>
