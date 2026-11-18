@@ -37,33 +37,33 @@ describe('DepotPlainte', () => {
 
     describe('étape « Coordonnées »', () => {
         beforeEach(() => {
-            component.currentStep = 2;
+            component.currentStep = 4;
             component.fd['dataProcessingConsent'].setValue(true);
         });
 
         it('refuse de passer à la confirmation avec un e-mail invalide', () => {
             component.fd['email'].setValue('pas-un-email');
 
-            component.goToStep3();
+            component.goToConfirmation();
 
-            expect(component.currentStep).toBe(2);
+            expect(component.currentStep).toBe(4);
             expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'warn', summary: 'E-mail invalide' }));
         });
 
         it('accepte un e-mail valide', () => {
             component.fd['email'].setValue('recette@example.com');
 
-            component.goToStep3();
+            component.goToConfirmation();
 
-            expect(component.currentStep).toBe(3);
+            expect(component.currentStep).toBe(5);
         });
 
         it('accepte un e-mail vide (champ optionnel)', () => {
             component.fd['email'].setValue('');
 
-            component.goToStep3();
+            component.goToConfirmation();
 
-            expect(component.currentStep).toBe(3);
+            expect(component.currentStep).toBe(5);
         });
     });
 
@@ -158,7 +158,7 @@ describe('DepotPlainte', () => {
         const ajouter = (...noms: string[]) =>
             component.onFileSelect({ target: { files: noms.map(fichier) } });
 
-        beforeEach(() => fixture.detectChanges());
+        beforeEach(() => { component.currentStep = 3; fixture.detectChanges(); });
 
         it('affiche les formats acceptés dans la zone de dépôt', () => {
             expect((fixture.nativeElement as HTMLElement).textContent)
@@ -223,6 +223,7 @@ describe('DepotPlainte', () => {
     });
 
     it("n'affiche aucun texte d'aide sous le choix de l'origine géographique", () => {
+        component.currentStep = 4;
         fixture.detectChanges();
 
         const texte = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -251,7 +252,7 @@ describe('DepotPlainte', () => {
             component.fd['email'].setValue('awa@example.com');
             component.fd['dataProcessingConsent'].setValue(true);
 
-            for (const etape of [1, 2, 3]) {
+            for (const etape of [1, 2, 3, 4, 5]) {
                 component.currentStep = etape;
                 expect(texte()).withContext('étape ' + etape).not.toMatch(/sms/i);
             }
@@ -260,7 +261,7 @@ describe('DepotPlainte', () => {
         it("annonce une notification par e-mail quand une adresse est donnée", () => {
             component.fd['email'].setValue('awa@example.com');
             component.fd['dataProcessingConsent'].setValue(true);
-            component.currentStep = 3;
+            component.currentStep = 5;
 
             const t = texte();
             expect(t).toContain('Notifications prévues');
@@ -271,7 +272,7 @@ describe('DepotPlainte', () => {
             component.fd['phoneNumber'].setValue('+226 70 00 00 00');
             component.fd['email'].setValue('');
             component.fd['dataProcessingConsent'].setValue(true);
-            component.currentStep = 3;
+            component.currentStep = 5;
 
             const t = texte();
             expect(t).toContain('Aucune notification');
@@ -289,6 +290,7 @@ describe('DepotPlainte', () => {
 
     describe('période approximative', () => {
         it('se choisit par un sélecteur de mois (calendrier ou saisie)', () => {
+            component.currentStep = 2;
             fixture.detectChanges();
 
             const champ = (fixture.nativeElement as HTMLElement).querySelector('input[type="month"]') as HTMLInputElement;
@@ -317,6 +319,222 @@ describe('DepotPlainte', () => {
             component.submit();
 
             expect(dossierService.submit.calls.mostRecent().args[0].incidentPeriod).toBe('Juin 2025');
+        });
+    });
+
+    describe('parcours en cinq écrans', () => {
+        const texte = (): string => {
+            fixture.detectChanges();
+            return ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+        };
+        const present = (sel: string): boolean => !!(fixture.nativeElement as HTMLElement).querySelector(sel);
+
+        it('annonce cinq étapes, la sécurité en premier', () => {
+            expect(component.steps.map(e => e.label)).toEqual(
+                ['Votre sécurité', 'Les faits', 'Preuves', 'Coordonnées', 'Confirmation']);
+        });
+
+        it('commence par la sécurité : rien à remplir, un seul bouton pour poursuivre', () => {
+            expect(component.currentStep).toBe(1);
+            const t = texte();
+
+            expect(t).toContain('Votre sécurité');
+            expect(t).toContain("J'ai compris, commencer");
+            expect(t).not.toContain('Décrivez les faits');
+        });
+
+        it("dit la vérité sur l'anonymat : adresse non conservée dans le dossier, mais journaux techniques du serveur", () => {
+            const t = texte();
+
+            expect(t).toContain('Rester anonyme est possible');
+            expect(t).toContain("adresse de connexion (adresse IP) n'est pas conservée dans le dossier");
+            expect(t).toContain('journaux techniques du serveur');
+            expect(t).toContain('code de suivi');
+            expect(t).toContain('voix');
+        });
+
+        it('explique que la protection de lanceur d\'alerte n\'est pas l\'anonymat, avant de la demander', () => {
+            const t = texte();
+
+            expect(t).toContain("La protection de lanceur d'alerte est différente de l'anonymat");
+        });
+
+        it('« J\'ai compris, commencer » ouvre les faits sans rien valider', () => {
+            component.commencer();
+
+            expect(component.currentStep).toBe(2);
+        });
+
+        it('les faits ne contiennent ni l\'audio ni les pièces jointes', () => {
+            component.currentStep = 2;
+            const t = texte();
+
+            expect(t).toContain('Décrivez les faits');
+            expect(t).not.toContain('Témoignage audio');
+            expect(t).not.toContain('Pièces jointes');
+        });
+
+        it('les faits exigent l\'objet et la description avant de continuer', () => {
+            component.currentStep = 2;
+
+            component.goToPreuves();
+            expect(component.currentStep).toBe(2);
+
+            component.f['object'].setValue('Détournement de fonds dans un service');
+            component.f['description'].setValue('Des faits précis, avec des dates et des noms.');
+            component.goToPreuves();
+            expect(component.currentStep).toBe(3);
+        });
+
+        it('les preuves regroupent l\'audio et les pièces jointes, et rien n\'y est obligatoire', () => {
+            component.currentStep = 3;
+            const t = texte();
+
+            expect(t).toContain('Témoignage audio');
+            expect(t).toContain('Pièces jointes');
+            component.goToCoordonnees();
+            expect(component.currentStep).toBe(4);
+        });
+
+        it('l\'origine géographique se renseigne avec les coordonnées, pas avec les faits', () => {
+            component.currentStep = 2; texte();
+            expect(present('app-origine-geographique')).toBeFalse();
+
+            component.currentStep = 4; texte();
+            expect(present('app-origine-geographique')).toBeTrue();
+        });
+
+        it('la confirmation permet de revenir aux coordonnées', () => {
+            component.currentStep = 5;
+            const t = texte();
+
+            expect(t).toContain('Soumettre mon signalement');
+            expect(t).toContain('Précédent');
+        });
+    });
+
+    describe("protection de lanceur d'alerte : lue avant d'être demandée", () => {
+        let confirmation: { confirm: jasmine.Spy };
+
+        beforeEach(() => {
+            component.currentStep = 4;
+            component.fd['anonymous'].setValue(false);
+            confirmation = { confirm: spyOn((component as any).confirmationService, 'confirm') } as any;
+            confirmation.confirm.and.callFake((c: any) => c.accept && c.accept());
+        });
+
+        const texte = (): string => {
+            fixture.detectChanges();
+            return ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ');
+        };
+
+        it("n'est plus une simple case à cocher : un bouton ouvre les conditions", () => {
+            const t = texte();
+
+            expect(t).toContain("Protection de lanceur d'alerte");
+            expect(t).toContain('Lire les conditions');
+            expect(t).toContain("Vous n'êtes pas obligé de la demander");
+            expect((fixture.nativeElement as HTMLElement).querySelector('.protection-trigger')).toBeNull();
+        });
+
+        it("n'est pas proposée à un déclarant anonyme", () => {
+            component.fd['anonymous'].setValue(true);
+
+            expect(texte()).not.toContain('Lire les conditions');
+        });
+
+        it('à l\'ouverture, rien n\'est coché et la lecture n\'est pas faite', () => {
+            component.cond1 = component.cond2 = component.cond3 = true;
+
+            component.ouvrirProtection();
+
+            expect(component.showProtectionDialog).toBeTrue();
+            expect(component.protectionLue).toBeFalse();
+            expect([component.cond1, component.cond2, component.cond3]).toEqual([false, false, false]);
+        });
+
+        it('la lecture n\'est acquise qu\'une fois le texte parcouru jusqu\'en bas', () => {
+            component.ouvrirProtection();
+
+            component.onScrollProtection({ scrollTop: 0, clientHeight: 300, scrollHeight: 900 });
+            expect(component.protectionLue).toBeFalse();
+
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            expect(component.protectionLue).toBeTrue();
+        });
+
+        it('explique ce que la protection change et ce qu\'elle ne change pas', () => {
+            component.ouvrirProtection();
+            const t = texte();
+
+            expect(t).toContain('Ce que cette protection change');
+            expect(t).toContain("Ce qu'elle ne change pas");
+            expect(t).toContain('sanctions pénales');
+        });
+
+        it('ne se confirme pas sans avoir tout lu et coché les trois conditions', () => {
+            component.ouvrirProtection();
+            component.cond1 = component.cond2 = component.cond3 = true;
+
+            component.confirmProtection();                       // pas encore lu jusqu'en bas
+            expect(confirmation.confirm).not.toHaveBeenCalled();
+
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            component.cond3 = false;
+            component.confirmProtection();                       // une condition manque
+            expect(confirmation.confirm).not.toHaveBeenCalled();
+            expect(component.fd['protectionRequested'].value).toBeFalse();
+        });
+
+        it('une fois lue, cochée et confirmée sur l\'honneur : demandée, et la fenêtre se ferme', () => {
+            component.ouvrirProtection();
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            component.cond1 = component.cond2 = component.cond3 = true;
+
+            component.confirmProtection();
+
+            expect(confirmation.confirm).toHaveBeenCalledTimes(1);
+            expect(component.fd['protectionRequested'].value).toBeTrue();
+            expect(component.protectionAcknowledged).toBeTrue();
+            expect(component.showProtectionDialog).toBeFalse();
+        });
+
+        it('fermer la fenêtre sans confirmer ne demande aucune protection', () => {
+            component.ouvrirProtection();
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            component.cond1 = true;
+
+            component.fermerProtection();
+
+            expect(component.showProtectionDialog).toBeFalse();
+            expect(component.fd['protectionRequested'].value).toBeFalse();
+            expect(component.protectionAcknowledged).toBeFalse();
+        });
+
+        it('la demande confirmée part avec le signalement', () => {
+            component.ouvrirProtection();
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            component.cond1 = component.cond2 = component.cond3 = true;
+            component.confirmProtection();
+            component.fd['firstName'].setValue('Awa');
+
+            component.submit();
+
+            const demande = dossierService.submit.calls.mostRecent().args[0];
+            expect(demande.declarantData.protectionRequested).toBeTrue();
+            expect(demande.declarantData.protectionAcknowledged).toBeTrue();
+        });
+
+        it('retirer la demande remet tout à zéro', () => {
+            component.ouvrirProtection();
+            component.onScrollProtection({ scrollTop: 600, clientHeight: 300, scrollHeight: 900 });
+            component.cond1 = component.cond2 = component.cond3 = true;
+            component.confirmProtection();
+
+            component.cancelProtection();
+
+            expect(component.fd['protectionRequested'].value).toBeFalse();
+            expect(component.protectionAcknowledged).toBeFalse();
         });
     });
 });
