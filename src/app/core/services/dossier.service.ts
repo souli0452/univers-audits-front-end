@@ -14,7 +14,8 @@ import {
     ReassignAgentRequest,
     DossierSearchParams,
     DossierStatsResponse,
-    DelaiEtapeResponse
+    DelaiEtapeResponse,
+    DossierUpdateRequest
 } from '../models/dossier.model';
 
 export type {
@@ -30,6 +31,11 @@ export class DossierService {
     private http    = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/dossiers`;
 
+
+    /** Complète ou corrige la fiche d'un dossier (avec sa version, pour éviter les écrasements). */
+    update(id: string, request: DossierUpdateRequest): Observable<DossierResponse> {
+        return this.http.put<DossierResponse>(`${this.baseUrl}/${id}`, request);
+    }
 
     findAll(page = 0, size = 20): Observable<PageResponse<DossierResponse>> {
         const params = new HttpParams()

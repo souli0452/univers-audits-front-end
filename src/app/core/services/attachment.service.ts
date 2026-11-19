@@ -51,6 +51,11 @@ export class AttachmentService {
         return `${this.baseUrl}/${attachmentId}/download`;
     }
 
+    /** Téléchargement : le serveur le réserve à ceux qui en ont le droit et l'inscrit au journal d'audit. */
+    telecharger(attachmentId: string): Observable<Blob> {
+        return this.http.get(`${this.baseUrl}/${attachmentId}/telecharger`, { responseType: 'blob' });
+    }
+
     delete(attachmentId: string): Observable<any> {
         return this.http.delete(`${this.baseUrl}/${attachmentId}`);
     }

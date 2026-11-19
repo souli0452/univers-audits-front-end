@@ -77,6 +77,8 @@ interface WorkflowStep {
 
 import { libelleDeNature } from '../../../core/utils/saisine-categories';
 import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
+import { FicheACompleter, AudioDuDossier } from '../fiche-a-completer/fiche-a-completer';
+import { PermissionService } from '../../../core/services/permission.service';
 @Component({
     selector: 'app-dossier-detail',
     standalone: true,
@@ -85,7 +87,7 @@ import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
         ButtonModule, TagModule, DialogModule,
         TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
         ConfirmDialogModule, TooltipModule, SelectModule, DureeAudio,
-        InputTextModule
+        InputTextModule, FicheACompleter
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -126,6 +128,7 @@ export class DossierDetail implements OnInit {
     private dossierService       = inject(DossierService);
     private investigationService = inject(InvestigationService);
     private keycloakService      = inject(KeycloakService);
+    private permissionService    = inject(PermissionService);
     private messageService       = inject(MessageService);
     private http                 = inject(HttpClient);
     private attachmentService    = inject(AttachmentService);
@@ -359,6 +362,7 @@ export class DossierDetail implements OnInit {
     ];
 
     ngOnInit(): void {
+        this.permissionService.charger().subscribe();
         const id = this.route.snapshot.paramMap.get('id');
         if (id) this.loadDossier(id);
     }
@@ -1121,6 +1125,68 @@ export class DossierDetail implements OnInit {
         this.transitionPlaceholder = placeholder;
         this.transitionReason      = '';
         this.showTransitionDialog  = true;
+    }
+
+    // ───────── ce que l'agent peut faire : décidé par ses droits en base, non par le nom de son rôle ─────────
+
+    ficheOuverte = false;
+
+    peutEnregistrer(): boolean {
+        return this.dossier?.status === 'SOUMIS' && this.permissionService.a('DOSSIER_ENREGISTRER');
+    }
+
+    /** Compléter la fiche (objet, faits, nature, type d'institution) avant le début de l'étude. */
+    peutCompleter(): boolean {
+        return (this.dossier?.status === 'SOUMIS' || this.dossier?.status === 'RECU')
+            && this.permissionService.a('DOSSIER_MODIFIER');
+    }
+
+    peutTelecharger(): boolean {
+        return this.permissionService.a('PIECE_JOINTE_TELECHARGER');
+    }
+
+    /** Enregistrements audio du dossier, pour les écouter depuis le panneau de complétion. */
+    audiosDuDossier(): AudioDuDossier[] {
+        return this.attachments
+            .filter(a => this.isAudio(a))
+            .map(a => ({ id: a.id, nom: a.originalName, url: this.getBlobUrl(a.id) }));
+    }
+
+    /** Dit à l'agent ce qui vient ensuite, pour qu'aucun écran ne reste muet. */
+    etapeSuivante(): string | null {
+        switch (this.dossier?.status) {
+            case 'SOUMIS':
+                return this.permissionService.a('DOSSIER_ENREGISTRER')
+                    ? "Prochaine étape : complétez la fiche si besoin, puis cliquez sur « Enregistrer » pour attribuer un numéro au dossier et un code de suivi au déclarant."
+                    : "Prochaine étape : l'agent BRPD enregistre le dossier et lui attribue un numéro.";
+            case 'RECU':
+                return "Prochaine étape : le conseiller juridique démarre l'étude d'opportunité.";
+            default:
+                return null;
+        }
+    }
+
+    /** Téléchargement : passe par le serveur, qui l'inscrit au journal d'audit. */
+    telecharger(att: AttachmentResponse): void {
+        this.attachmentService.telecharger(att.id).subscribe({
+            next: blob => this.enregistrerFichier(blob, att.originalName),
+            error: () => this.messageService.add({ severity: 'error', summary: 'Téléchargement impossible',
+                detail: "Vous n'avez pas le droit de télécharger cette pièce, ou elle est introuvable." })
+        });
+    }
+
+    private enregistrerFichier(blob: Blob, nom: string): void {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = nom;
+        lien.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    onFicheCompletee(dossier: DossierResponse): void {
+        this.dossier = dossier;
+        this.ficheOuverte = false;
     }
 
     openRegister(): void {
