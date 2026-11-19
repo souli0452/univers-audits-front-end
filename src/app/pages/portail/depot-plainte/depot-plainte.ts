@@ -342,6 +342,12 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .notif-badge.sms   { background:var(--mist); color:var(--green); border:1px solid var(--green); }
         .notif-badge.email { background:#fff; color:var(--ink); border:1px solid var(--hair); }
 
+        .secu-liste { list-style:none; margin:0 0 1.25rem; padding:0; display:flex; flex-direction:column; gap:.875rem; }
+        .secu-liste li { display:flex; gap:.875rem; align-items:flex-start; font-size:.85rem; line-height:1.6; color:var(--ink-60); }
+        .secu-liste li > i { color:var(--green); font-size:1.05rem; margin-top:3px; flex-shrink:0; width:1.25rem; text-align:center; }
+        .secu-liste strong { color:var(--ink); }
+        .protection-section { border:1.5px solid var(--hair); border-radius:12px; padding:1rem; background:#fff; }
+        .protection-liste { margin:0; padding-left:1.1rem; font-size:.8rem; line-height:1.7; color:var(--ink-60); display:flex; flex-direction:column; gap:.3rem; }
         .page-foot {
             text-align:center; margin-top:2rem;
             color:var(--ink-40); font-size:.75rem; padding-bottom:1rem;
@@ -466,6 +472,75 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         <div *ngIf="currentStep === 1" class="card">
 
             <div class="card-title">
+                <div class="card-title-icon" style="background:rgba(0,54,23,.08);">
+                    <i class="pi pi-shield" style="color:var(--ink);"></i>
+                </div>
+                Votre sécurité
+            </div>
+
+            <p style="font-size:.875rem;color:var(--ink-60);line-height:1.6;margin:0 0 1rem;">
+                Avant de commencer, voici ce qui protège votre signalement et ce que vous pouvez faire pour
+                vous protéger vous-même. Rien n'est à remplir sur cet écran.
+            </p>
+
+            <ul class="secu-liste">
+                <li>
+                    <i class="pi pi-eye-slash"></i>
+                    <div><strong>Rester anonyme est possible.</strong> Aucun nom ni contact n'est demandé.
+                        En contrepartie, l'ASCE-LC ne peut pas vous recontacter : seul votre code de suivi
+                        vous permet de suivre le dossier. Votre adresse de connexion (adresse IP) n'est pas
+                        conservée dans le dossier. Comme sur tout site, les journaux techniques du serveur
+                        peuvent en garder une trace : si cela vous inquiète, utilisez une connexion qui n'est
+                        pas celle de votre bureau ou de votre domicile.</div>
+                </li>
+                <li>
+                    <i class="pi pi-shield"></i>
+                    <div><strong>La protection de lanceur d'alerte est différente de l'anonymat.</strong>
+                        Vous donnez votre identité à l'ASCE-LC, qui la cache aux agents qui n'ont pas à la
+                        connaître et enregistre chaque consultation. Elle est réservée aux faits connus dans
+                        le cadre de votre travail. Vous pourrez la demander à l'étape « Coordonnées », après
+                        avoir lu ses conditions. Rien ne vous y oblige.</div>
+                </li>
+                <li>
+                    <i class="pi pi-microphone"></i>
+                    <div><strong>Votre voix peut vous identifier.</strong> Si vous voulez rester anonyme,
+                        préférez écrire plutôt qu'enregistrer un message vocal.</div>
+                </li>
+                <li>
+                    <i class="pi pi-paperclip"></i>
+                    <div><strong>Les fichiers contiennent des informations cachées</strong> (auteur, date,
+                        parfois le lieu d'une photo). Envoyez des copies, jamais un original que vous êtes
+                        seul à posséder.</div>
+                </li>
+                <li>
+                    <i class="pi pi-key"></i>
+                    <div><strong>Votre code de suivi est la seule clé de votre dossier.</strong> Notez-le à la
+                        fin, gardez-le pour vous et ne le partagez pas.</div>
+                </li>
+                <li>
+                    <i class="pi pi-desktop"></i>
+                    <div><strong>Pensez à votre appareil.</strong> Évitez un ordinateur de travail ou partagé,
+                        et fermez la page une fois le dépôt terminé.</div>
+                </li>
+                <li>
+                    <i class="pi pi-lock"></i>
+                    <div><strong>Rien n'est envoyé avant la confirmation finale.</strong> La connexion est
+                        chiffrée.</div>
+                </li>
+            </ul>
+
+            <div class="step-footer">
+                <span style="font-size:.78rem;color:var(--ink-40);">
+                    <i class="pi pi-lock"></i> Données chiffrées
+                </span>
+                <p-button label="J'ai compris, commencer" icon="pi pi-arrow-right" iconPos="right"
+                    (onClick)="commencer()" />
+            </div>
+        </div>
+
+        <div *ngIf="currentStep === 2" class="card">
+
+            <div class="card-title">
                 <div class="card-title-icon" style="background:var(--mist);">
                     <i class="pi pi-file-edit" style="color:var(--green);"></i>
                 </div>
@@ -545,11 +620,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                     </div>
                 </div>
 
-                <div class="field">
-                    <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
-                    <app-origine-geographique (origineChange)="onOrigine($event)" />
-                </div>
-
                 <div class="grid2">
                     <div class="field">
                         <label>Lieu des faits <span class="opt">— optionnel</span></label>
@@ -591,6 +661,33 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                         [useGrouping]="true" placeholder="0" styleClass="w-full" />
                     <span class="field-hint">Laissez vide si inconnu</span>
                 </div>
+
+
+            </div>
+
+            <div class="step-footer">
+                <p-button label="Précédent" icon="pi pi-arrow-left"
+                    severity="secondary" outlined (onClick)="currentStep = 1" />
+                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
+                    (onClick)="goToPreuves()" />
+            </div>
+        </div>
+
+        <div *ngIf="currentStep === 3" class="card">
+
+            <div class="card-title">
+                <div class="card-title-icon" style="background:var(--mist);">
+                    <i class="pi pi-paperclip" style="color:var(--green);"></i>
+                </div>
+                Vos preuves
+            </div>
+
+            <p style="font-size:.875rem;color:var(--ink-60);line-height:1.6;margin:0 0 1rem;">
+                Tout est facultatif sur cet écran. Un document ou un enregistrement aide l'instruction, mais
+                n'est jamais exigé pour signaler.
+            </p>
+
+            <div style="display:flex;flex-direction:column;gap:1.25rem;">
 
                 <!-- Audio -->
                 <div class="field">
@@ -697,15 +794,14 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
             </div>
 
             <div class="step-footer">
-                <span style="font-size:.78rem;color:var(--ink-40);">
-                    <i class="pi pi-lock"></i> Données chiffrées
-                </span>
+                <p-button label="Précédent" icon="pi pi-arrow-left"
+                    severity="secondary" outlined (onClick)="currentStep = 2" />
                 <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="goToStep2()" />
+                    (onClick)="goToCoordonnees()" />
             </div>
         </div>
 
-        <div *ngIf="currentStep === 2" class="card">
+        <div *ngIf="currentStep === 4" class="card">
 
             <div class="card-title">
                 <div class="card-title-icon" style="background:rgba(0,54,23,.08);">
@@ -838,138 +934,43 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                 </div>
 
                 <!-- Protection lanceur d'alerte -->
-                <div>
-                    <div class="protection-trigger"
-                        [class.selected]="fd['protectionRequested'].value"
-                        (click)="toggleProtectionRequested()">
-                        <div style="display:flex;align-items:center;gap:.875rem;">
-                            <div style="width:22px;height:22px;border-radius:6px;
-                                border:2.5px solid var(--ink-40);display:flex;align-items:center;
-                                justify-content:center;flex-shrink:0;transition:all .2s;"
-                                [style.background]="fd['protectionRequested'].value
-                                    ? 'var(--ink)' : 'transparent'"
-                                [style.border-color]="fd['protectionRequested'].value
-                                    ? 'var(--ink)' : 'var(--ink-40)'">
-                                <i *ngIf="fd['protectionRequested'].value"
-                                    class="pi pi-check"
-                                    style="font-size:.65rem;color:#fff;"></i>
-                            </div>
-                            <div style="flex:1;">
-                                <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
-                                    Je demande une protection lanceur d'alerte
-                                </div>
-                                <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                    Protection prévue par la loi
-                                </div>
-                            </div>
-                            <div style="width:32px;height:32px;border-radius:8px;
-                                background:rgba(0,54,23,.06);display:flex;align-items:center;
-                                justify-content:center;">
-                                <i class="pi pi-shield"
-                                    style="color:var(--ink);font-size:.875rem;"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div *ngIf="fd['protectionRequested'].value && !protectionAcknowledged">
-                        <div class="protection-info-box">
-                            <div style="font-weight:800;color:var(--ink);font-size:.875rem;
-                                display:flex;align-items:center;gap:.5rem;margin-bottom:.625rem;">
-                                <i class="pi pi-info-circle"></i>
-                                À qui s'adresse cette protection ?
-                            </div>
-                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;
-                                      margin:0 0 .625rem 0;">
-                                Cette protection est réservée aux personnes qui signalent des
-                                faits de <strong>corruption, détournement de fonds publics ou
-                                abus de pouvoir</strong> dont elles ont eu connaissance
-                                <strong>dans le cadre de leurs fonctions ou activités</strong>.
-                            </p>
-                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0;">
-                                Elle garantit la <strong>confidentialité totale de votre
-                                identité</strong> et vous protège contre toute représaille,
-                                licenciement ou sanction liée à votre signalement.
-                            </p>
-                        </div>
-                        <div class="protection-warning">
-                            <div style="display:flex;align-items:flex-start;gap:.75rem;">
-                                <i class="pi pi-exclamation-triangle"
-                                    style="color:var(--red);font-size:1rem;flex-shrink:0;
-                                           margin-top:1px;"></i>
-                                <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
-                                    <strong>Attention :</strong> invoquer cette protection
-                                    de manière abusive est passible de
-                                    <strong>sanctions pénales</strong>.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="protection-conditions">
-                            <div style="font-size:.78rem;font-weight:800;color:var(--ink);
-                                text-transform:uppercase;letter-spacing:1px;
-                                margin-bottom:.25rem;">
-                                Je confirme les 3 conditions suivantes :
-                            </div>
-                            <div class="condition-row" (click)="cond1 = !cond1">
-                                <div class="condition-check" [class.checked]="cond1">
-                                    <i *ngIf="cond1" class="pi pi-check"
-                                        style="font-size:.6rem;color:#fff;"></i>
-                                </div>
-                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                                    J'ai eu connaissance de ces faits dans le cadre de mes
-                                    fonctions, de mon travail ou de mes activités
-                                    professionnelles.
-                                </span>
-                            </div>
-                            <div class="condition-row" (click)="cond2 = !cond2">
-                                <div class="condition-check" [class.checked]="cond2">
-                                    <i *ngIf="cond2" class="pi pi-check"
-                                        style="font-size:.6rem;color:#fff;"></i>
-                                </div>
-                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                                    Je crains des représailles directes si mon identité est
-                                    révélée (licenciement, menaces, sanctions...).
-                                </span>
-                            </div>
-                            <div class="condition-row" (click)="cond3 = !cond3">
-                                <div class="condition-check" [class.checked]="cond3">
-                                    <i *ngIf="cond3" class="pi pi-check"
-                                        style="font-size:.6rem;color:#fff;"></i>
-                                </div>
-                                <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                                    Je comprends qu'invoquer cette protection de manière
-                                    abusive constitue une infraction pénale.
-                                </span>
-                            </div>
-                            <p-button
-                                label="Je confirme sur l'honneur"
-                                icon="pi pi-shield" severity="secondary"
-                                styleClass="w-full justify-center mt-2"
-                                [disabled]="!cond1 || !cond2 || !cond3"
-                                (onClick)="confirmProtection()" />
-                            <small *ngIf="protectionCondTouched && (!cond1||!cond2||!cond3)"
-                                class="error-msg" style="justify-content:center;">
-                                <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                                Veuillez cocher les 3 conditions pour continuer
-                            </small>
-                        </div>
-                    </div>
-
-                    <div *ngIf="fd['protectionRequested'].value && protectionAcknowledged"
-                        class="protection-acknowledged">
-                        <i class="pi pi-shield"
-                            style="color:var(--green);font-size:1.25rem;flex-shrink:0;"></i>
+                <div class="protection-section">
+                    <div style="display:flex;align-items:flex-start;gap:.875rem;">
+                        <i class="pi pi-shield" style="color:var(--ink);font-size:1.25rem;margin-top:2px;"></i>
                         <div style="flex:1;">
-                            <div style="font-weight:800;color:var(--green);font-size:.875rem;">
-                                Protection lanceur d'alerte confirmée
+                            <div style="font-weight:800;color:var(--ink);font-size:.95rem;">
+                                Protection de lanceur d'alerte
                             </div>
-                            <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
-                                Votre identité sera strictement protégée
+                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.6;margin:.35rem 0 .75rem;">
+                                Elle concerne les personnes qui signalent des faits connus dans le cadre de
+                                leur travail, et elle a des conséquences. Lisez ses conditions avant de décider.
+                                Vous n'êtes pas obligé de la demander pour déposer un signalement.
+                            </p>
+                            <p-button *ngIf="!fd['protectionRequested'].value"
+                                label="Lire les conditions et demander la protection" icon="pi pi-book"
+                                severity="secondary" outlined size="small" (onClick)="ouvrirProtection()" />
+                            <div *ngIf="fd['protectionRequested'].value && protectionAcknowledged"
+                                class="protection-acknowledged">
+                                <i class="pi pi-shield" style="color:var(--green);font-size:1.25rem;flex-shrink:0;"></i>
+                                <div style="flex:1;">
+                                    <div style="font-weight:800;color:var(--green);font-size:.875rem;">
+                                        Protection demandée
+                                    </div>
+                                    <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
+                                        Votre identité sera protégée selon les conditions que vous avez lues.
+                                    </div>
+                                </div>
+                                <p-button label="Retirer" icon="pi pi-times" severity="secondary" text size="small"
+                                    (onClick)="cancelProtection()" />
                             </div>
                         </div>
-                        <p-button icon="pi pi-times" severity="secondary" text size="small"
-                            pTooltip="Annuler la demande" (onClick)="cancelProtection()" />
                     </div>
                 </div>
+            </div>
+
+            <div class="field" style="margin-bottom:1.25rem;">
+                <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
+                <app-origine-geographique (origineChange)="onOrigine($event)" />
             </div>
 
             <!-- Consentement -->
@@ -995,13 +996,13 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
             <div class="step-footer">
                 <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 1" />
+                    severity="secondary" outlined (onClick)="currentStep = 3" />
                 <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="goToStep3()" />
+                    (onClick)="goToConfirmation()" />
             </div>
         </div>
 
-        <div *ngIf="currentStep === 3" class="card">
+        <div *ngIf="currentStep === 5" class="card">
 
             <div class="card-title">
                 <div class="card-title-icon" style="background:rgba(255,216,0,.15);">
@@ -1120,11 +1121,105 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
             <div class="step-footer">
                 <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 2" />
+                    severity="secondary" outlined (onClick)="currentStep = 4" />
                 <p-button label="Soumettre mon signalement" icon="pi pi-send"
                     severity="success" [loading]="submitting" (onClick)="submit()" />
             </div>
         </div>
+
+        <p-dialog header="Protection de lanceur d'alerte" [(visible)]="showProtectionDialog" [modal]="true"
+            [draggable]="false" [style]="{ width: 'min(38rem, 94vw)' }" (onHide)="fermerProtection()">
+
+            <div class="protection-lecture" #lecture (scroll)="onScrollProtection(lecture)"
+                style="max-height:50vh;overflow-y:auto;padding-right:.5rem;">
+
+                <div class="protection-info-box">
+                    <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin-bottom:.5rem;">
+                        À qui s'adresse cette protection ?
+                    </div>
+                    <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0 0 .625rem;">
+                        Elle est réservée aux personnes qui signalent des faits de <strong>corruption,
+                        détournement de fonds publics ou abus de pouvoir</strong> dont elles ont eu connaissance
+                        <strong>dans le cadre de leurs fonctions ou activités</strong>.
+                    </p>
+                    <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0;">
+                        Elle garantit la <strong>confidentialité totale de votre identité</strong> et vous protège
+                        contre toute représaille, licenciement ou sanction liée à votre signalement.
+                    </p>
+                </div>
+
+                <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin:1rem 0 .5rem;">
+                    Ce que cette protection change
+                </div>
+                <ul class="protection-liste">
+                    <li>Vous ne pouvez pas rester anonyme : <strong>votre identité est connue de l'ASCE-LC</strong>.</li>
+                    <li>Elle est cachée aux agents qui n'ont pas à la connaître. <strong>Chaque consultation est
+                        enregistrée</strong> et contrôlée.</li>
+                    <li>L'ASCE-LC est informée dès le dépôt qu'un signalement sous protection est arrivé.</li>
+                </ul>
+
+                <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin:1rem 0 .5rem;">
+                    Ce qu'elle ne change pas
+                </div>
+                <ul class="protection-liste">
+                    <li>Elle ne garantit pas l'issue de l'enquête et n'empêche pas qu'on vous pose des questions.</li>
+                    <li>Elle ne dispense pas d'apporter des faits exacts : une accusation sciemment fausse reste punissable.</li>
+                    <li>Elle ne couvre pas des faits dont vous n'avez pas eu connaissance dans le cadre de votre travail.</li>
+                </ul>
+
+                <div class="protection-warning">
+                    <div style="display:flex;align-items:flex-start;gap:.75rem;">
+                        <i class="pi pi-exclamation-triangle"
+                            style="color:var(--red);font-size:1rem;flex-shrink:0;margin-top:1px;"></i>
+                        <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
+                            <strong>Attention :</strong> invoquer cette protection de manière abusive est passible de
+                            <strong>sanctions pénales</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <p *ngIf="!protectionLue" style="font-size:.78rem;color:var(--ink-60);margin:.75rem 0 0;text-align:center;">
+                <i class="pi pi-arrow-down"></i> Faites défiler le texte jusqu'en bas pour continuer.
+            </p>
+
+            <div *ngIf="protectionLue" class="protection-conditions">
+                <div style="font-size:.78rem;font-weight:800;color:var(--ink);text-transform:uppercase;
+                    letter-spacing:1px;margin-bottom:.25rem;">Je confirme les 3 conditions suivantes :</div>
+                <div class="condition-row" (click)="cond1 = !cond1">
+                    <div class="condition-check" [class.checked]="cond1">
+                        <i *ngIf="cond1" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                    </div>
+                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
+                        J'ai eu connaissance de ces faits dans le cadre de mes fonctions, de mon travail ou de mes
+                        activités professionnelles.</span>
+                </div>
+                <div class="condition-row" (click)="cond2 = !cond2">
+                    <div class="condition-check" [class.checked]="cond2">
+                        <i *ngIf="cond2" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                    </div>
+                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
+                        Je crains des représailles directes si mon identité est révélée (licenciement, menaces,
+                        sanctions...).</span>
+                </div>
+                <div class="condition-row" (click)="cond3 = !cond3">
+                    <div class="condition-check" [class.checked]="cond3">
+                        <i *ngIf="cond3" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
+                    </div>
+                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
+                        Je comprends qu'invoquer cette protection de manière abusive constitue une infraction
+                        pénale.</span>
+                </div>
+                <p-button label="Je confirme sur l'honneur" icon="pi pi-shield" severity="secondary"
+                    styleClass="w-full justify-center mt-2" [disabled]="!cond1 || !cond2 || !cond3"
+                    (onClick)="confirmProtection()" />
+                <small *ngIf="protectionCondTouched && (!cond1 || !cond2 || !cond3)" class="error-msg"
+                    style="justify-content:center;">
+                    <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
+                    Veuillez cocher les 3 conditions pour continuer
+                </small>
+            </div>
+        </p-dialog>
 
         <div class="page-foot">
             ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
@@ -1156,9 +1251,11 @@ export class DepotPlainte {
     protectionCondTouched  = false;
 
     readonly steps = [
-        { id: 1, label: 'Les faits'    },
-        { id: 2, label: 'Coordonnées'  },
-        { id: 3, label: 'Confirmation' }
+        { id: 1, label: 'Votre sécurité' },
+        { id: 2, label: 'Les faits'      },
+        { id: 3, label: 'Preuves'        },
+        { id: 4, label: 'Coordonnées'    },
+        { id: 5, label: 'Confirmation'   }
     ];
 
     isRecording       = false;
@@ -1251,19 +1348,40 @@ export class DepotPlainte {
         { label: 'Association / ONG', value: 'ASSOCIATION',
           description: 'Société civile', icon: 'pi pi-users' }
     ];
-    toggleProtectionRequested(): void {
-        if (this.fd['protectionRequested'].value) {
-            this.cancelProtection();
-        } else {
-            this.fd['protectionRequested'].setValue(true);
-            this.protectionAcknowledged = false;
+    /** La fenêtre des conditions est ouverte : rien n'est coché, et le texte n'est pas encore lu. */
+    showProtectionDialog = false;
+    protectionLue        = false;
+
+    ouvrirProtection(): void {
+        this.cond1 = this.cond2 = this.cond3 = false;
+        this.protectionCondTouched = false;
+        this.protectionLue = false;
+        this.showProtectionDialog = true;
+        // Un texte assez court pour tenir sans défilement est considéré comme lu.
+        setTimeout(() => {
+            const zone = document.querySelector('.protection-lecture') as HTMLElement | null;
+            if (zone) { this.onScrollProtection(zone); }
+        }, 50);
+    }
+
+    onScrollProtection(zone: { scrollTop: number; clientHeight: number; scrollHeight: number }): void {
+        if (zone.scrollTop + zone.clientHeight >= zone.scrollHeight - 8) {
+            this.protectionLue = true;
+        }
+    }
+
+    /** Fermer la fenêtre sans confirmer ne demande aucune protection. */
+    fermerProtection(): void {
+        this.showProtectionDialog = false;
+        if (!this.protectionAcknowledged) {
+            this.fd['protectionRequested'].setValue(false);
             this.cond1 = this.cond2 = this.cond3 = false;
         }
     }
 
     confirmProtection(): void {
         this.protectionCondTouched = true;
-        if (!this.cond1 || !this.cond2 || !this.cond3) return;
+        if (!this.protectionLue || !this.cond1 || !this.cond2 || !this.cond3) return;
         this.confirmationService.confirm({
             header:      "Confirmation sur l'honneur",
             message:     "En confirmant, vous attestez sur l'honneur que votre demande "
@@ -1272,7 +1390,11 @@ export class DepotPlainte {
             rejectLabel: 'Annuler',
             acceptIcon:  'pi pi-shield',
             rejectButtonProps: { severity: 'secondary', outlined: true },
-            accept:  () => { this.protectionAcknowledged = true; },
+            accept:  () => {
+                this.protectionAcknowledged = true;
+                this.fd['protectionRequested'].setValue(true);
+                this.showProtectionDialog = false;
+            },
             reject:  () => {}
         });
     }
@@ -1296,7 +1418,11 @@ export class DepotPlainte {
             });
         }
     }
-    goToStep2(): void {
+    commencer(): void {
+        this.currentStep = 2;
+    }
+
+    goToPreuves(): void {
         this.dossierForm.markAllAsTouched();
         if (this.f['object'].invalid || this.f['description'].invalid) {
             this.messageService.add({
@@ -1305,10 +1431,14 @@ export class DepotPlainte {
             });
             return;
         }
-        this.currentStep = 2;
+        this.currentStep = 3;
     }
 
-    goToStep3(): void {
+    goToCoordonnees(): void {
+        this.currentStep = 4;
+    }
+
+    goToConfirmation(): void {
         this.consentTouched = true;
         if (!this.fd['anonymous'].value && this.fd['email'].invalid) {
             this.fd['email'].markAsTouched();
@@ -1334,7 +1464,7 @@ export class DepotPlainte {
             });
             return;
         }
-        this.currentStep = 3;
+        this.currentStep = 5;
     }
 
     goToSuivi(): void {
