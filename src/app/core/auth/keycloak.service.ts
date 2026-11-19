@@ -37,9 +37,10 @@ export class KeycloakService {
         });
     }
 
+    /** Après la déconnexion, on revient dans l'application : la garde d'accès affiche la page de connexion. */
     logout(): void {
         this.keycloak.logout({
-            redirectUri: window.location.origin + '/#/portail'
+            redirectUri: window.location.origin + '/#/app'
         });
     }
 
