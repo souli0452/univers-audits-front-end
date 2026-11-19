@@ -116,6 +116,7 @@ export interface DossierResponse {
     incidentLocation?: string;
     incidentPeriod?: string;
     estimatedLoss?: number;
+    typologieInstitutionnelle?: string;
     isConfidential: boolean;
     receptionDate?: string;
     acknowledgmentDeadline?: string;
@@ -138,6 +139,20 @@ export interface DossierResponse {
     prioritySetAt?:    string;
     createdAt: string;
     updatedAt?: string;
+}
+
+/** Compléments qu'un agent peut apporter à la fiche d'un dossier. */
+export interface DossierUpdateRequest {
+    version: number;
+    object?: string;
+    description?: string;
+    motifs?: string;
+    incidentLocation?: string;
+    incidentPeriod?: string;
+    estimatedLoss?: number;
+    numeroCourrier?: string;
+    natureSaisineChoisie?: string;
+    typologieInstitutionnelle?: string;
 }
 
 export interface DossierCreateRequest {

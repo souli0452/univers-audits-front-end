@@ -877,7 +877,13 @@
 
             <div class="flex gap-2 flex-wrap items-center" *ngIf="dossier">
 
-                <p-button *ngIf="dossier.status==='SOUMIS' && hasRole(['AGENT_BRPD'])"
+                <p-button *ngIf="peutCompleter()"
+                    [label]="ficheOuverte ? 'Fermer la fiche' : 'Compléter la fiche'"
+                    [icon]="ficheOuverte ? 'pi pi-times' : 'pi pi-pencil'"
+                    severity="secondary" outlined size="small"
+                    (onClick)="ficheOuverte = !ficheOuverte"/>
+
+                <p-button *ngIf="peutEnregistrer()"
                     label="Enregistrer" icon="pi pi-check" severity="success" size="small"
                     (onClick)="openRegister()"/>
 
@@ -1015,6 +1021,15 @@
             </div>
         </div>
     </div>
+
+    <div *ngIf="dossier && etapeSuivante()"
+        class="flex items-start gap-3 rounded-xl border border-primary-200 bg-primary-50 p-3 text-sm text-primary-900">
+        <i class="pi pi-arrow-right mt-0.5"></i>
+        <span>{{ etapeSuivante() }}</span>
+    </div>
+
+    <app-fiche-a-completer *ngIf="dossier && ficheOuverte && peutCompleter()"
+        [dossier]="dossier" [audios]="audiosDuDossier()" (enregistre)="onFicheCompletee($event)"/>
 
     <div *ngIf="dossier?.isConfidential && !canSeeConfidential()"
         class="bg-orange-50 border-2 border-orange-200 rounded-2xl p-8 text-center">
@@ -1463,9 +1478,10 @@
                                         severity="info" text size="small"
                                         [pTooltip]="previewId===att.id ? 'Fermer' : 'Visualiser'"
                                         (onClick)="togglePreview(att)"/>
-                                    <a *ngIf="getBlobUrl(att.id)" [href]="getBlobUrl(att.id)" [download]="att.originalName">
-                                        <p-button icon="pi pi-download" severity="secondary" text size="small" pTooltip="Télécharger"/>
-                                    </a>
+                                    <p-button *ngIf="peutTelecharger()"
+                                        icon="pi pi-download" severity="secondary" text size="small"
+                                        pTooltip="Télécharger (inscrit au journal d'audit)"
+                                        (onClick)="telecharger(att)"/>
                                     <i *ngIf="!getBlobUrl(att.id)" class="pi pi-spin pi-spinner text-surface-300 text-sm"></i>
                                 </div>
                             </div>

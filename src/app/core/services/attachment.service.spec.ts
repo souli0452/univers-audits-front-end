@@ -34,3 +34,29 @@ describe('AttachmentService.upload', () => {
         req.flush({ uploaded: 1, files: [] });
     });
 });
+
+describe('AttachmentService.telecharger', () => {
+    let service: AttachmentService;
+    let http: HttpTestingController;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+        service = TestBed.inject(AttachmentService);
+        http = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => http.verify());
+
+    it('passe par la route de téléchargement du serveur, qui le trace, et non par l\'aperçu déjà chargé', () => {
+        let recu: Blob | undefined;
+        service.telecharger('a1').subscribe(b => recu = b);
+
+        const requete = http.expectOne(r => r.url.endsWith('/attachments/a1/telecharger'));
+        expect(requete.request.method).toBe('GET');
+        expect(requete.request.responseType).toBe('blob');
+        requete.flush(new Blob(['contenu']));
+
+        expect(recu?.size).toBe(7);
+    });
+});
+
