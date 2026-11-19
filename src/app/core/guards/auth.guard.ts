@@ -29,7 +29,7 @@ export const roleGuard = (roles: string[]): CanActivateFn => {
             return true;
         }
 
-        router.navigate(['/notfound']);
+        router.navigate(['/auth/access']);
         return false;
     };
 };
