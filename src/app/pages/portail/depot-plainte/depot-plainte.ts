@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, ViewChild, inject } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -15,17 +14,24 @@ import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { TailleTexte } from '../shared/taille-texte';
 import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { extraireDuRecit, formaterHeure, formaterJour, resumeDuRecit } from '../../../core/utils/extraction-recit';
 import { OrigineSaisie } from '../../../core/models/geographie.model';
 import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
 import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 import { AideNumeroVert } from '../shared/aide-numero-vert';
 import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
+/** Un récit plus court que cela ne dit presque rien : on invite à en dire davantage (ou à parler). */
+const RECIT_MINIMUM = 20;
+const OBJET_MESSAGE_VOCAL = 'Signalement déposé par message vocal';
+
+type Volet = 'precisions' | 'preuves' | 'coordonnees';
+
 @Component({
     selector: 'app-depot-plainte',
     standalone: true,
     imports: [
-        CommonModule, RouterModule, FormsModule,
+        RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, CheckboxModule, InputNumberModule,
         ToastModule, DialogModule, ConfirmDialogModule,
@@ -33,10 +39,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
-        @keyframes slide-up {
-            from { opacity:0; transform:translateY(20px); }
-            to   { opacity:1; transform:translateY(0);    }
-        }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
         @keyframes pulse-ring {
             0%   { transform:scale(1);    opacity:.5; }
@@ -44,375 +46,359 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         }
 
         :host {
-            --green:#009640; --red:#E30613; --yellow:#FFD800;
+            /* Vert de marque pour les aplats ; vert foncé pour tout texte blanc ou vert sur fond clair (contraste AA) */
+            --green:#009640; --green-text:#00753a; --red:#C40510; --yellow:#FFD800;
             --ink:#003617; --paper:#FFFFFF; --mist:#F2F8F4;
-            --ink-60:rgba(0,54,23,.62); --ink-40:rgba(0,54,23,.4);
-            --hair:#E4E9E6;
+            --ink-60:#3f5c4b; --hint:#4a6556;
+            --hair:#C9D5CE;
             --font: 'Lato', system-ui, sans-serif;
-            --font-display: ui-serif, Georgia, 'Times New Roman', serif;
             --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Consolas, monospace;
-            display:block; font-family:var(--font);
+            /* La racine du site est à 14 px : on part de 16 px (1,1429 rem), qui suit les boutons A− / A+. */
+            display:block; font-family:var(--font); color:var(--ink); font-size:1.1429rem;
         }
 
         .page { min-height:100vh; background:var(--paper); }
 
         .navbar {
-            background:var(--green); padding:0 1.5rem; height:60px;
+            background:var(--green-text); padding:0 1.5em; height:60px;
             display:flex; align-items:center; justify-content:space-between;
             position:sticky; top:0; z-index:100;
             box-shadow:0 2px 12px rgba(0,0,0,.15);
         }
-        .nav-left { display:flex; align-items:center; gap:.875rem; }
+        .nav-left { display:flex; align-items:center; gap:.875em; }
         .nav-logo  {
-            flex-shrink:0;
-            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; display:flex; align-items:center; justify-content:center;
             background:rgba(255,255,255,.94); border-radius:9px;
             padding:6px 11px; box-shadow:0 2px 10px rgba(0,0,0,.15);
         }
         .nav-logo img { height:28px; width:auto; object-fit:contain; display:block; }
-        .nav-sub   { color:var(--yellow); font-size:.75rem; }
-        .nav-right { display:flex; align-items:center; gap:.75rem; color:#fff; flex-wrap:wrap; justify-content:flex-end; }
-        .skip { position:absolute; left:-9999px; top:0; background:#fff; color:var(--ink); padding:.6rem 1rem; z-index:10000; font-weight:700; }
-        .skip:focus { left:.5rem; top:.5rem; }
-        .id-conseil { margin:-.5rem 0 1.25rem; padding:.85rem 1.1rem; background:var(--mist); border-left:3px solid var(--green); border-radius:10px; font-size:.8rem; line-height:1.6; color:var(--ink-60); }
-        .id-conseil b { color:var(--ink); }
+        .nav-sub   { color:#fff; font-size:.95em; font-weight:700; }
+        .nav-right { display:flex; align-items:center; gap:.75em; color:#fff; flex-wrap:wrap; justify-content:flex-end; }
+        .skip { position:absolute; left:-9999px; top:0; background:#fff; color:var(--ink); padding:.6em 1em; z-index:10000; font-weight:700; }
+        .skip:focus { left:.5em; top:.5em; }
 
-        .content { max-width:700px; margin:0 auto; padding:2rem 1rem 3rem; }
+        .content { max-width:760px; margin:0 auto; padding:2.25em 1em 3em; }
 
-        .hero { text-align:center; margin-bottom:2.5rem; animation:slide-up .4s ease; }
-        .hero-icon {
-            width:80px; height:80px; border-radius:50%;
-            background:var(--green);
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem;
-            box-shadow:0 8px 24px rgba(0,150,64,.3);
+        h1 { font-size:2em; line-height:1.2; font-weight:800; color:var(--ink); margin:0 0 .75em; }
+        .intro { font-size:1.15em; line-height:1.6; color:var(--ink-60); margin:0 0 .75em; }
+        .lien {
+            background:none; border:0; padding:.5em 0; min-height:44px; cursor:pointer;
+            font:inherit; font-size:1.05em; font-weight:700; color:var(--green-text); text-decoration:underline;
         }
-        .hero-icon i { font-size:2.25rem; color:#fff; }
-        .hero h1 { font-family:var(--font-display); font-size:1.85rem; font-weight:800; color:var(--ink); margin-bottom:.5rem; }
-        .hero p  { color:var(--ink-60); font-size:.875rem; }
+        .lien:focus-visible, .acc-titre:focus-visible, .btn:focus-visible { outline:3px solid var(--ink); outline-offset:3px; }
 
-        .steps-bar {
-            display:flex; align-items:center;
-            justify-content:center; gap:0; margin-bottom:2rem;
-        }
-        .step-item { display:flex; align-items:center; }
-        .step-circle {
-            width:44px; height:44px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center;
-            font-weight:800; font-size:.875rem;
-            border:2.5px solid var(--hair); background:#fff; color:var(--ink-40);
-            transition:all .3s; flex-shrink:0;
-        }
-        .step-circle.active {
-            background:var(--green); border-color:var(--green); color:#fff;
-            box-shadow:0 0 0 5px rgba(0,150,64,.15);
-        }
-        .step-circle.done { background:var(--green); border-color:var(--green); color:#fff; }
-        .step-label {
-            font-size:.78rem; font-weight:600; color:var(--ink-40);
-            margin:0 .5rem; white-space:nowrap;
-        }
-        .step-label.active { color:var(--green); }
-        .step-label.done   { color:var(--green); }
-        .step-line {
-            width:48px; height:3px; background:var(--hair);
-            border-radius:2px; transition:background .3s; flex-shrink:0;
-        }
-        .step-line.done { background:var(--green); }
+        .field { display:flex; flex-direction:column; gap:.5em; }
+        label, .label { font-size:1.15em; font-weight:800; color:var(--ink); }
+        .req { color:var(--red); font-weight:900; margin-left:.2em; }
+        .opt { color:var(--hint); font-weight:400; font-size:.95em; }
+        .hint { font-size:.95em; line-height:1.5; color:var(--hint); margin:0; }
+        .error-msg { color:var(--red); font-size:.95em; font-weight:700; display:flex; align-items:center; gap:.35em; margin:0; }
+        .repere { font-size:.95em; font-weight:700; color:var(--green-text); margin:0; display:flex; align-items:center; gap:.35em; }
 
-        .card {
-            background:#fff; border-radius:14px; padding:2rem;
-            border:1px solid var(--hair);
-            box-shadow:0 4px 24px rgba(0,0,0,.05);
-            animation:slide-up .3s ease;
+        .champ {
+            width:100%; font-size:1.1em; line-height:1.5; color:var(--ink);
+            padding:.8em 1em; border:2px solid var(--hair); border-radius:12px; background:#fff;
         }
-        .card-title {
-            font-size:1.1rem; font-weight:800; color:var(--ink);
-            margin-bottom:.5rem; display:flex; align-items:center; gap:.75rem;
-        }
-        .card-title-icon {
-            width:36px; height:36px; border-radius:10px;
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0;
-        }
+        .champ:focus { outline:3px solid var(--green); outline-offset:1px; border-color:var(--green-text); }
+        .champ-recit { min-height:13em; font-size:1.15em; line-height:1.6; resize:vertical; }
 
-        .required-legend {
-            font-size:.75rem; color:var(--ink-60);
-            margin-bottom:1.25rem; margin-top:-.25rem;
-            display:flex; align-items:center; gap:4px;
+        .recit-bloc { display:flex; flex-direction:column; gap:.75em; margin-top:1.5em; }
+        /* Composants internes (montant, origine géographique) : leurs styles viennent d'ailleurs, on les aligne ici seulement. */
+        :host ::ng-deep p-inputnumber { display:block; width:100%; }
+        :host ::ng-deep p-inputnumber .p-inputnumber { display:flex; width:100%; }
+        :host ::ng-deep p-inputnumber input {
+            width:100%; font-size:1.1em; line-height:1.5; color:var(--ink);
+            padding:.8em 1em; border:2px solid var(--hair); border-radius:12px; background:#fff;
         }
+        :host ::ng-deep p-inputnumber input:focus { outline:3px solid var(--green); outline-offset:1px; border-color:var(--green-text); }
+        :host ::ng-deep app-origine-geographique label { font-size:1em; font-weight:700; color:var(--ink); }
+        :host ::ng-deep app-origine-geographique select,
+        :host ::ng-deep app-origine-geographique input {
+            font-size:1.1em; line-height:1.5; padding:.8em 1em; border:2px solid var(--hair); border-radius:12px; min-height:3em;
+        }
+        .compteur { text-align:right; font-size:.95em; color:var(--hint); }
 
-        .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
-        .type-card {
-            border:2.5px solid var(--hair); border-radius:12px; padding:1rem;
-            cursor:pointer; transition:all .2s; background:#fff;
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:.6em;
+            min-height:3.25em; padding:0 1.5em; border-radius:12px; cursor:pointer;
+            font:inherit; font-size:1.1em; font-weight:800; border:2px solid var(--green-text);
+            background:#fff; color:var(--green-text); transition:background .15s, color .15s;
         }
-        .type-card:hover   { border-color:var(--green); background:var(--mist); }
-        .type-card.selected { border-color:var(--green); background:var(--mist); }
-        .type-icon {
-            width:36px; height:36px; border-radius:9px;
-            display:flex; align-items:center; justify-content:center;
-            margin-bottom:.625rem;
-        }
-        .type-name { font-weight:700; font-size:.875rem; color:var(--ink); }
-        .type-desc { font-size:.75rem; color:var(--ink-40); margin-top:2px; }
-
-        .field { display:flex; flex-direction:column; gap:.375rem; }
-
-        .field label {
-            font-size:.875rem; font-weight:700; color:var(--ink);
-            display:flex; align-items:center; gap:3px;
-        }
-        .req {
-            color:var(--red);
-            font-size:.9rem;
-            font-weight:900;
-            line-height:1;
-        }
-        .opt {
-            color:var(--ink-40);
-            font-weight:400;
-            font-size:.8rem;
-            margin-left:2px;
-        }
-
-        .field-hint { font-size:.75rem; color:var(--ink-40); }
-        .char-count { text-align:right; font-size:.75rem; color:var(--ink-40); }
-        .error-msg { color:var(--red); font-size:.75rem; display:flex; align-items:center; gap:4px; margin-top:2px; }
-
-        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-
-        .audio-idle {
-            text-align:center; padding:2rem 1.5rem; border-radius:12px;
-            border:2px dashed var(--green); background:var(--mist);
-        }
-        .audio-idle-icon {
-            width:64px; height:64px; border-radius:50%;
-            background:#fff; display:flex; align-items:center;
-            justify-content:center; margin:0 auto .875rem;
-        }
-        .audio-idle-icon i { font-size:1.75rem; color:var(--green); }
+        .btn:hover { background:var(--mist); }
+        .btn-envoyer { background:var(--green-text); color:#fff; flex:1 1 16em; }
+        .btn-envoyer:hover { background:#005f2e; }
+        .btn-effacer { border-color:var(--hair); color:var(--ink-60); }
+        .btn-voix { align-self:flex-start; }
+        .btn-danger { border-color:var(--red); color:var(--red); }
+        .btn:disabled { opacity:.5; cursor:default; }
 
         .audio-recording {
-            text-align:center; padding:1.5rem;
-            border-radius:12px; border:2px solid var(--red); background:#FDEBEC;
+            display:flex; align-items:center; gap:1em; flex-wrap:wrap;
+            padding:1em 1.25em; border-radius:12px; border:2px solid var(--red); background:#FDEBEC;
         }
-        .rec-pulse-wrap { position:relative; display:inline-block; margin-bottom:.875rem; }
-        .rec-ring {
-            position:absolute; inset:-10px; border-radius:50%;
-            border:3px solid var(--red); animation:pulse-ring 1.4s ease-out infinite;
-        }
-        .rec-icon {
-            width:72px; height:72px; border-radius:50%; background:var(--red);
-            display:flex; align-items:center; justify-content:center;
-            position:relative; z-index:1;
-        }
-        .rec-icon i { font-size:2rem; color:#fff; }
-        .rec-timer {
-            font-family:var(--mono); font-size:2.5rem;
-            font-weight:900; color:var(--red); line-height:1;
-        }
-        .rec-label-badge {
-            display:inline-flex; align-items:center; gap:6px;
-            background:#fff; border:1px solid var(--red); border-radius:20px;
-            padding:4px 14px; margin:.625rem 0 1rem;
-        }
-        .rec-dot {
-            width:8px; height:8px; border-radius:50%;
-            background:var(--red); animation:blink 1s infinite;
-        }
-        .rec-text { color:var(--red); font-weight:900; font-size:.75rem; letter-spacing:2px; }
-
+        .rec-timer { font-family:var(--mono); font-size:1.75em; font-weight:900; color:var(--red); line-height:1; }
+        .rec-dot { width:12px; height:12px; border-radius:50%; background:var(--red); animation:blink 1s infinite; }
+        .rec-text { color:var(--red); font-weight:900; font-size:1em; letter-spacing:2px; }
         .audio-done {
-            display:flex; align-items:center; gap:.875rem; padding:.875rem;
-            border-radius:12px; background:var(--mist); border:1.5px solid var(--green);
-            margin-bottom:.75rem;
+            padding:1em 1.25em; border-radius:12px; background:var(--mist); border:2px solid var(--green-text);
+            display:flex; flex-direction:column; gap:.6em;
         }
-        .done-icon {
-            width:44px; height:44px; border-radius:10px; background:var(--green);
-            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        .audio-done b { color:var(--green-text); font-size:1.05em; }
+
+        .acc { border:2px solid var(--hair); border-radius:14px; margin-top:1em; background:#fff; overflow:hidden; }
+        .acc-titre {
+            width:100%; min-height:3.5em; padding:.6em 1.25em; background:#fff; border:0; cursor:pointer;
+            display:flex; align-items:center; justify-content:space-between; gap:1em; text-align:left;
+            font:inherit; font-size:1.15em; font-weight:800; color:var(--ink);
         }
-        .done-icon i { color:#fff; font-size:1.1rem; }
+        .acc-titre:hover { background:var(--mist); }
+        .acc-corps { padding:.25em 1.25em 1.5em; display:flex; flex-direction:column; gap:1.25em; }
+        .sous-label { font-size:1em; font-weight:700; }
+        .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1em; }
 
         .upload-zone {
-            border:2.5px dashed var(--hair); border-radius:12px;
-            padding:1.5rem; text-align:center; cursor:pointer;
-            transition:all .2s; background:var(--mist);
+            border:2px dashed var(--green-text); border-radius:12px; padding:1.5em; text-align:center;
+            cursor:pointer; background:var(--mist);
         }
-        .upload-zone:hover { border-color:var(--green); background:var(--mist); }
+        .upload-zone p { margin:.25em 0 0; }
         .file-item {
-            display:flex; align-items:center; gap:.75rem; padding:.75rem;
-            border-radius:10px; background:var(--mist); border:1.5px solid var(--hair);
+            display:flex; align-items:center; gap:.75em; padding:.75em; border-radius:10px;
+            background:var(--mist); border:1.5px solid var(--hair);
         }
-        .file-icon {
-            width:40px; height:40px; border-radius:9px;
-            display:flex; align-items:center; justify-content:center; flex-shrink:0;
-        }
+        .file-icon { width:40px; height:40px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-        .anon-option {
-            border:2.5px solid var(--hair); border-radius:12px;
-            padding:1rem 1.25rem; cursor:pointer; transition:all .2s;
+        .anonyme-carte {
+            display:flex; align-items:center; gap:1em; flex-wrap:wrap; padding:1em 1.25em;
         }
-        .anon-option.selected-id   { border-color:var(--green); background:var(--mist); }
-        .anon-option.selected-anon { border-color:var(--yellow); background:rgba(255,216,0,.08); }
-        .radio-dot {
-            width:20px; height:20px; border-radius:50%; border:2px solid var(--hair);
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0; transition:all .2s;
-        }
-        .radio-dot.active-id   { border-color:var(--green); background:var(--green); }
-        .radio-dot.active-anon { border-color:var(--yellow); background:var(--yellow); }
-        .radio-inner { width:8px; height:8px; border-radius:50%; background:#fff; }
+        .anonyme-carte p { flex:1 1 16em; margin:0; font-size:1.05em; line-height:1.5; color:var(--ink-60); }
+        .anonyme-carte p b { color:var(--ink); }
 
-        .protection-trigger {
-            border:2.5px solid var(--hair); border-radius:12px;
-            padding:1rem 1.25rem; cursor:pointer; transition:all .2s; background:#fff;
+        .type-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75em; }
+        .type-card {
+            border:2px solid var(--hair); border-radius:12px; padding:1em; cursor:pointer;
+            background:#fff; text-align:left; font:inherit; color:var(--ink);
         }
-        .protection-trigger.selected { border-color:var(--ink); background:var(--mist); }
+        .type-card:hover, .type-card.selected { border-color:var(--green-text); background:var(--mist); }
+        .type-card.selected { box-shadow:inset 0 0 0 1px var(--green-text); }
+        .type-name { font-weight:800; font-size:1.1em; }
+        .type-desc { font-size:.95em; color:var(--hint); margin-top:.25em; }
 
-        .protection-info-box {
-            border-radius:12px; padding:1rem 1.25rem;
-            background:var(--mist); border:1.5px solid var(--hair); margin-top:.75rem;
-        }
-        .protection-warning {
-            background:#FDEBEC; border:1.5px solid var(--red);
-            border-radius:10px; padding:.875rem 1rem; margin-top:.625rem;
-        }
+        .protection-section { border:2px solid var(--hair); border-radius:12px; padding:1em 1.25em; background:#fff; }
+        .protection-info-box { border-radius:12px; padding:1em 1.25em; background:var(--mist); border:1.5px solid var(--hair); }
+        .protection-warning { background:#FDEBEC; border:1.5px solid var(--red); border-radius:10px; padding:.875em 1em; margin-top:.75em; }
         .protection-conditions {
-            background:#fff; border:1.5px solid var(--hair);
-            border-radius:10px; padding:1rem; margin-top:.75rem;
-            display:flex; flex-direction:column; gap:.625rem;
+            background:#fff; border:1.5px solid var(--hair); border-radius:10px; padding:1em; margin-top:.75em;
+            display:flex; flex-direction:column; gap:.75em;
         }
-        .condition-row {
-            display:flex; align-items:flex-start; gap:.75rem; cursor:pointer;
-        }
+        .condition-row { display:flex; align-items:flex-start; gap:.75em; cursor:pointer; font-size:1em; line-height:1.5; }
         .condition-check {
-            width:20px; height:20px; border-radius:6px; border:2px solid var(--ink-40);
-            display:flex; align-items:center; justify-content:center;
-            flex-shrink:0; transition:all .2s; margin-top:1px;
+            width:22px; height:22px; border-radius:6px; border:2px solid var(--ink-60);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
         }
-        .condition-check.checked { background:var(--green); border-color:var(--green); }
+        .condition-check.checked { background:var(--green-text); border-color:var(--green-text); }
         .protection-acknowledged {
-            background:var(--mist); border:2px solid var(--green);
-            border-radius:10px; padding:.875rem 1rem; margin-top:.75rem;
-            display:flex; align-items:center; gap:.75rem;
+            background:var(--mist); border:2px solid var(--green-text); border-radius:10px;
+            padding:.875em 1em; display:flex; align-items:center; gap:.75em;
         }
+        .protection-liste { margin:0; padding-left:1.1em; font-size:1em; line-height:1.7; color:var(--ink-60); display:flex; flex-direction:column; gap:.3em; }
+        .consent-box { display:flex; align-items:flex-start; gap:.875em; padding:1em; border-radius:12px; background:var(--mist); border:1.5px solid var(--hair); }
+        .consent-box-error { border:2px solid var(--red) !important; background:#FDEBEC !important; }
 
-        .recap-section {
-            background:var(--mist); border-radius:12px; padding:1rem 1.25rem;
-            border:1.5px solid var(--hair);
-        }
-        .recap-row { display:flex; gap:.5rem; font-size:.875rem; padding:.25rem 0; }
-        .recap-key { color:var(--ink-40); width:100px; flex-shrink:0; }
-        .recap-val { font-weight:600; color:var(--ink); }
+        .actions { display:flex; gap:.75em; flex-wrap:wrap; margin-top:2em; }
+        .mention { font-size:.95em; line-height:1.5; color:var(--hint); margin:1em 0 0; }
+        .mention a, .mention button { color:var(--green-text); font-weight:700; text-decoration:underline; background:none; border:0; padding:0; font:inherit; cursor:pointer; }
 
-        .step-footer {
-            display:flex; justify-content:space-between;
-            align-items:center; margin-top:1.75rem; gap:.75rem;
-        }
+        .recap-section { background:var(--mist); border-radius:12px; padding:1em 1.25em; border:1.5px solid var(--hair); }
+        .recap-titre { font-size:.95em; font-weight:800; color:var(--ink-60); margin-bottom:.5em; }
+        .recap-row { display:flex; gap:.75em; font-size:1.05em; padding:.25em 0; }
+        .recap-key { color:var(--hint); width:7.5em; flex-shrink:0; }
+        .recap-val { font-weight:700; color:var(--ink); min-width:0; overflow-wrap:anywhere; }
+        .recap-recit { font-size:1.05em; line-height:1.6; color:var(--ink); margin:0; white-space:pre-line; }
 
-        .success-body { padding:.5rem .25rem; text-align:center; }
+        .success-body { padding:.5em .25em; text-align:center; }
         .success-icon {
-            width:88px; height:88px; border-radius:50%;
-            background:var(--green);
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; box-shadow:0 8px 24px rgba(0,150,64,.3);
+            width:88px; height:88px; border-radius:50%; background:var(--green-text);
+            display:flex; align-items:center; justify-content:center; margin:0 auto 1.25em;
         }
-        .success-icon i { font-size:2.75rem; color:#fff; }
-        .code-box {
-            background:var(--mist);
-            border:2px solid var(--green); border-radius:14px;
-            padding:1.25rem; margin:1.25rem 0;
-        }
-        .code-label {
-            font-size:.65rem; font-weight:900; color:var(--green);
-            letter-spacing:2px; text-transform:uppercase;
-        }
-        .code-value {
-            font-family:var(--mono); font-size:2.5rem;
-            font-weight:900; color:var(--ink); letter-spacing:6px;
-        }
-        .code-hint  { font-size:.75rem; color:var(--ink-60); margin-top:.375rem; }
-
-        .notif-row { display:flex; flex-direction:column; gap:.5rem; margin-top:.75rem; }
+        .success-icon i { font-size:2.75em; color:#fff; }
+        .code-box { background:var(--mist); border:2px solid var(--green-text); border-radius:14px; padding:1.25em; margin:1.25em 0; }
+        .code-label { font-size:.95em; font-weight:900; color:var(--green-text); letter-spacing:1px; text-transform:uppercase; }
+        .code-value { font-family:var(--mono); font-size:2.25em; font-weight:900; color:var(--ink); letter-spacing:6px; overflow-wrap:anywhere; }
+        .code-hint  { font-size:.95em; color:var(--ink-60); margin-top:.375em; }
         .notif-badge {
-            display:inline-flex; align-items:center; gap:.5rem;
-            font-size:.8rem; padding:6px 14px; border-radius:20px; font-weight:600;
+            display:inline-flex; align-items:center; gap:.5em; font-size:1em; padding:6px 14px;
+            border-radius:20px; font-weight:700; background:#fff; color:var(--ink); border:1px solid var(--hair);
         }
-        .notif-badge.sms   { background:var(--mist); color:var(--green); border:1px solid var(--green); }
-        .notif-badge.email { background:#fff; color:var(--ink); border:1px solid var(--hair); }
 
-        .secu-liste { list-style:none; margin:0 0 1.25rem; padding:0; display:flex; flex-direction:column; gap:.875rem; }
-        .secu-liste li { display:flex; gap:.875rem; align-items:flex-start; font-size:.85rem; line-height:1.6; color:var(--ink-60); }
-        .secu-liste li > i { color:var(--green); font-size:1.05rem; margin-top:3px; flex-shrink:0; width:1.25rem; text-align:center; }
+        .secu-liste { list-style:none; margin:0 0 1em; padding:0; display:flex; flex-direction:column; gap:.875em; }
+        .secu-liste li { display:flex; gap:.875em; align-items:flex-start; font-size:1em; line-height:1.6; color:var(--ink-60); }
+        .secu-liste li > i { color:var(--green-text); font-size:1.1em; margin-top:4px; flex-shrink:0; width:1.25em; text-align:center; }
         .secu-liste strong { color:var(--ink); }
-        .protection-section { border:1.5px solid var(--hair); border-radius:12px; padding:1rem; background:#fff; }
-        .protection-liste { margin:0; padding-left:1.1rem; font-size:.8rem; line-height:1.7; color:var(--ink-60); display:flex; flex-direction:column; gap:.3rem; }
-        .page-foot {
-            text-align:center; margin-top:2rem;
-            color:var(--ink-40); font-size:.75rem; padding-bottom:1rem;
-        }
 
-        .consent-box-error {
-            border:1.5px solid var(--red) !important;
-            background:#FDEBEC !important;
-        }
+        .page-foot { text-align:center; margin-top:2.5em; color:var(--hint); font-size:.95em; padding-bottom:1em; }
 
         @media (max-width:520px) {
-            .grid2 { grid-template-columns:1fr; }
-            .type-grid { grid-template-columns:1fr; }
-            .step-label:not(.active) { display:none; }
-            /* barre du haut sur deux lignes : le texte agrandi ne doit pas déborder */
-            .navbar { height:auto; flex-wrap:wrap; padding:.5rem 1rem; gap:.5rem; }
+            h1 { font-size:1.65em; }
+            .grid2, .type-grid { grid-template-columns:1fr; }
+            .navbar { height:auto; flex-wrap:wrap; padding:.5em 1em; gap:.5em; }
             .nav-right { width:100%; justify-content:space-between; }
-            .step-line { width:20px; }
+            .actions .btn { flex:1 1 100%; }
         }
+        @media (prefers-reduced-motion:reduce) { .rec-dot { animation:none; } }
     `],
     template: `
 <p-toast />
 <p-confirmDialog />
 
+<!-- Récapitulatif avant l'envoi : une vérification, pas un écran de plus -->
+<p-dialog [(visible)]="showRecap" header="Vérifiez avant d'envoyer" [modal]="true" [draggable]="false"
+    [style]="{ width: 'min(38em, 94vw)' }">
+    <div style="display:flex;flex-direction:column;gap:1em;">
+        <div class="recap-section">
+            <div class="recap-titre">Votre signalement</div>
+            @if (f['description'].value) {
+                <p class="recap-recit" style="margin-bottom:.75em;">{{ f['description'].value }}</p>
+            }
+            @if (audioUrl) {
+                <div class="recap-row"><span class="recap-key">Message vocal</span>
+                    <span class="recap-val">✓ {{ formatDuration(recordingDuration) }}</span></div>
+            }
+            @if (attachments.length > 0) {
+                <div class="recap-row"><span class="recap-key">Pièces jointes</span>
+                    <span class="recap-val">{{ attachments.length }} pièce{{ attachments.length > 1 ? 's' : '' }}</span></div>
+            }
+            @if (f['incidentLocation'].value) {
+                <div class="recap-row"><span class="recap-key">Lieu</span><span class="recap-val">{{ f['incidentLocation'].value }}</span></div>
+            }
+            @if (f['incidentPeriod'].value) {
+                <div class="recap-row"><span class="recap-key">Période</span><span class="recap-val">{{ f['incidentPeriod'].value }}</span></div>
+            }
+            @if (f['estimatedLoss'].value) {
+                <div class="recap-row"><span class="recap-key">Montant</span><span class="recap-val">{{ formatMontant(f['estimatedLoss'].value) }} FCFA</span></div>
+            }
+            @if (aDesIndicesRepere) {
+                <p class="repere" style="margin-top:.5em;"><i class="pi pi-sparkles"></i> Repéré dans votre récit : choisissez « Modifier » pour corriger.</p>
+            }
+        </div>
+
+        <div class="recap-section">
+            <div class="recap-titre">Qui signale</div>
+            @if (fd['anonymous'].value) {
+                <div class="recap-val"><i class="pi pi-eye-slash"></i> Anonyme</div>
+                <p class="hint" style="margin-top:.5em;">Sans coordonnées, nous ne pouvons pas vous écrire : vous suivez le dossier avec votre code de suivi.</p>
+            } @else {
+                <div class="recap-row"><span class="recap-key">Identité</span>
+                    <span class="recap-val">{{ fd['firstName'].value }} {{ fd['lastName'].value }}</span></div>
+                @if (fd['phoneNumber'].value) {
+                    <div class="recap-row"><span class="recap-key">Téléphone</span><span class="recap-val">{{ fd['phoneNumber'].value }}</span></div>
+                }
+                @if (fd['email'].value) {
+                    <div class="recap-row"><span class="recap-key">E-mail</span><span class="recap-val">{{ fd['email'].value }}</span></div>
+                }
+                @if (protectionAcknowledged) {
+                    <div class="recap-row"><span class="recap-key">Protection</span>
+                        <span class="recap-val"><i class="pi pi-shield"></i> Lanceur d'alerte confirmée</span></div>
+                }
+            }
+        </div>
+
+        @if (!fd['anonymous'].value && !fd['email'].value) {
+            <p class="hint"><strong>Aucune notification</strong> ne vous sera envoyée, faute d'adresse e-mail.
+                Conservez bien votre <strong>code de suivi</strong> : c'est lui qui permet de suivre votre dossier.</p>
+        }
+        @if (!fd['anonymous'].value && fd['email'].value) {
+            <p class="hint"><strong>Notifications prévues</strong> : e-mail → {{ fd['email'].value }}</p>
+        }
+
+        <p class="hint">En envoyant, vous certifiez l'exactitude des informations. Toute fausse déclaration est passible de poursuites.</p>
+    </div>
+    <ng-template pTemplate="footer">
+        <div style="display:flex;gap:.75em;flex-wrap:wrap;justify-content:flex-end;">
+            <button type="button" class="btn" (click)="showRecap = false">Modifier</button>
+            <button type="button" class="btn btn-envoyer" style="flex:0 1 auto;" [disabled]="submitting" (click)="confirmerEnvoi()">
+                <i class="pi pi-send"></i> Envoyer mon signalement
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Détail de la protection : à la demande, jamais bloquant -->
+<p-dialog [(visible)]="showSecurite" header="Comment vos données sont protégées" [modal]="true" [draggable]="false"
+    [style]="{ width: 'min(40em, 94vw)' }">
+    <ul class="secu-liste">
+        <li>
+            <i class="pi pi-eye-slash"></i>
+            <div><strong>Rester anonyme est possible.</strong> Aucun nom ni contact n'est demandé.
+                En contrepartie, l'ASCE-LC ne peut pas vous recontacter : seul votre code de suivi
+                vous permet de suivre le dossier. Votre adresse de connexion (adresse IP) n'est pas
+                conservée dans le dossier. Comme sur tout site, les journaux techniques du serveur
+                peuvent en garder une trace : si cela vous inquiète, utilisez une connexion qui n'est
+                pas celle de votre bureau ou de votre domicile.</div>
+        </li>
+        <li>
+            <i class="pi pi-shield"></i>
+            <div><strong>La protection de lanceur d'alerte est différente de l'anonymat.</strong>
+                Vous donnez votre identité à l'ASCE-LC, qui la cache aux agents qui n'ont pas à la
+                connaître et enregistre chaque consultation. Elle est réservée aux faits connus dans
+                le cadre de votre travail. Vous pouvez la demander en laissant vos coordonnées, après
+                avoir lu ses conditions. Rien ne vous y oblige.</div>
+        </li>
+        <li>
+            <i class="pi pi-microphone"></i>
+            <div><strong>Votre voix peut vous identifier.</strong> Si vous voulez rester anonyme,
+                préférez écrire plutôt qu'enregistrer un message vocal.</div>
+        </li>
+        <li>
+            <i class="pi pi-paperclip"></i>
+            <div><strong>Les fichiers contiennent des informations cachées</strong> (auteur, date,
+                parfois le lieu d'une photo). Envoyez des copies, jamais un original que vous êtes
+                seul à posséder.</div>
+        </li>
+        <li>
+            <i class="pi pi-key"></i>
+            <div><strong>Votre code de suivi est la seule clé de votre dossier.</strong> Notez-le à la
+                fin, gardez-le pour vous et ne le partagez pas.</div>
+        </li>
+        <li>
+            <i class="pi pi-desktop"></i>
+            <div><strong>Pensez à votre appareil.</strong> Évitez un ordinateur de travail ou partagé,
+                et fermez la page une fois le dépôt terminé.</div>
+        </li>
+        <li>
+            <i class="pi pi-lock"></i>
+            <div><strong>Rien n'est envoyé avant votre confirmation.</strong> La connexion est chiffrée.</div>
+        </li>
+    </ul>
+    <app-avant-de-signaler />
+</p-dialog>
+
 <p-dialog [(visible)]="showSuccess" header=" " [modal]="true"
-    [closable]="false" [style]="{width:'400px'}">
+    [closable]="false" [style]="{ width: 'min(26em, 94vw)' }">
     <div class="success-body">
         <div class="success-icon"><i class="pi pi-check-circle"></i></div>
-        <h3 style="font-family:var(--font-display);font-size:1.4rem;font-weight:800;color:var(--ink);margin-bottom:.5rem;">
-            Merci pour votre signalement !
-        </h3>
-        <p style="font-size:.875rem;color:var(--ink-60);line-height:1.7;margin-bottom:0;">
+        <h2 style="font-size:1.5em;font-weight:800;color:var(--ink);margin:0 0 .5em;">Merci pour votre signalement !</h2>
+        <p style="font-size:1.05em;color:var(--ink-60);line-height:1.6;margin:0;">
             Votre dossier a été enregistré.<br>
-            Conservez précieusement votre code d'accès.
+            Conservez précieusement votre code de suivi.
         </p>
         <div class="code-box">
             <div class="code-label">Votre code de suivi</div>
             <div class="code-value">{{ createdAccessCode }}</div>
-            <div class="code-hint">
-                <i class="pi pi-camera" style="font-size:.7rem;"></i>
-                Notez ce code ou prenez une photo
-            </div>
+            <div class="code-hint"><i class="pi pi-camera"></i> Notez ce code ou prenez une photo</div>
         </div>
-        <div class="notif-row" *ngIf="fd['email'].value && !fd['anonymous'].value">
-            <div class="notif-badge email">
-                <i class="pi pi-envelope" style="font-size:.85rem;"></i>
-                Email envoyé à {{ fd['email'].value }}
-            </div>
-        </div>
-        <p *ngIf="!fd['email'].value || fd['anonymous'].value"
-            style="font-size:.8rem;color:var(--ink-60);text-align:center;margin:.5rem 0 0;">
-            Aucune notification ne vous sera envoyée : conservez bien votre code de suivi.
-        </p>
-        <div style="background:rgba(255,216,0,.1);border:1px solid var(--yellow);border-radius:12px;
-                    padding:.875rem;font-size:.8rem;color:var(--ink);text-align:left;margin-top:.75rem;">
-            <i class="pi pi-info-circle" style="color:var(--ink);margin-right:6px;"></i>
-            Vous recevrez un accusé de réception officiel dans les 7 jours ouvrables.
-        </div>
+        @if (fd['email'].value && !fd['anonymous'].value) {
+            <div class="notif-badge"><i class="pi pi-envelope"></i> E-mail envoyé à {{ fd['email'].value }}</div>
+        } @else {
+            <p class="hint" style="text-align:center;">Aucune notification ne vous sera envoyée : conservez bien votre code de suivi.</p>
+        }
+        <p class="hint" style="margin-top:.75em;">Vous recevrez un accusé de réception officiel dans les 7 jours ouvrables.</p>
     </div>
     <ng-template pTemplate="footer">
-        <div style="display:flex;gap:.5rem;justify-content:center;">
-            <p-button label="Suivre mon dossier" icon="pi pi-search"
-                severity="success" (onClick)="goToSuivi()" />
-            <p-button label="Accueil" severity="secondary" outlined
-                (onClick)="goToAccueil()" />
+        <div style="display:flex;gap:.5em;justify-content:center;flex-wrap:wrap;">
+            <button type="button" class="btn btn-envoyer" style="flex:0 1 auto;" (click)="goToSuivi()">
+                <i class="pi pi-search"></i> Suivre mon dossier
+            </button>
+            <button type="button" class="btn" (click)="goToAccueil()">Accueil</button>
         </div>
     </ng-template>
 </p-dialog>
@@ -422,811 +408,362 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
     <a class="skip" href="#contenu">Aller au contenu</a>
     <nav class="navbar">
         <div class="nav-left">
-            <p-button icon="pi pi-arrow-left" severity="contrast"
-                text (onClick)="router.navigate(['/portail'])" />
-            <div class="nav-logo">
-                <img src="assets/logo-asce.png" alt="ASCE-LC" />
-            </div>
-            <div class="nav-sub">Dépôt de plainte sécurisé</div>
+            <p-button icon="pi pi-arrow-left" severity="contrast" text aria-label="Retour à l'accueil"
+                (onClick)="router.navigate(['/portail'])" />
+            <div class="nav-logo"><img src="assets/logo-asce.png" alt="ASCE-LC" /></div>
+            <div class="nav-sub">Dépôt de signalement</div>
         </div>
         <div class="nav-right">
             <app-aide-numero-vert />
             <app-taille-texte />
-            <p-button label="Suivre" icon="pi pi-search" severity="contrast"
-                outlined
+            <p-button label="Suivre" icon="pi pi-search" severity="contrast" outlined
                 (onClick)="router.navigate(['/portail/suivi'])" />
         </div>
     </nav>
 
-    <div class="content" id="contenu">
+    <main class="content" id="contenu">
 
-        <div class="hero">
-            <div class="hero-icon"><i class="pi pi-file-edit"></i></div>
-            <h1>Déposer un signalement</h1>
-            <p>Formulaire sécurisé — vos données sont strictement protégées</p>
+        <h1>Racontez-nous ce qui s'est passé</h1>
+        <p class="intro">Vous restez anonyme. Dites les faits comme vous le diriez à quelqu'un : nous nous occupons du reste.</p>
+        <button type="button" class="lien" (click)="showSecurite = true">Comment vos données sont protégées</button>
+
+        <div class="recit-bloc">
+            <label for="recit">Votre récit <span class="req" aria-hidden="true">*</span></label>
+            <textarea pTextarea id="recit" #recitChamp class="champ champ-recit"
+                [formControl]="f['description']"
+                placeholder="Exemple : À la mairie de ..., un agent m'a demandé 50 000 FCFA pour un acte de naissance, en mars dernier."
+                (blur)="recitTouche = true; analyserRecit()"></textarea>
+            <div style="display:flex;justify-content:space-between;gap:1em;align-items:flex-start;">
+                @if (recitTouche && !recitSuffisant) {
+                    <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Racontez les faits en quelques phrases, ou enregistrez votre voix.</p>
+                } @else {
+                    <p class="hint">Qui, quoi, où, quand : écrivez ce que vous savez, même incomplet. Un soupçon raisonnable suffit.</p>
+                }
+                <span class="compteur">{{ f['description'].value?.length || 0 }}</span>
+            </div>
+
+            @if (!audioUrl && !isRecording) {
+                <button type="button" class="btn btn-voix" (click)="startRecording()">
+                    <i class="pi pi-microphone"></i> Ou enregistrez votre voix
+                </button>
+                @if (fd['anonymous'].value) {
+                    <p class="hint">Votre voix peut vous identifier : préférez écrire si vous voulez rester anonyme.</p>
+                }
+            }
+            @if (isRecording) {
+                <div class="audio-recording" role="status">
+                    <span class="rec-dot"></span><span class="rec-text">REC</span>
+                    <span class="rec-timer">{{ formatDuration(recordingDuration) }}</span>
+                    <button type="button" class="btn btn-danger" style="margin-left:auto;" (click)="stopRecording()">
+                        <i class="pi pi-stop-circle"></i> Arrêter
+                    </button>
+                </div>
+            }
+            @if (audioUrl && !isRecording) {
+                <div class="audio-done">
+                    <b><i class="pi pi-check"></i> Message vocal enregistré · {{ formatDuration(recordingDuration) }}</b>
+                    <audio appDureeAudio [src]="audioUrl" controls style="width:100%;"></audio>
+                    <button type="button" class="btn btn-danger" style="align-self:flex-start;" (click)="deleteAudio()">
+                        <i class="pi pi-trash"></i> Supprimer et recommencer
+                    </button>
+                </div>
+            }
         </div>
 
-        <!-- Barre de progression -->
-        <div class="steps-bar">
-            <div class="step-item"
-                *ngFor="let s of steps; let i = index; let last = last">
-                <div class="step-circle"
-                    [class.active]="currentStep === s.id"
-                    [class.done]="currentStep > s.id">
-                    <i *ngIf="currentStep > s.id" class="pi pi-check"
-                        style="font-size:.75rem;"></i>
-                    <span *ngIf="currentStep <= s.id">{{ s.id }}</span>
-                </div>
-                <span class="step-label"
-                    [class.active]="currentStep === s.id"
-                    [class.done]="currentStep > s.id">
-                    {{ s.label }}
-                </span>
-                <div *ngIf="!last" class="step-line"
-                    [class.done]="currentStep > s.id"></div>
-            </div>
-        </div>
-
-        <app-avant-de-signaler *ngIf="currentStep === 1" style="margin-bottom:1.25rem;" />
-
-        <div *ngIf="currentStep === 1" class="card">
-
-            <div class="card-title">
-                <div class="card-title-icon" style="background:rgba(0,54,23,.08);">
-                    <i class="pi pi-shield" style="color:var(--ink);"></i>
-                </div>
-                Votre sécurité
-            </div>
-
-            <p style="font-size:.875rem;color:var(--ink-60);line-height:1.6;margin:0 0 1rem;">
-                Avant de commencer, voici ce qui protège votre signalement et ce que vous pouvez faire pour
-                vous protéger vous-même. Rien n'est à remplir sur cet écran.
-            </p>
-
-            <ul class="secu-liste">
-                <li>
-                    <i class="pi pi-eye-slash"></i>
-                    <div><strong>Rester anonyme est possible.</strong> Aucun nom ni contact n'est demandé.
-                        En contrepartie, l'ASCE-LC ne peut pas vous recontacter : seul votre code de suivi
-                        vous permet de suivre le dossier. Votre adresse de connexion (adresse IP) n'est pas
-                        conservée dans le dossier. Comme sur tout site, les journaux techniques du serveur
-                        peuvent en garder une trace : si cela vous inquiète, utilisez une connexion qui n'est
-                        pas celle de votre bureau ou de votre domicile.</div>
-                </li>
-                <li>
-                    <i class="pi pi-shield"></i>
-                    <div><strong>La protection de lanceur d'alerte est différente de l'anonymat.</strong>
-                        Vous donnez votre identité à l'ASCE-LC, qui la cache aux agents qui n'ont pas à la
-                        connaître et enregistre chaque consultation. Elle est réservée aux faits connus dans
-                        le cadre de votre travail. Vous pourrez la demander à l'étape « Coordonnées », après
-                        avoir lu ses conditions. Rien ne vous y oblige.</div>
-                </li>
-                <li>
-                    <i class="pi pi-microphone"></i>
-                    <div><strong>Votre voix peut vous identifier.</strong> Si vous voulez rester anonyme,
-                        préférez écrire plutôt qu'enregistrer un message vocal.</div>
-                </li>
-                <li>
-                    <i class="pi pi-paperclip"></i>
-                    <div><strong>Les fichiers contiennent des informations cachées</strong> (auteur, date,
-                        parfois le lieu d'une photo). Envoyez des copies, jamais un original que vous êtes
-                        seul à posséder.</div>
-                </li>
-                <li>
-                    <i class="pi pi-key"></i>
-                    <div><strong>Votre code de suivi est la seule clé de votre dossier.</strong> Notez-le à la
-                        fin, gardez-le pour vous et ne le partagez pas.</div>
-                </li>
-                <li>
-                    <i class="pi pi-desktop"></i>
-                    <div><strong>Pensez à votre appareil.</strong> Évitez un ordinateur de travail ou partagé,
-                        et fermez la page une fois le dépôt terminé.</div>
-                </li>
-                <li>
-                    <i class="pi pi-lock"></i>
-                    <div><strong>Rien n'est envoyé avant la confirmation finale.</strong> La connexion est
-                        chiffrée.</div>
-                </li>
-            </ul>
-
-            <div class="step-footer">
-                <span style="font-size:.78rem;color:var(--ink-40);">
-                    <i class="pi pi-lock"></i> Données chiffrées
-                </span>
-                <p-button label="J'ai compris, commencer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="commencer()" />
-            </div>
-        </div>
-
-        <div *ngIf="currentStep === 2" class="card">
-
-            <div class="card-title">
-                <div class="card-title-icon" style="background:var(--mist);">
-                    <i class="pi pi-file-edit" style="color:var(--green);"></i>
-                </div>
-                Décrivez les faits
-            </div>
-
-            <p class="required-legend">
-                <span class="req">*</span> Champs obligatoires
-            </p>
-
-            <div style="display:flex;flex-direction:column;gap:1.25rem;">
-
-                <div class="field">
-                    <label>Type de signalement <span class="req">*</span></label>
-                    <div class="type-grid">
-                        <div *ngFor="let type of typeOptions"
-                            class="type-card"
-                            [class.selected]="f['type'].value === type.value"
-                            (click)="selectType(type.value)">
-                            <div class="type-icon"
-                                [style.background]="f['type'].value === type.value
-                                    ? 'var(--mist)' : 'var(--mist)'">
-                                <i [class]="type.icon"
-                                    [style.color]="f['type'].value === type.value
-                                        ? 'var(--green)' : 'var(--ink-40)'"
-                                    style="font-size:1.1rem;"></i>
-                            </div>
-                            <div class="type-name">{{ type.label }}</div>
-                            <div class="type-desc">{{ type.description }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field" *ngIf="f['type'].value === 'COMPLAINT'">
-                    <label>Vous êtes <span class="req">*</span></label>
-                    <div class="type-grid">
-                        <div *ngFor="let q of qualityOptions"
-                            class="type-card"
-                            [class.selected]="f['quality'].value === q.value"
-                            (click)="f['quality'].setValue(q.value)">
-                            <div class="type-name">{{ q.label }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Résumé du signalement <span class="req">*</span></label>
-                    <input pInputText [formControl]="f['object']"
-                        placeholder="Ex: Détournement de fonds à la mairie de..."
-                        class="w-full"
-                        [class.ng-invalid]="f['object'].invalid && f['object'].touched"
-                        [class.ng-dirty]="f['object'].invalid && f['object'].touched" />
-                    <small class="error-msg"
-                        *ngIf="f['object'].invalid && f['object'].touched">
-                        <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                        Minimum 10 caractères requis
-                    </small>
-                </div>
-
-                <div class="field">
-                    <label>Description détaillée <span class="req">*</span></label>
-                    <textarea pTextarea [formControl]="f['description']"
-                        placeholder="Décrivez les faits : qui, quoi, quand, où, comment..."
-                        rows="5" class="w-full resize-none"
-                        [class.ng-invalid]="f['description'].invalid && f['description'].touched"
-                        [class.ng-dirty]="f['description'].invalid && f['description'].touched">
-                    </textarea>
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <small class="error-msg"
-                            *ngIf="f['description'].invalid && f['description'].touched">
-                            <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                            Ce champ est obligatoire
-                        </small>
-                        <span class="char-count" style="margin-left:auto;">
-                            {{ f['description'].value?.length || 0 }} caractères
-                        </span>
-                    </div>
-                </div>
-
-                <div class="grid2">
+        <!-- Précisions : repérées dans le récit, corrigeables, jamais obligatoires -->
+        <section class="acc">
+            <button type="button" class="acc-titre" [attr.aria-expanded]="ouvert.precisions"
+                aria-controls="acc-precisions" (click)="basculer('precisions')">
+                <span><i class="pi pi-sliders-h"></i> Ajouter des précisions <span class="opt">(facultatif)</span></span>
+                <i class="pi" [class.pi-chevron-down]="!ouvert.precisions" [class.pi-chevron-up]="ouvert.precisions"></i>
+            </button>
+            @if (ouvert.precisions) {
+                <div id="acc-precisions" class="acc-corps">
                     <div class="field">
-                        <label>Lieu des faits <span class="opt">— optionnel</span></label>
-                        <div style="display:flex;align-items:center;gap:8px;
-                            border:1.5px solid var(--hair);border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-map-marker"
-                                style="color:var(--ink-40);font-size:.875rem;"></i>
-                            <input pInputText [formControl]="f['incidentLocation']"
-                                placeholder="Service, ville..."
-                                style="border:none;outline:none;background:transparent;
-                                       padding:.625rem 0;flex:1;font-size:.875rem;" />
+                        <label for="lieu">Service, organisme ou lieu</label>
+                        <input pInputText id="lieu" class="champ" [formControl]="f['incidentLocation']"
+                            placeholder="Ex. : Mairie de Koudougou" />
+                        @if (suggere.lieu && !f['incidentLocation'].dirty) {
+                            <p class="repere"><i class="pi pi-sparkles"></i> Repéré dans votre récit : corrigez si besoin.</p>
+                        }
+                    </div>
+                    <div class="field">
+                        <label for="periode">Période</label>
+                        <input pInputText id="periode" class="champ" [formControl]="f['incidentPeriod']"
+                            placeholder="Ex. : Mars 2025, depuis 6 mois, ou le 15 mars 2025 à 14h30" />
+                        <p class="hint">Écrivez librement, ou choisissez le jour exact (jj/mm/aaaa) et, si vous le souhaitez, l'heure.</p>
+                        @if (suggere.periode && !f['incidentPeriod'].dirty) {
+                            <p class="repere"><i class="pi pi-sparkles"></i> Repéré dans votre récit : corrigez si besoin.</p>
+                        }
+                    </div>
+                    <div class="grid2">
+                        <div class="field">
+                            <label for="jour" class="sous-label">Jour précis</label>
+                            <input id="jour" type="date" class="champ" [max]="jourMaximum" [value]="jourChoisi"
+                                (change)="onJour($any($event.target).value)" />
+                        </div>
+                        <div class="field">
+                            <label for="heure" class="sous-label">Heure <span class="opt">(facultatif)</span></label>
+                            <input id="heure" type="time" class="champ" [value]="heureChoisie" [disabled]="!jourChoisi"
+                                (change)="onHeure($any($event.target).value)" />
                         </div>
                     </div>
                     <div class="field">
-                        <label>
-                            Période approximative
-                            <span class="opt">— optionnel</span>
-                        </label>
-                        <div style="display:flex;align-items:center;gap:8px;
-                            border:1.5px solid var(--hair);border-radius:8px;padding:0 12px;">
-                            <i class="pi pi-calendar"
-                                style="color:var(--ink-40);font-size:.875rem;"></i>
-                            <input pInputText [formControl]="f['incidentPeriod']"
-                                placeholder="Ex: Janvier 2024, ou De 2022 à 2023, ou Depuis 6 mois"
-                                style="border:none;outline:none;background:transparent;
-                                       padding:.625rem 0;flex:1;font-size:.875rem;" />
-                            <input type="month" [max]="moisMaximum" (change)="onPeriode($any($event.target).value)"
-                                aria-label="Choisir un mois dans le calendrier"
-                                style="border:1px solid var(--hair);border-radius:6px;padding:.25rem .4rem;
-                                       font-size:.8rem;background:#fff;color:var(--ink);max-width:9.5rem;" />
-                        </div>
-                        <span class="field-hint">Saisissez librement, ou choisissez un mois dans le calendrier.</span>
+                        <label for="montant">Montant estimé (FCFA)</label>
+                        <p-inputnumber inputId="montant" [formControl]="f['estimatedLoss']" [useGrouping]="true"
+                            placeholder="0" styleClass="champ-nombre" inputStyleClass="champ" />
+                        <p class="hint">Laissez vide si inconnu.</p>
+                        @if (suggere.montant && !f['estimatedLoss'].dirty) {
+                            <p class="repere"><i class="pi pi-sparkles"></i> Repéré dans votre récit : corrigez si besoin.</p>
+                        }
+                    </div>
+                    <div class="field">
+                        <span class="label">D'où nous écrivez-vous ?</span>
+                        <app-origine-geographique (origineChange)="onOrigine($event)" />
                     </div>
                 </div>
+            }
+        </section>
 
-                <div class="field">
-                    <label>Montant estimé (FCFA) <span class="opt">— optionnel</span></label>
-                    <p-inputnumber [formControl]="f['estimatedLoss']"
-                        [useGrouping]="true" placeholder="0" styleClass="w-full" />
-                    <span class="field-hint">Laissez vide si inconnu</span>
-                </div>
-
-
-            </div>
-
-            <div class="step-footer">
-                <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 1" />
-                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="goToPreuves()" />
-            </div>
-        </div>
-
-        <div *ngIf="currentStep === 3" class="card">
-
-            <div class="card-title">
-                <div class="card-title-icon" style="background:var(--mist);">
-                    <i class="pi pi-paperclip" style="color:var(--green);"></i>
-                </div>
-                Vos preuves
-            </div>
-
-            <p style="font-size:.875rem;color:var(--ink-60);line-height:1.6;margin:0 0 1rem;">
-                Tout est facultatif sur cet écran. Un document ou un enregistrement aide l'instruction, mais
-                n'est jamais exigé pour signaler.
-            </p>
-
-            <div style="display:flex;flex-direction:column;gap:1.25rem;">
-
-                <!-- Audio -->
-                <div class="field">
-                    <label>Témoignage audio <span class="opt">— optionnel</span></label>
-                    <div *ngIf="!audioUrl && !isRecording" class="audio-idle">
-                        <div class="audio-idle-icon">
-                            <i class="pi pi-microphone"></i>
-                        </div>
-                        <p style="font-size:.875rem;color:var(--ink);font-weight:600;
-                                  margin-bottom:.375rem;">
-                            Enregistrez votre témoignage vocal
-                        </p>
-                        <p style="font-size:.8rem;color:var(--ink-40);margin-bottom:1rem;">
-                            Complément utile à votre déclaration écrite
-                        </p>
-                        <p-button label="Démarrer l'enregistrement"
-                            icon="pi pi-microphone" severity="secondary" outlined
-                            (onClick)="startRecording()" />
-                    </div>
-                    <div *ngIf="isRecording" class="audio-recording">
-                        <div class="rec-pulse-wrap">
-                            <div class="rec-ring"></div>
-                            <div class="rec-icon"><i class="pi pi-microphone"></i></div>
-                        </div>
-                        <div class="rec-timer">{{ formatDuration(recordingDuration) }}</div>
-                        <div class="rec-label-badge">
-                            <span class="rec-dot"></span>
-                            <span class="rec-text">REC</span>
-                        </div>
-                        <p-button label="Arrêter" icon="pi pi-stop-circle"
-                            severity="danger" (onClick)="stopRecording()" />
-                    </div>
-                    <div *ngIf="audioUrl && !isRecording">
-                        <div class="audio-done">
-                            <div class="done-icon"><i class="pi pi-check"></i></div>
-                            <div style="flex:1;">
-                                <div style="font-weight:700;color:var(--green);font-size:.875rem;">
-                                    Audio enregistré ✓
-                                </div>
-                                <div style="font-size:.8rem;color:var(--green);margin-top:2px;">
-                                    Durée : {{ formatDuration(recordingDuration) }}
-                                </div>
-                            </div>
-                        </div>
-                        <audio appDureeAudio [src]="audioUrl" controls
-                            style="width:100%;border-radius:8px;margin-bottom:.625rem;">
-                        </audio>
-                        <p-button label="Supprimer et recommencer" icon="pi pi-trash"
-                            severity="danger" text size="small" (onClick)="deleteAudio()" />
-                    </div>
-                </div>
-
-                <!-- Pièces jointes -->
-                <div class="field">
-                    <label>
-                        Pièces jointes
-                        <span class="opt">— max {{ maxFiles }} fichiers,
-                            {{ maxSizeMB }}MB chacun</span>
-                    </label>
-                    <div class="upload-zone" (click)="fileInput.click()"
-                        (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+        <section class="acc">
+            <button type="button" class="acc-titre" [attr.aria-expanded]="ouvert.preuves"
+                aria-controls="acc-preuves" (click)="basculer('preuves')">
+                <span><i class="pi pi-paperclip"></i> Ajouter des preuves <span class="opt">(facultatif)</span></span>
+                <i class="pi" [class.pi-chevron-down]="!ouvert.preuves" [class.pi-chevron-up]="ouvert.preuves"></i>
+            </button>
+            @if (ouvert.preuves) {
+                <div id="acc-preuves" class="acc-corps">
+                    <p class="hint">Un document ou une photo aide l'instruction, mais n'est jamais exigé pour signaler.
+                        Envoyez des copies : un fichier peut contenir des informations cachées (auteur, date, lieu d'une photo).
+                        {{ maxFiles }} fichiers au plus, {{ maxSizeMB }} Mo chacun.</p>
+                    <div class="upload-zone" role="button" tabindex="0" (click)="fileInput.click()"
+                        (keydown.enter)="fileInput.click()" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
                         <input #fileInput type="file" multiple style="display:none;"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
                             (change)="onFileSelect($event)" />
-                        <i class="pi pi-cloud-upload"
-                            style="font-size:2rem;color:var(--ink-40);margin-bottom:.5rem;
-                                   display:block;"></i>
-                        <p style="font-size:.875rem;font-weight:600;color:var(--ink);
-                                  margin-bottom:.25rem;">
-                            Cliquez ou glissez vos fichiers ici
-                        </p>
-                        <p style="font-size:.75rem;color:var(--ink-40);">
-                            Formats acceptés : {{ extensionsLibelle }}
-                        </p>
+                        <i class="pi pi-cloud-upload" style="font-size:2em;color:var(--green-text);"></i>
+                        <p style="font-size:1.1em;font-weight:800;">Touchez ici pour choisir vos fichiers</p>
+                        <p class="hint">Formats acceptés : {{ extensionsLibelle }}</p>
                     </div>
-                    <div *ngIf="attachments.length > 0"
-                        style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
-                        <div *ngFor="let file of attachments; let i = index"
-                            class="file-item">
-                            <div class="file-icon" [style.background]="getFileBg(file)">
-                                <i [class]="getFileIcon(file)"
-                                    [style.color]="getFileColor(file)"
-                                    style="font-size:1rem;"></i>
-                            </div>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:.875rem;font-weight:600;color:var(--ink);
-                                            overflow:hidden;text-overflow:ellipsis;
-                                            white-space:nowrap;">
-                                    {{ file.name }}
-                                </div>
-                                <div style="font-size:.75rem;color:var(--ink-40);">
-                                    {{ formatFileSize(file.size) }}
-                                </div>
-                            </div>
-                            <p-button icon="pi pi-times" severity="danger"
-                                text size="small" (onClick)="removeAttachment(i)" />
-                        </div>
-                        <div style="text-align:right;font-size:.75rem;color:var(--ink-40);">
-                            {{ attachments.length }}/{{ maxFiles }} fichiers
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="step-footer">
-                <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 2" />
-                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="goToCoordonnees()" />
-            </div>
-        </div>
-
-        <div *ngIf="currentStep === 4" class="card">
-
-            <div class="card-title">
-                <div class="card-title-icon" style="background:rgba(0,54,23,.08);">
-                    <i class="pi pi-user" style="color:var(--ink);"></i>
-                </div>
-                Vos coordonnées
-            </div>
-
-            <p class="required-legend">
-                <span class="req">*</span> Champs obligatoires
-            </p>
-
-            <p style="font-size:.875rem;color:var(--ink-60);margin-bottom:1rem;margin-top:-.5rem;">
-                Vos coordonnées sont réservées aux agents habilités. Vous pouvez aussi rester anonyme : le choix vous appartient.
-            </p>
-            <p class="id-conseil">
-                <b>Pour choisir :</b> avec vos coordonnées, un agent peut vous poser des questions et vous informer de la suite.
-                Sans coordonnées, votre signalement est traité comme une dénonciation et nous ne pouvons pas vous contacter : vous suivez le dossier avec votre <b>code de suivi</b>
-                et pouvez répondre à une demande de précision depuis la page de suivi. Notez bien ce code à la fin du dépôt.
-            </p>
-
-            <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
-                <div class="anon-option"
-                    [class.selected-id]="!fd['anonymous'].value"
-                    (click)="fd['anonymous'].setValue(false)">
-                    <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot" [class.active-id]="!fd['anonymous'].value">
-                            <div *ngIf="!fd['anonymous'].value" class="radio-inner"></div>
-                        </div>
-                        <div style="flex:1;">
-                            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
-                                Je fournis mes coordonnées
-                            </div>
-                            <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                Recommandé pour un meilleur suivi de votre dossier
-                            </div>
-                        </div>
-                        <div style="width:32px;height:32px;border-radius:8px;
-                            background:var(--mist);display:flex;align-items:center;
-                            justify-content:center;">
-                            <i class="pi pi-id-card"
-                                style="color:var(--green);font-size:.875rem;"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="anon-option"
-                    [class.selected-anon]="fd['anonymous'].value"
-                    (click)="setAnonymous()">
-                    <div style="display:flex;align-items:center;gap:.875rem;">
-                        <div class="radio-dot" [class.active-anon]="fd['anonymous'].value">
-                            <div *ngIf="fd['anonymous'].value" class="radio-inner"></div>
-                        </div>
-                        <div style="flex:1;">
-                            <div style="font-weight:700;font-size:.875rem;color:var(--ink);">
-                                Je reste anonyme
-                            </div>
-                            <div style="font-size:.75rem;color:var(--ink-60);margin-top:2px;">
-                                Votre identité ne sera pas enregistrée
-                            </div>
-                        </div>
-                        <div style="width:32px;height:32px;border-radius:8px;
-                            background:rgba(255,216,0,.15);display:flex;align-items:center;
-                            justify-content:center;">
-                            <i class="pi pi-eye-slash"
-                                style="color:var(--ink);font-size:.875rem;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div *ngIf="!fd['anonymous'].value"
-                style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.25rem;">
-                <div class="field">
-                    <label>Vous déposez cette plainte en tant que</label>
-                    <div class="type-grid">
-                        <div *ngFor="let cat of declarantCategoryOptions"
-                            class="type-card"
-                            [class.selected]="fd['typeDeclarant'].value === cat.value"
-                            (click)="fd['typeDeclarant'].setValue(cat.value)">
-                            <div class="type-icon" style="background:var(--mist);">
-                                <i [class]="cat.icon"
-                                    [style.color]="fd['typeDeclarant'].value === cat.value
-                                        ? 'var(--green)' : 'var(--ink-40)'"
-                                    style="font-size:1.1rem;"></i>
-                            </div>
-                            <div class="type-name">{{ cat.label }}</div>
-                            <div class="type-desc">{{ cat.description }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="field" *ngIf="fd['typeDeclarant'].value !== 'CITIZEN'">
-                    <label>Nom de l'organisation <span class="opt">— optionnel</span></label>
-                    <input pInputText [formControl]="fd['organizationName']"
-                        placeholder="Raison sociale de l'entreprise ou de l'association" class="w-full" />
-                </div>
-                <div class="grid2">
-                    <div class="field">
-                        <label>Prénom <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['firstName']"
-                            placeholder="Votre prénom" class="w-full" />
-                    </div>
-                    <div class="field">
-                        <label>Nom <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['lastName']"
-                            placeholder="Votre nom" class="w-full" />
-                    </div>
-                    <div class="field">
-                        <label>Téléphone <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['phoneNumber']"
-                            placeholder="+226 XX XX XX XX" class="w-full" />
-                        <span class="field-hint">Pour que l'ASCE-LC puisse vous joindre si besoin</span>
-                    </div>
-                    <div class="field">
-                        <label>Email <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['email']"
-                            placeholder="votre@email.com" type="email" class="w-full" />
-                        <span class="field-hint">Pour recevoir votre code par email</span>
-                    </div>
-                    <div class="field">
-                        <label>Commune <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['commune']"
-                            placeholder="Votre commune" class="w-full" />
-                    </div>
-                    <div class="field">
-                        <label>Province <span class="opt">— optionnel</span></label>
-                        <input pInputText [formControl]="fd['province']"
-                            placeholder="Votre province" class="w-full" />
-                    </div>
-                </div>
-
-                <!-- Protection lanceur d'alerte -->
-                <div class="protection-section">
-                    <div style="display:flex;align-items:flex-start;gap:.875rem;">
-                        <i class="pi pi-shield" style="color:var(--ink);font-size:1.25rem;margin-top:2px;"></i>
-                        <div style="flex:1;">
-                            <div style="font-weight:800;color:var(--ink);font-size:.95rem;">
-                                Protection de lanceur d'alerte
-                            </div>
-                            <p style="font-size:.8rem;color:var(--ink-60);line-height:1.6;margin:.35rem 0 .75rem;">
-                                Elle concerne les personnes qui signalent des faits connus dans le cadre de
-                                leur travail, et elle a des conséquences. Lisez ses conditions avant de décider.
-                                Vous n'êtes pas obligé de la demander pour déposer un signalement.
-                            </p>
-                            <p-button *ngIf="!fd['protectionRequested'].value"
-                                label="Lire les conditions et demander la protection" icon="pi pi-book"
-                                severity="secondary" outlined size="small" (onClick)="ouvrirProtection()" />
-                            <div *ngIf="fd['protectionRequested'].value && protectionAcknowledged"
-                                class="protection-acknowledged">
-                                <i class="pi pi-shield" style="color:var(--green);font-size:1.25rem;flex-shrink:0;"></i>
-                                <div style="flex:1;">
-                                    <div style="font-weight:800;color:var(--green);font-size:.875rem;">
-                                        Protection demandée
+                    @if (attachments.length > 0) {
+                        <div style="display:flex;flex-direction:column;gap:.5em;">
+                            @for (file of attachments; track $index) {
+                                <div class="file-item">
+                                    <div class="file-icon" [style.background]="getFileBg(file)">
+                                        <i [class]="getFileIcon(file)" [style.color]="getFileColor(file)"></i>
                                     </div>
-                                    <div style="font-size:.75rem;color:var(--green);margin-top:2px;">
-                                        Votre identité sera protégée selon les conditions que vous avez lues.
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="font-size:1.05em;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ file.name }}</div>
+                                        <div class="hint">{{ formatFileSize(file.size) }}</div>
                                     </div>
+                                    <p-button icon="pi pi-times" severity="danger" text
+                                        [attr.aria-label]="'Retirer ' + file.name" (onClick)="removeAttachment($index)" />
                                 </div>
-                                <p-button label="Retirer" icon="pi pi-times" severity="secondary" text size="small"
-                                    (onClick)="cancelProtection()" />
+                            }
+                            <p class="hint" style="text-align:right;">{{ attachments.length }}/{{ maxFiles }} fichiers</p>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="acc">
+            @if (!avecCoordonnees) {
+                <div class="anonyme-carte">
+                    <i class="pi pi-eye-slash" style="font-size:1.5em;color:var(--green-text);"></i>
+                    <p><b>Vous restez anonyme.</b> Votre message est traité de la même façon. Sans coordonnées, nous ne pouvons pas vous écrire.</p>
+                    <button type="button" class="btn" (click)="laisserCoordonnees()">
+                        <i class="pi pi-user"></i> Laisser mes coordonnées <span class="opt">(facultatif)</span>
+                    </button>
+                </div>
+            } @else {
+                <div class="acc-titre" style="cursor:default;">
+                    <span><i class="pi pi-user"></i> Vos coordonnées</span>
+                    <button type="button" class="lien" (click)="setAnonymous()">Je préfère rester anonyme</button>
+                </div>
+                <div class="acc-corps">
+                    <p class="hint">Réservées aux agents habilités. Tous les champs sont facultatifs : avec une adresse e-mail,
+                        vous recevez votre code et les nouvelles de votre dossier.</p>
+
+                    <div class="field">
+                        <span class="label">Vous êtes</span>
+                        <div class="type-grid">
+                            @for (type of typeOptions; track type.value) {
+                                <button type="button" class="type-card" [class.selected]="f['type'].value === type.value"
+                                    [attr.aria-pressed]="f['type'].value === type.value" (click)="selectType(type.value)">
+                                    <div class="type-name">{{ type.label }}</div>
+                                    <div class="type-desc">{{ type.description }}</div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="grid2">
+                        <div class="field">
+                            <label for="prenom">Prénom</label>
+                            <input pInputText id="prenom" class="champ" [formControl]="fd['firstName']" autocomplete="given-name" />
+                        </div>
+                        <div class="field">
+                            <label for="nom">Nom</label>
+                            <input pInputText id="nom" class="champ" [formControl]="fd['lastName']" autocomplete="family-name" />
+                        </div>
+                        <div class="field">
+                            <label for="telephone">Téléphone</label>
+                            <input pInputText id="telephone" class="champ" [formControl]="fd['phoneNumber']"
+                                placeholder="+226 XX XX XX XX" inputmode="tel" autocomplete="tel" />
+                        </div>
+                        <div class="field">
+                            <label for="email">E-mail</label>
+                            <input pInputText id="email" class="champ" type="email" [formControl]="fd['email']"
+                                placeholder="votre@email.com" autocomplete="email" />
+                            @if (fd['email'].invalid && fd['email'].touched) {
+                                <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Adresse e-mail invalide</p>
+                            }
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="organisation">Entreprise ou association <span class="opt">(si vous écrivez en son nom)</span></label>
+                        <input pInputText id="organisation" class="champ" [formControl]="fd['organizationName']"
+                            (input)="fd['typeDeclarant'].setValue(fd['organizationName'].value ? 'COMPANY' : 'CITIZEN')" />
+                    </div>
+
+                    <div class="protection-section">
+                        <div style="display:flex;align-items:flex-start;gap:.875em;">
+                            <i class="pi pi-shield" style="color:var(--green-text);font-size:1.4em;margin-top:2px;"></i>
+                            <div style="flex:1;display:flex;flex-direction:column;gap:.6em;">
+                                <div style="font-weight:800;font-size:1.1em;">Protection de lanceur d'alerte</div>
+                                <p class="hint">Elle concerne les personnes qui signalent des faits connus dans le cadre de
+                                    leur travail, et elle a des conséquences. Lisez ses conditions avant de décider.
+                                    Vous n'êtes pas obligé de la demander pour déposer un signalement.</p>
+                                @if (!fd['protectionRequested'].value) {
+                                    <button type="button" class="btn" style="align-self:flex-start;" (click)="ouvrirProtection()">
+                                        <i class="pi pi-book"></i> Lire les conditions et demander la protection
+                                    </button>
+                                }
+                                @if (fd['protectionRequested'].value && protectionAcknowledged) {
+                                    <div class="protection-acknowledged">
+                                        <i class="pi pi-shield" style="color:var(--green-text);font-size:1.25em;"></i>
+                                        <div style="flex:1;">
+                                            <div style="font-weight:800;color:var(--green-text);">Protection demandée</div>
+                                            <div class="hint">Votre identité sera protégée selon les conditions que vous avez lues.</div>
+                                        </div>
+                                        <button type="button" class="lien" (click)="cancelProtection()">Retirer</button>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
+
+                    <div class="consent-box" [class.consent-box-error]="consentTouched && !fd['dataProcessingConsent'].value">
+                        <p-checkbox [formControl]="fd['dataProcessingConsent']" [binary]="true" inputId="consent" />
+                        <label for="consent" style="font-size:1.05em;font-weight:400;cursor:pointer;">
+                            J'accepte le traitement de mes données personnelles par l'ASCE-LC. <span class="req">*</span>
+                        </label>
+                    </div>
+                    @if (consentTouched && !fd['dataProcessingConsent'].value) {
+                        <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Vous devez accepter pour continuer</p>
+                    }
                 </div>
-            </div>
+            }
+        </section>
 
-            <div class="field" style="margin-bottom:1.25rem;">
-                <label>D'où nous écrivez-vous ? <span class="opt">— optionnel</span></label>
-                <app-origine-geographique (origineChange)="onOrigine($event)" />
-            </div>
-
-            <!-- Consentement -->
-            <div [class.consent-box-error]="consentTouched && !fd['dataProcessingConsent'].value"
-                style="display:flex;align-items:flex-start;gap:.875rem;
-                padding:.875rem;border-radius:12px;background:var(--mist);
-                border:1.5px solid var(--hair);">
-                <p-checkbox [formControl]="fd['dataProcessingConsent']"
-                    [binary]="true" inputId="consent" />
-                <label for="consent"
-                    style="font-size:.875rem;color:var(--ink);cursor:pointer;
-                           display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
-                    J'accepte le traitement de mes données personnelles par l'ASCE-LC.
-                    <span class="req">*</span>
-                </label>
-            </div>
-            <small class="error-msg"
-                *ngIf="consentTouched && !fd['dataProcessingConsent'].value"
-                style="margin-top:4px;">
-                <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                Vous devez accepter pour continuer
-            </small>
-
-            <div class="step-footer">
-                <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 3" />
-                <p-button label="Continuer" icon="pi pi-arrow-right" iconPos="right"
-                    (onClick)="goToConfirmation()" />
-            </div>
+        <div class="actions">
+            <button type="button" class="btn btn-effacer" (click)="effacer()"><i class="pi pi-trash"></i> Effacer</button>
+            <button type="button" class="btn btn-envoyer" (click)="ouvrirRecapitulatif()">
+                <i class="pi pi-send"></i> Envoyer ma dénonciation
+            </button>
         </div>
-
-        <div *ngIf="currentStep === 5" class="card">
-
-            <div class="card-title">
-                <div class="card-title-icon" style="background:rgba(255,216,0,.15);">
-                    <i class="pi pi-check-circle" style="color:var(--ink);"></i>
-                </div>
-                Confirmer votre signalement
-            </div>
-
-            <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
-
-                <div class="recap-section">
-                    <div style="font-size:.75rem;font-weight:800;color:var(--ink-60);
-                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
-                        Votre signalement
-                    </div>
-                    <div class="recap-row">
-                        <span class="recap-key">Type</span>
-                        <span class="recap-val">{{ getTypeLabel(f['type'].value) }}</span>
-                    </div>
-                    <div class="recap-row">
-                        <span class="recap-key">Objet</span>
-                        <span class="recap-val"
-                            style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            {{ f['object'].value }}
-                        </span>
-                    </div>
-                    <div *ngIf="f['incidentLocation'].value" class="recap-row">
-                        <span class="recap-key">Lieu</span>
-                        <span class="recap-val">{{ f['incidentLocation'].value }}</span>
-                    </div>
-                    <div *ngIf="audioUrl" class="recap-row">
-                        <span class="recap-key">Audio</span>
-                        <span class="recap-val" style="color:var(--green);">
-                            ✓ {{ formatDuration(recordingDuration) }}
-                        </span>
-                    </div>
-                    <div *ngIf="attachments.length > 0" class="recap-row">
-                        <span class="recap-key">Fichiers</span>
-                        <span class="recap-val">{{ attachments.length }} pièce(s)</span>
-                    </div>
-                </div>
-
-                <div class="recap-section">
-                    <div style="font-size:.75rem;font-weight:800;color:var(--ink-60);
-                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.75rem;">
-                        Déclarant
-                    </div>
-                    <div *ngIf="fd['anonymous'].value"
-                        style="display:inline-flex;align-items:center;gap:.5rem;
-                            background:rgba(255,216,0,.15);color:var(--ink);padding:.375rem .875rem;
-                            border-radius:20px;font-size:.8rem;font-weight:700;">
-                        <i class="pi pi-eye-slash" style="font-size:.75rem;"></i>
-                        Anonyme
-                    </div>
-                    <div *ngIf="!fd['anonymous'].value">
-                        <div class="recap-row">
-                            <span class="recap-key">Identité</span>
-                            <span class="recap-val">
-                                {{ fd['firstName'].value }} {{ fd['lastName'].value }}
-                            </span>
-                        </div>
-                        <div *ngIf="fd['phoneNumber'].value" class="recap-row">
-                            <span class="recap-key">Téléphone</span>
-                            <span class="recap-val">{{ fd['phoneNumber'].value }}</span>
-                        </div>
-                        <div *ngIf="fd['email'].value" class="recap-row">
-                            <span class="recap-key">Email</span>
-                            <span class="recap-val">{{ fd['email'].value }}</span>
-                        </div>
-                        <div *ngIf="protectionAcknowledged" class="recap-row">
-                            <span class="recap-key">Protection</span>
-                            <span class="recap-val"
-                                style="color:var(--ink-60);display:flex;align-items:center;
-                                       gap:.375rem;">
-                                <i class="pi pi-shield" style="font-size:.75rem;"></i>
-                                Lanceur d'alerte confirmée
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div *ngIf="!fd['anonymous'].value && !fd['email'].value"
-                    style="background:var(--mist);border:1.5px solid var(--hair);
-                           border-radius:12px;padding:.875rem;font-size:.8rem;color:var(--ink-60);line-height:1.6;">
-                    <strong style="color:var(--ink);">Aucune notification</strong> ne vous sera envoyée, faute d'adresse e-mail.
-                    Conservez bien votre <strong>code de suivi</strong> : c'est lui qui permet de suivre votre dossier.
-                </div>
-
-                <div *ngIf="!fd['anonymous'].value && fd['email'].value"
-                    style="background:var(--mist);border:1.5px solid var(--green);
-                           border-radius:12px;padding:.875rem;">
-                    <div style="font-size:.75rem;font-weight:800;color:var(--green);
-                        letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;">
-                        <i class="pi pi-send" style="margin-right:4px;"></i>
-                        Notifications prévues
-                    </div>
-                    <div *ngIf="fd['email'].value"
-                        style="font-size:.8rem;color:var(--green);display:flex;
-                               align-items:center;gap:.5rem;margin-top:4px;">
-                        <i class="pi pi-envelope" style="font-size:.8rem;"></i>
-                        Email → {{ fd['email'].value }}
-                    </div>
-                </div>
-
-                <div style="display:flex;align-items:flex-start;gap:.875rem;
-                    padding:.875rem;border-radius:12px;background:rgba(255,216,0,.1);
-                    border:1.5px solid var(--yellow);">
-                    <i class="pi pi-exclamation-triangle" style="color:var(--ink);margin-top:1px;"></i>
-                    <p style="font-size:.8rem;color:var(--ink);line-height:1.6;">
-                        En soumettant, vous certifiez l'exactitude des informations.
-                        Toute fausse déclaration est passible de poursuites.
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="step-footer">
-                <p-button label="Précédent" icon="pi pi-arrow-left"
-                    severity="secondary" outlined (onClick)="currentStep = 4" />
-                <p-button label="Soumettre mon signalement" icon="pi pi-send"
-                    severity="success" [loading]="submitting" (onClick)="submit()" />
-            </div>
-        </div>
-
-        <p-dialog header="Protection de lanceur d'alerte" [(visible)]="showProtectionDialog" [modal]="true"
-            [draggable]="false" [style]="{ width: 'min(38rem, 94vw)' }" (onHide)="fermerProtection()">
-
-            <div class="protection-lecture" #lecture (scroll)="onScrollProtection(lecture)"
-                style="max-height:50vh;overflow-y:auto;padding-right:.5rem;">
-
-                <div class="protection-info-box">
-                    <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin-bottom:.5rem;">
-                        À qui s'adresse cette protection ?
-                    </div>
-                    <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0 0 .625rem;">
-                        Elle est réservée aux personnes qui signalent des faits de <strong>corruption,
-                        détournement de fonds publics ou abus de pouvoir</strong> dont elles ont eu connaissance
-                        <strong>dans le cadre de leurs fonctions ou activités</strong>.
-                    </p>
-                    <p style="font-size:.8rem;color:var(--ink-60);line-height:1.7;margin:0;">
-                        Elle garantit la <strong>confidentialité totale de votre identité</strong> et vous protège
-                        contre toute représaille, licenciement ou sanction liée à votre signalement.
-                    </p>
-                </div>
-
-                <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin:1rem 0 .5rem;">
-                    Ce que cette protection change
-                </div>
-                <ul class="protection-liste">
-                    <li>Vous ne pouvez pas rester anonyme : <strong>votre identité est connue de l'ASCE-LC</strong>.</li>
-                    <li>Elle est cachée aux agents qui n'ont pas à la connaître. <strong>Chaque consultation est
-                        enregistrée</strong> et contrôlée.</li>
-                    <li>L'ASCE-LC est informée dès le dépôt qu'un signalement sous protection est arrivé.</li>
-                </ul>
-
-                <div style="font-weight:800;color:var(--ink);font-size:.875rem;margin:1rem 0 .5rem;">
-                    Ce qu'elle ne change pas
-                </div>
-                <ul class="protection-liste">
-                    <li>Elle ne garantit pas l'issue de l'enquête et n'empêche pas qu'on vous pose des questions.</li>
-                    <li>Elle ne dispense pas d'apporter des faits exacts : une accusation sciemment fausse reste punissable.</li>
-                    <li>Elle ne couvre pas des faits dont vous n'avez pas eu connaissance dans le cadre de votre travail.</li>
-                </ul>
-
-                <div class="protection-warning">
-                    <div style="display:flex;align-items:flex-start;gap:.75rem;">
-                        <i class="pi pi-exclamation-triangle"
-                            style="color:var(--red);font-size:1rem;flex-shrink:0;margin-top:1px;"></i>
-                        <p style="font-size:.8rem;color:var(--red);margin:0;line-height:1.6;">
-                            <strong>Attention :</strong> invoquer cette protection de manière abusive est passible de
-                            <strong>sanctions pénales</strong>.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <p *ngIf="!protectionLue" style="font-size:.78rem;color:var(--ink-60);margin:.75rem 0 0;text-align:center;">
-                <i class="pi pi-arrow-down"></i> Faites défiler le texte jusqu'en bas pour continuer.
-            </p>
-
-            <div *ngIf="protectionLue" class="protection-conditions">
-                <div style="font-size:.78rem;font-weight:800;color:var(--ink);text-transform:uppercase;
-                    letter-spacing:1px;margin-bottom:.25rem;">Je confirme les 3 conditions suivantes :</div>
-                <div class="condition-row" (click)="cond1 = !cond1">
-                    <div class="condition-check" [class.checked]="cond1">
-                        <i *ngIf="cond1" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
-                    </div>
-                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                        J'ai eu connaissance de ces faits dans le cadre de mes fonctions, de mon travail ou de mes
-                        activités professionnelles.</span>
-                </div>
-                <div class="condition-row" (click)="cond2 = !cond2">
-                    <div class="condition-check" [class.checked]="cond2">
-                        <i *ngIf="cond2" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
-                    </div>
-                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                        Je crains des représailles directes si mon identité est révélée (licenciement, menaces,
-                        sanctions...).</span>
-                </div>
-                <div class="condition-row" (click)="cond3 = !cond3">
-                    <div class="condition-check" [class.checked]="cond3">
-                        <i *ngIf="cond3" class="pi pi-check" style="font-size:.6rem;color:#fff;"></i>
-                    </div>
-                    <span style="font-size:.8rem;color:var(--ink);line-height:1.5;">
-                        Je comprends qu'invoquer cette protection de manière abusive constitue une infraction
-                        pénale.</span>
-                </div>
-                <p-button label="Je confirme sur l'honneur" icon="pi pi-shield" severity="secondary"
-                    styleClass="w-full justify-center mt-2" [disabled]="!cond1 || !cond2 || !cond3"
-                    (onClick)="confirmProtection()" />
-                <small *ngIf="protectionCondTouched && (!cond1 || !cond2 || !cond3)" class="error-msg"
-                    style="justify-content:center;">
-                    <i class="pi pi-exclamation-circle" style="font-size:.75rem;"></i>
-                    Veuillez cocher les 3 conditions pour continuer
-                </small>
-            </div>
-        </p-dialog>
+        @if (!avecCoordonnees) {
+            <p class="mention">En envoyant, vous acceptez que l'ASCE-LC traite ces informations pour instruire votre signalement.
+                <button type="button" (click)="showSecurite = true">En savoir plus</button></p>
+        }
 
         <div class="page-foot">
             ASCE-LC — Autorité Supérieure de Contrôle d'État — Burkina Faso
         </div>
-
-    </div>
+    </main>
 </div>
+
+<p-dialog header="Protection de lanceur d'alerte" [(visible)]="showProtectionDialog" [modal]="true"
+    [draggable]="false" [style]="{ width: 'min(38em, 94vw)' }" (onHide)="fermerProtection()">
+
+    <div class="protection-lecture" #lecture (scroll)="onScrollProtection(lecture)"
+        style="max-height:50vh;overflow-y:auto;padding-right:.5em;">
+
+        <div class="protection-info-box">
+            <div style="font-weight:800;font-size:1.05em;margin-bottom:.5em;">À qui s'adresse cette protection ?</div>
+            <p class="hint" style="margin-bottom:.625em;">
+                Elle est réservée aux personnes qui signalent des faits de <strong>corruption,
+                détournement de fonds publics ou abus de pouvoir</strong> dont elles ont eu connaissance
+                <strong>dans le cadre de leurs fonctions ou activités</strong>.
+            </p>
+            <p class="hint">
+                Elle garantit la <strong>confidentialité totale de votre identité</strong> et vous protège
+                contre toute représaille, licenciement ou sanction liée à votre signalement.
+            </p>
+        </div>
+
+        <div style="font-weight:800;font-size:1.05em;margin:1em 0 .5em;">Ce que cette protection change</div>
+        <ul class="protection-liste">
+            <li>Vous ne pouvez pas rester anonyme : <strong>votre identité est connue de l'ASCE-LC</strong>.</li>
+            <li>Elle est cachée aux agents qui n'ont pas à la connaître. <strong>Chaque consultation est
+                enregistrée</strong> et contrôlée.</li>
+            <li>L'ASCE-LC est informée dès le dépôt qu'un signalement sous protection est arrivé.</li>
+        </ul>
+
+        <div style="font-weight:800;font-size:1.05em;margin:1em 0 .5em;">Ce qu'elle ne change pas</div>
+        <ul class="protection-liste">
+            <li>Elle ne garantit pas l'issue de l'enquête et n'empêche pas qu'on vous pose des questions.</li>
+            <li>Elle ne dispense pas d'apporter des faits exacts : une accusation sciemment fausse reste punissable.</li>
+            <li>Elle ne couvre pas des faits dont vous n'avez pas eu connaissance dans le cadre de votre travail.</li>
+        </ul>
+
+        <div class="protection-warning">
+            <p style="font-size:1em;color:var(--red);margin:0;line-height:1.6;">
+                <strong>Attention :</strong> invoquer cette protection de manière abusive est passible de
+                <strong>sanctions pénales</strong>.
+            </p>
+        </div>
+    </div>
+
+    @if (!protectionLue) {
+        <p class="hint" style="margin:.75em 0 0;text-align:center;">
+            <i class="pi pi-arrow-down"></i> Faites défiler le texte jusqu'en bas pour continuer.
+        </p>
+    }
+
+    @if (protectionLue) {
+        <div class="protection-conditions">
+            <div style="font-size:1em;font-weight:800;">Je confirme les 3 conditions suivantes :</div>
+            <div class="condition-row" (click)="cond1 = !cond1">
+                <div class="condition-check" [class.checked]="cond1">
+                    @if (cond1) { <i class="pi pi-check" style="font-size:.7em;color:#fff;"></i> }
+                </div>
+                <span>J'ai eu connaissance de ces faits dans le cadre de mes fonctions, de mon travail ou de mes activités professionnelles.</span>
+            </div>
+            <div class="condition-row" (click)="cond2 = !cond2">
+                <div class="condition-check" [class.checked]="cond2">
+                    @if (cond2) { <i class="pi pi-check" style="font-size:.7em;color:#fff;"></i> }
+                </div>
+                <span>Je crains des représailles directes si mon identité est révélée (licenciement, menaces, sanctions...).</span>
+            </div>
+            <div class="condition-row" (click)="cond3 = !cond3">
+                <div class="condition-check" [class.checked]="cond3">
+                    @if (cond3) { <i class="pi pi-check" style="font-size:.7em;color:#fff;"></i> }
+                </div>
+                <span>Je comprends qu'invoquer cette protection de manière abusive constitue une infraction pénale.</span>
+            </div>
+            <button type="button" class="btn" [disabled]="!cond1 || !cond2 || !cond3" (click)="confirmProtection()">
+                <i class="pi pi-shield"></i> Je confirme sur l'honneur
+            </button>
+            @if (protectionCondTouched && (!cond1 || !cond2 || !cond3)) {
+                <p class="error-msg" style="justify-content:center;">
+                    <i class="pi pi-exclamation-circle"></i> Veuillez cocher les 3 conditions pour continuer
+                </p>
+            }
+        </div>
+    }
+</p-dialog>
     `
 })
 export class DepotPlainte {
@@ -1239,10 +776,14 @@ export class DepotPlainte {
     private attachmentService   = inject(AttachmentService);
     private confirmationService = inject(ConfirmationService);
 
-    currentStep       = 1;
+    @ViewChild('recitChamp') private recitChamp?: ElementRef<HTMLTextAreaElement>;
+
     submitting        = false;
     showSuccess       = false;
+    showRecap         = false;
+    showSecurite      = false;
     createdAccessCode = '';
+    recitTouche       = false;
     consentTouched    = false;
     cond1 = false;
     cond2 = false;
@@ -1250,13 +791,11 @@ export class DepotPlainte {
     protectionAcknowledged = false;
     protectionCondTouched  = false;
 
-    readonly steps = [
-        { id: 1, label: 'Votre sécurité' },
-        { id: 2, label: 'Les faits'      },
-        { id: 3, label: 'Preuves'        },
-        { id: 4, label: 'Coordonnées'    },
-        { id: 5, label: 'Confirmation'   }
-    ];
+    /** Volets repliés par défaut : tout ce qui n'est pas le récit est facultatif. */
+    ouvert: Record<Volet, boolean> = { precisions: false, preuves: false, coordonnees: false };
+
+    /** Champs préremplis d'après le récit (et encore intacts) : signalés au citoyen pour qu'il les vérifie. */
+    suggere = { lieu: false, periode: false, montant: false };
 
     isRecording       = false;
     audioBlob:        Blob | null   = null;
@@ -1270,14 +809,14 @@ export class DepotPlainte {
     maxSizeMB = 25;
     readonly extensionsLibelle = LIBELLE_EXTENSIONS;
 
+    /** Sans identité, un signalement est une dénonciation : c'est la valeur de départ, la page étant anonyme par défaut. */
     dossierForm = this.fb.group({
-        type:             ['COMPLAINT'],
-        quality:          ['VICTIME'],
-        object:           ['', [Validators.required, Validators.minLength(10)]],
-        description:      ['', Validators.required],
+        type:             ['DENUNCIATION'],
+        quality:          ['TEMOIN'],
+        description:      [''],
         incidentLocation: [''],
         incidentPeriod:   [''],
-        estimatedLoss:    [null]
+        estimatedLoss:    [null as number | null]
     });
 
     declarantForm = this.fb.group({
@@ -1287,9 +826,7 @@ export class DepotPlainte {
         lastName:              [''],
         email:                 ['', Validators.email],
         phoneNumber:           [''],
-        commune:               [''],
-        province:              [''],
-        anonymous:             [false],
+        anonymous:             [true],
         dataProcessingConsent: [false],
         notificationsAccepted: [true],
         protectionRequested:   [false]
@@ -1298,6 +835,13 @@ export class DepotPlainte {
     get f()  { return this.dossierForm.controls;   }
     get fd() { return this.declarantForm.controls; }
 
+    get avecCoordonnees(): boolean { return !this.fd['anonymous'].value; }
+
+    /** Un récit assez long, ou un message vocal : un des deux suffit pour envoyer. */
+    get recitSuffisant(): boolean {
+        return (this.f['description'].value ?? '').trim().length >= RECIT_MINIMUM || !!this.audioBlob;
+    }
+
     /** Origine choisie dans les listes liées ; transmise au serveur au dépôt. */
     origine: OrigineSaisie = {};
 
@@ -1305,34 +849,74 @@ export class DepotPlainte {
         this.origine = origine;
     }
 
-    /** Mois le plus récent que l'on puisse choisir : le mois en cours. */
-    readonly moisMaximum = (() => {
+    basculer(volet: Volet): void {
+        this.ouvert[volet] = !this.ouvert[volet];
+    }
+
+    /** Jour le plus récent que l'on puisse choisir : aujourd'hui (jamais dans le futur). */
+    readonly jourMaximum = (() => {
         const maintenant = new Date();
-        return `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, '0')}`;
+        const deux = (n: number) => String(n).padStart(2, '0');
+        return `${maintenant.getFullYear()}-${deux(maintenant.getMonth() + 1)}-${deux(maintenant.getDate())}`;
     })();
 
-    /** Mois choisi dans le calendrier (AAAA-MM) : écrit sous forme lisible, modifiable ensuite (« De 2022 à 2023 »…). */
-    onPeriode(mois: string): void {
-        const correspondance = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(mois ?? '');
-        if (!correspondance) {
-            this.f['incidentPeriod'].setValue('');
-            return;
+    /** Jour (AAAA-MM-JJ) et heure (HH:MM) choisis dans les champs du navigateur ; la période en est écrite en toutes lettres. */
+    jourChoisi   = '';
+    heureChoisie = '';
+
+    onJour(valeur: string): void {
+        this.jourChoisi = valeur ?? '';
+        if (!this.jourChoisi) { this.heureChoisie = ''; }
+        this.ecrirePeriode();
+    }
+
+    /** Sans jour, une heure ne dit rien : elle est ignorée. */
+    onHeure(valeur: string): void {
+        this.heureChoisie = this.jourChoisi ? (valeur ?? '') : '';
+        this.ecrirePeriode();
+    }
+
+    private ecrirePeriode(): void {
+        const champ = this.f['incidentPeriod'];
+        champ.markAsDirty();
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(this.jourChoisi);
+        if (!m) { champ.setValue(''); return; }
+        const jour = formaterJour(Number(m[1]), Number(m[2]), Number(m[3]));
+        const heure = this.heureChoisie ? formaterHeure(this.heureChoisie) : null;
+        champ.setValue(heure ? `${jour} à ${heure}` : jour);
+    }
+
+    /**
+     * Préremplit lieu, période et montant d'après le récit. Jamais par-dessus une saisie du citoyen (champ « dirty »),
+     * et seulement avec ce que les règles reconnaissent : sans indice, le champ reste vide.
+     */
+    analyserRecit(): void {
+        const indices = extraireDuRecit(this.f['description'].value ?? '');
+        const cibles = [
+            { cle: 'lieu', champ: this.f['incidentLocation'], valeur: indices.lieu, vide: '' },
+            { cle: 'periode', champ: this.f['incidentPeriod'], valeur: indices.periode, vide: '' },
+            { cle: 'montant', champ: this.f['estimatedLoss'], valeur: indices.montant, vide: null }
+        ] as const;
+        // Le volet des précisions ne s'ouvre jamais tout seul : la page ne doit pas bouger quand le citoyen
+        // touche « Envoyer » juste après avoir écrit (le décalage ferait perdre son appui).
+        for (const { cle, champ, valeur, vide } of cibles) {
+            if (champ.dirty) { continue; }
+            if (valeur === null) {
+                if (this.suggere[cle]) { champ.setValue(vide as never); this.suggere[cle] = false; }
+                continue;
+            }
+            champ.setValue(valeur as never);
+            this.suggere[cle] = true;
         }
-        const nom = new Date(Number(correspondance[1]), Number(correspondance[2]) - 1, 1)
-            .toLocaleDateString('fr-FR', { month: 'long' });
-        this.f['incidentPeriod'].setValue(`${nom.charAt(0).toUpperCase()}${nom.slice(1)} ${correspondance[1]}`);
+    }
+
+    get aDesIndicesRepere(): boolean {
+        return this.suggere.lieu || this.suggere.periode || this.suggere.montant;
     }
 
     typeOptions = [
-        { label: 'Plainte',      value: 'COMPLAINT',
-          description: 'Vous demandez réparation pour un préjudice subi', icon: 'pi pi-exclamation-circle' },
-        { label: 'Dénonciation', value: 'DENUNCIATION',
-          description: 'Je signale des faits en tant que témoin', icon: 'pi pi-megaphone'          }
-    ];
-
-    qualityOptions = [
-        { label: 'Je suis la victime',          value: 'VICTIME' },
-        { label: 'Je représente la victime',    value: 'REPRESENTANT_VICTIME' }
+        { label: 'Témoin',  value: 'DENUNCIATION', description: 'Je signale des faits dont j\'ai connaissance' },
+        { label: 'Victime', value: 'COMPLAINT',    description: 'Je demande réparation pour un préjudice subi' }
     ];
 
     selectType(value: string): void {
@@ -1340,14 +924,6 @@ export class DepotPlainte {
         this.f['quality'].setValue(value === 'DENUNCIATION' ? 'TEMOIN' : 'VICTIME');
     }
 
-    declarantCategoryOptions = [
-        { label: 'Citoyen',          value: 'CITIZEN',
-          description: 'Personne physique', icon: 'pi pi-user' },
-        { label: 'Entreprise',       value: 'COMPANY',
-          description: 'Société privée ou publique', icon: 'pi pi-building' },
-        { label: 'Association / ONG', value: 'ASSOCIATION',
-          description: 'Société civile', icon: 'pi pi-users' }
-    ];
     /** La fenêtre des conditions est ouverte : rien n'est coché, et le texte n'est pas encore lu. */
     showProtectionDialog = false;
     protectionLue        = false;
@@ -1406,8 +982,15 @@ export class DepotPlainte {
         this.cond1 = this.cond2 = this.cond3 = false;
     }
 
+    /** Le citoyen choisit de s'identifier : les champs d'identité s'ouvrent. */
+    laisserCoordonnees(): void {
+        this.fd['anonymous'].setValue(false);
+        this.ouvert.coordonnees = true;
+    }
+
     setAnonymous(): void {
         this.fd['anonymous'].setValue(true);
+        this.ouvert.coordonnees = false;
         this.cancelProtection();
         if (this.f['quality'].value !== 'TEMOIN') {
             this.f['type'].setValue('DENUNCIATION');
@@ -1418,53 +1001,84 @@ export class DepotPlainte {
             });
         }
     }
-    commencer(): void {
-        this.currentStep = 2;
+
+    /** Vérifie l'essentiel, puis montre le récapitulatif : rien n'est envoyé avant la confirmation. */
+    ouvrirRecapitulatif(): void {
+        this.analyserRecit();
+        this.recitTouche = true;
+        if (!this.recitSuffisant) {
+            this.messageService.add({
+                severity: 'warn', summary: 'Votre récit',
+                detail: `Racontez les faits en quelques phrases (au moins ${RECIT_MINIMUM} caractères) ou enregistrez votre voix.`
+            });
+            this.recitChamp?.nativeElement.focus();
+            return;
+        }
+        if (this.avecCoordonnees) {
+            this.consentTouched = true;
+            if (this.fd['email'].invalid) {
+                this.fd['email'].markAsTouched();
+                this.messageService.add({
+                    severity: 'warn', summary: 'E-mail invalide',
+                    detail: 'Saisissez une adresse e-mail valide (ex. nom@exemple.bf) ou laissez le champ vide.'
+                });
+                return;
+            }
+            if (!this.fd['dataProcessingConsent'].value) {
+                this.messageService.add({
+                    severity: 'warn', summary: 'Consentement requis',
+                    detail: 'Vous devez accepter le traitement de vos données.'
+                });
+                return;
+            }
+            if (this.fd['protectionRequested'].value && !this.protectionAcknowledged) {
+                this.protectionCondTouched = true;
+                this.messageService.add({
+                    severity: 'warn', summary: "Protection lanceur d'alerte",
+                    detail: 'Vous devez confirmer les 3 conditions avant de continuer.'
+                });
+                return;
+            }
+        }
+        this.showRecap = true;
     }
 
-    goToPreuves(): void {
-        this.dossierForm.markAllAsTouched();
-        if (this.f['object'].invalid || this.f['description'].invalid) {
-            this.messageService.add({
-                severity: 'warn', summary: 'Champs requis',
-                detail: 'Veuillez remplir tous les champs obligatoires.'
-            });
-            return;
-        }
-        this.currentStep = 3;
+    confirmerEnvoi(): void {
+        this.showRecap = false;
+        this.submit();
     }
 
-    goToCoordonnees(): void {
-        this.currentStep = 4;
+    /** Efface tout après confirmation : un récit ne se perd pas par un clic malheureux. */
+    effacer(): void {
+        this.confirmationService.confirm({
+            header:      'Effacer votre saisie ?',
+            message:     'Tout ce que vous avez écrit ou ajouté sera supprimé.',
+            acceptLabel: 'Effacer',
+            rejectLabel: 'Garder',
+            acceptIcon:  'pi pi-trash',
+            rejectButtonProps: { severity: 'secondary', outlined: true },
+            accept: () => this.reinitialiser(),
+            reject: () => {}
+        });
     }
 
-    goToConfirmation(): void {
-        this.consentTouched = true;
-        if (!this.fd['anonymous'].value && this.fd['email'].invalid) {
-            this.fd['email'].markAsTouched();
-            this.messageService.add({
-                severity: 'warn', summary: 'E-mail invalide',
-                detail: 'Saisissez une adresse e-mail valide (ex. nom@exemple.bf) ou laissez le champ vide.'
-            });
-            return;
-        }
-        if (!this.fd['dataProcessingConsent'].value) {
-            this.messageService.add({
-                severity: 'warn', summary: 'Consentement requis',
-                detail: 'Vous devez accepter le traitement de vos données.'
-            });
-            return;
-        }
-        if (this.fd['protectionRequested'].value && !this.protectionAcknowledged) {
-            this.protectionCondTouched = true;
-            this.messageService.add({
-                severity: 'warn',
-                summary:  "Protection lanceur d'alerte",
-                detail:   "Vous devez confirmer les 3 conditions avant de continuer."
-            });
-            return;
-        }
-        this.currentStep = 5;
+    private reinitialiser(): void {
+        this.dossierForm.reset({
+            type: 'DENUNCIATION', quality: 'TEMOIN', description: '',
+            incidentLocation: '', incidentPeriod: '', estimatedLoss: null
+        });
+        this.declarantForm.reset({
+            typeDeclarant: 'CITIZEN', organizationName: '', firstName: '', lastName: '', email: '', phoneNumber: '',
+            anonymous: true, dataProcessingConsent: false, notificationsAccepted: true, protectionRequested: false
+        });
+        this.attachments = [];
+        this.deleteAudio();
+        this.cancelProtection();
+        this.origine = {};
+        this.ouvert = { precisions: false, preuves: false, coordonnees: false };
+        this.suggere = { lieu: false, periode: false, montant: false };
+        this.jourChoisi = this.heureChoisie = '';
+        this.recitTouche = this.consentTouched = false;
     }
 
     goToSuivi(): void {
@@ -1476,6 +1090,7 @@ export class DepotPlainte {
         this.showSuccess = false;
         setTimeout(() => this.router.navigate(['/portail']), 150);
     }
+
     async startRecording(): Promise<void> {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1516,14 +1131,21 @@ export class DepotPlainte {
         this.recordingDuration = 0;
     }
 
+    /** « 250000 » → « 250 000 » (espace ordinaire : l'espace insécable fine ne s'affiche pas partout). */
+    formatMontant(montant: number | null): string {
+        return montant === null ? '' : montant.toLocaleString('fr-FR').replace(/[  ]/g, ' ');
+    }
+
     formatDuration(seconds: number): string {
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
+
     onFileSelect(event: any): void {
         this.addFiles(Array.from(event.target.files));
     }
+
     onDrop(event: DragEvent): void {
         event.preventDefault();
         this.addFiles(Array.from(event.dataTransfer?.files || []));
@@ -1569,9 +1191,9 @@ export class DepotPlainte {
     }
     getFileBg(file: File): string {
         if (file.type.includes('image')) return 'rgba(0,54,23,.08)';
-        if (file.type.includes('pdf'))   return 'rgba(227,6,19,.1)';
+        if (file.type.includes('pdf'))   return 'rgba(196,5,16,.1)';
         if (file.type.includes('video')) return 'rgba(0,54,23,.06)';
-        if (file.type.includes('audio')) return 'rgba(227,6,19,.08)';
+        if (file.type.includes('audio')) return 'rgba(196,5,16,.08)';
         return 'var(--mist)';
     }
     getFileColor(file: File): string {
@@ -1587,11 +1209,6 @@ export class DepotPlainte {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 
-    getTypeLabel(type: string | null): string {
-        if (!type) return '';
-        return this.typeOptions.find(o => o.value === type)?.label || type;
-    }
-
     /** Un dépôt anonyme ne transmet que la région : une province ou une commune pourrait identifier son auteur. */
     private origineAEnvoyer(anonyme: boolean): OrigineSaisie {
         if (!anonyme) { return this.origine; }
@@ -1600,6 +1217,7 @@ export class DepotPlainte {
     }
 
     submit(): void {
+        if (!this.recitSuffisant) { return; }
         this.submitting = true;
 
         // Un dépôt anonyme n'envoie aucune donnée d'identité, même saisie avant le choix de l'anonymat.
@@ -1607,13 +1225,17 @@ export class DepotPlainte {
         const identity = (value: string | null): string | undefined =>
             isAnonymous ? undefined : (value || undefined);
 
+        // Le citoyen n'écrit plus de résumé : l'objet est la première phrase de son récit.
+        const recit = (this.f['description'].value ?? '').trim();
+        const objet = recit ? resumeDuRecit(recit) : OBJET_MESSAGE_VOCAL;
+
         const request = {
             type:             this.f['type'].value as any,
             quality:          this.f['quality'].value as any,
             submissionMode:   'WEB_FORM' as any,
             anonymous:        isAnonymous,
-            object:           this.f['object'].value!,
-            description:      this.f['description'].value     || undefined,
+            object:           objet,
+            description:      recit || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
             ...this.origineAEnvoyer(isAnonymous),
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
@@ -1626,10 +1248,8 @@ export class DepotPlainte {
                 lastName:               identity(this.fd['lastName'].value),
                 email:                  identity(this.fd['email'].value),
                 phoneNumber:            identity(this.fd['phoneNumber'].value),
-                commune:                identity(this.fd['commune'].value),
-                province:               identity(this.fd['province'].value),
                 anonymous:              isAnonymous,
-                dataProcessingConsent:  this.fd['dataProcessingConsent'].value || true,
+                dataProcessingConsent:  true,
                 notificationsAccepted:  this.fd['notificationsAccepted'].value || true,
                 protectionRequested:    this.fd['protectionRequested'].value   || false,
                 protectionAcknowledged: this.protectionAcknowledged

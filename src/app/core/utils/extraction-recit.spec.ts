@@ -111,6 +111,34 @@ describe('extraction-recit', () => {
             expect(periodeDuRecit('Ils ont pris 2 000 000 FCFA.', maintenant)).toBeNull();
         });
 
+        it('lit une date complète, écrite en toutes lettres ou en chiffres', () => {
+            expect(periodeDuRecit('Le 15 mars 2025, on m\'a demandé de l\'argent.', maintenant)).toBe('15 mars 2025');
+            expect(periodeDuRecit('C\'était le 15/03/2025 à la mairie.', maintenant)).toBe('15 mars 2025');
+            expect(periodeDuRecit('Le 3-2-2024 exactement.', maintenant)).toBe('3 février 2024');
+            expect(periodeDuRecit('Le 1er février 2024, un agent a refusé.', maintenant)).toBe('1 février 2024');
+        });
+
+        it('ajoute l\'heure quand elle est donnée avec une date complète', () => {
+            expect(periodeDuRecit('Le 15 mars 2025 à 14h30, on m\'a demandé de l\'argent.', maintenant)).toBe('15 mars 2025 à 14h30');
+            expect(periodeDuRecit('Le 15/03/2025 vers 9h, devant le guichet.', maintenant)).toBe('15 mars 2025 à 9h');
+            expect(periodeDuRecit('Le 15 mars 2025 à 14 h 05.', maintenant)).toBe('15 mars 2025 à 14h05');
+        });
+
+        it('une heure seule n\'est pas une période, et ne s\'ajoute pas à un simple mois', () => {
+            expect(periodeDuRecit('Rendez-vous à 14h30 devant la mairie.', maintenant)).toBeNull();
+            expect(periodeDuRecit('En mars 2025, vers 10h, un agent a refusé.', maintenant)).toBe('Mars 2025');
+        });
+
+        it('ignore une date impossible ou dans le futur', () => {
+            expect(periodeDuRecit('Le 31/02/2025 selon le registre.', maintenant)).toBeNull();
+            expect(periodeDuRecit('Le 15/03/2027 est prévu.', maintenant)).toBeNull();
+            expect(periodeDuRecit('Le 25 décembre 2026 est prévu.', maintenant)).toBeNull();
+        });
+
+        it('préfère la date complète au mois seul', () => {
+            expect(periodeDuRecit('Depuis mars 2025, et surtout le 4 avril 2025.', maintenant)).toBe('4 avril 2025');
+        });
+
         it('rend null sans date', () => {
             expect(periodeDuRecit('C\'est arrivé récemment.', maintenant)).toBeNull();
         });

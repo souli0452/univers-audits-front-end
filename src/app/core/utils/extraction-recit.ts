@@ -62,15 +62,67 @@ function sansAccent(texte: string): string {
     return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
-/** Période citée : « Mars 2025 », « De 2021 à 2023 » ou « 2022 ». Le mois précis l'emporte sur l'année seule. */
+/** « 15 mars 2025 » : jour, mois en toutes lettres, année. Même forme pour le calendrier et pour le repérage. */
+export function formaterJour(annee: number, mois: number, jour: number): string {
+    return `${jour} ${MOIS[mois - 1].toLowerCase()} ${annee}`;
+}
+
+/** « 14:30 » (champ heure) ou « 14h30 » → « 14h30 » ; « 09:05 » → « 9h05 » ; « 08:00 » → « 8h ». */
+export function formaterHeure(heure: string): string | null {
+    const m = /^(\d{1,2})\s?[:h]\s?([0-5]\d)?$/.exec((heure ?? '').trim().toLowerCase());
+    if (!m || Number(m[1]) > 23) { return null; }
+    return `${Number(m[1])}h${m[2] && m[2] !== '00' ? m[2] : ''}`;
+}
+
+const JOUR = String.raw`(1er|0?[1-9]|[12]\d|3[01])`;
+const DATE_TEXTE = new RegExp(
+    String.raw`(?<![\d\p{L}])${JOUR}\s+(${MOIS_SANS_ACCENT.join('|')})\s+(\d{4})(?!\d)`, 'gu');
+const DATE_CHIFFRES = /(?<![\d/.-])(0?[1-9]|[12]\d|3[01])[/.-](0?[1-9]|1[0-2])[/.-](\d{4})(?!\d)/gu;
+const HEURE = /(?<![\d:])([01]?\d|2[0-3])\s?h\s?([0-5]\d)?(?![\d\p{L}])/u;
+
+/** Une date qui existe vraiment (pas le 31 février), pas avant 1990 et pas dans le futur. */
+function dateReelle(annee: number, mois: number, jour: number, maintenant: Date): boolean {
+    const d = new Date(annee, mois - 1, jour);
+    return d.getFullYear() === annee && d.getMonth() === mois - 1 && d.getDate() === jour
+        && annee >= ANNEE_MINIMALE && d.getTime() <= maintenant.getTime();
+}
+
+/** Première date complète du récit, avec l'heure si elle est donnée (« 15 mars 2025 à 14h30 »). */
+function dateCompleteDuRecit(t: string, maintenant: Date): string | null {
+    const candidates: { index: number; libelle: string }[] = [];
+    for (const m of t.matchAll(DATE_TEXTE)) {
+        const [jour, mois, annee] = [Number(m[1].replace('er', '')), MOIS_SANS_ACCENT.indexOf(m[2]) + 1, Number(m[3])];
+        if (dateReelle(annee, mois, jour, maintenant)) { candidates.push({ index: m.index, libelle: formaterJour(annee, mois, jour) }); }
+    }
+    for (const m of t.matchAll(DATE_CHIFFRES)) {
+        const [jour, mois, annee] = [Number(m[1]), Number(m[2]), Number(m[3])];
+        if (dateReelle(annee, mois, jour, maintenant)) { candidates.push({ index: m.index, libelle: formaterJour(annee, mois, jour) }); }
+    }
+    if (candidates.length === 0) { return null; }
+    const date = candidates.sort((a, b) => a.index - b.index)[0].libelle;
+    const heure = HEURE.exec(t);
+    const h = heure ? formaterHeure(`${heure[1]}h${heure[2] ?? ''}`) : null;
+    return h ? `${date} à ${h}` : date;
+}
+
+/**
+ * Période citée : « 15 mars 2025 à 14h30 », « Mars 2025 », « De 2021 à 2023 » ou « 2022 ». Le plus précis l'emporte ;
+ * une heure seule n'est jamais une période.
+ */
 export function periodeDuRecit(texte: string, maintenant: Date = new Date()): string | null {
     const t = sansAccent(texte ?? '');
     const anneeMax = maintenant.getFullYear();
     const valide = (a: number) => a >= ANNEE_MINIMALE && a <= anneeMax;
 
-    const moisAnnee = new RegExp(`(?<![\\p{L}])(${MOIS_SANS_ACCENT.join('|')})\\s+(?:de\\s+l'annee\\s+)?(\\d{4})(?!\\d)`, 'gu');
+    const complete = dateCompleteDuRecit(t, maintenant);
+    if (complete) { return complete; }
+
+    const moisAnnee = new RegExp(
+        String.raw`(?<![\p{L}])(${MOIS_SANS_ACCENT.join('|')})\s+(?:de\s+l'annee\s+)?(\d{4})(?!\d)`, 'gu');
     for (const m of t.matchAll(moisAnnee)) {
-        if (valide(Number(m[2]))) { return `${MOIS[MOIS_SANS_ACCENT.indexOf(m[1])]} ${m[2]}`; }
+        const [mois, annee] = [MOIS_SANS_ACCENT.indexOf(m[1]), Number(m[2])];
+        const passe = annee < anneeMax || (annee === anneeMax && mois <= maintenant.getMonth());
+        if (valide(annee) && passe) { return `${MOIS[mois]} ${m[2]}`; }
     }
 
     for (const m of t.matchAll(/(?<![\p{L}])(?:de|entre)\s+(\d{4})\s+(?:a|et)\s+(\d{4})(?!\d)/gu)) {
