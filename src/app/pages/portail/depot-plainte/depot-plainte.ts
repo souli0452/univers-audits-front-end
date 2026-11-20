@@ -16,6 +16,7 @@ import { TailleTexte } from '../shared/taille-texte';
 import { COMPLEMENT_ACCEPT, LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
 import { typeAudioEnregistre } from '../../../core/utils/audio-enregistre';
 import { extraireDuRecit, formaterHeure, formaterJour, resumeDuRecit } from '../../../core/utils/extraction-recit';
+import { MOTIFS_CITOYEN, motifCitoyen } from '../../../core/utils/saisine-categories';
 import { OrigineSaisie } from '../../../core/models/geographie.model';
 import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
 import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
@@ -147,6 +148,18 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         }
         .puce.choisie { border-color:var(--green-text); background:var(--mist); color:var(--green-text); }
         .puce:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+        .motifs { display:grid; grid-template-columns:repeat(auto-fit, minmax(16em, 1fr)); gap:.6em; }
+        .motif {
+            display:flex; flex-direction:column; align-items:flex-start; gap:.25em; text-align:left; min-height:3.5em;
+            padding:.75em 1em; border:2px solid var(--hair); border-radius:12px; background:#fff; color:var(--ink);
+            font:inherit; cursor:pointer;
+        }
+        .motif:hover { border-color:var(--green-text); }
+        .motif.choisi { border-color:var(--green-text); background:var(--mist); box-shadow:inset 0 0 0 1px var(--green-text); }
+        .motif:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+        .motif-libelle { font-size:1.05em; font-weight:800; }
+        .motif-expl { font-size:.95em; line-height:1.4; color:var(--hint); }
+        .motif-terme { font-size:.9em; font-weight:700; color:var(--green-text); }
         .lien-ecrire { align-self:flex-start; }
         .preuves-boutons { display:grid; grid-template-columns:repeat(auto-fit, minmax(13em, 1fr)); gap:.75em; }
         .btn-preuve { text-align:center; }
@@ -279,6 +292,9 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
             @if (audioUrl) {
                 <div class="recap-row"><span class="recap-key">Message vocal</span>
                     <span class="recap-val">✓ {{ formatDuration(recordingDuration) }}</span></div>
+            }
+            @if (motifChoisi(); as m) {
+                <div class="recap-row"><span class="recap-key">Motif</span><span class="recap-val">{{ m.libelle }}</span></div>
             }
             @if (attachments.length > 0) {
                 <div class="recap-row"><span class="recap-key">Pièces jointes</span>
@@ -507,6 +523,22 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
                     </button>
                 </div>
             }
+        </div>
+
+        <!-- Motif : facultatif, en mots simples ; l'agent qualifie ensuite les faits -->
+        <div class="recit-bloc" role="group" aria-labelledby="motif-titre">
+            <span id="motif-titre" class="label">De quoi s'agit-il ? <span class="opt">(facultatif)</span></span>
+            <p class="hint">Choisissez ce qui s'en rapproche le plus. Un agent vérifiera.</p>
+            <div class="motifs">
+                @for (m of motifs; track m.code) {
+                    <button type="button" class="motif" [class.choisi]="motifDeclare === m.code"
+                        [attr.aria-pressed]="motifDeclare === m.code" (click)="choisirMotif(m.code)">
+                        <span class="motif-libelle">{{ m.libelle }}</span>
+                        <span class="motif-expl">{{ m.explication }}</span>
+                        @if (m.terme) { <span class="motif-terme">{{ m.terme }}</span> }
+                    </button>
+                }
+            </div>
         </div>
 
         <!-- Précisions : repérées dans le récit, corrigeables, jamais obligatoires -->
@@ -853,6 +885,17 @@ export class DepotPlainte implements OnDestroy {
     /** Volets repliés par défaut : tout ce qui n'est pas le récit est facultatif. */
     ouvert: Record<Volet, boolean> = { precisions: false, preuves: false, coordonnees: false };
 
+    /** Motifs proposés en mots simples ; le choix est facultatif et l'agent qualifie ensuite les faits. */
+    readonly motifs = MOTIFS_CITOYEN;
+    motifDeclare = '';
+
+    /** Un second clic sur le motif choisi le retire : rien n'est jamais obligatoire. */
+    choisirMotif(code: string): void {
+        this.motifDeclare = this.motifDeclare === code ? '' : code;
+    }
+
+    motifChoisi() { return motifCitoyen(this.motifDeclare); }
+
     /** Champs préremplis d'après le récit (et encore intacts) : signalés au citoyen pour qu'il les vérifie. */
     suggere = { lieu: false, periode: false, montant: false };
 
@@ -1145,6 +1188,7 @@ export class DepotPlainte implements OnDestroy {
         this.deleteAudio();
         this.mode = 'ecrit';
         this.langueParlee = '';
+        this.motifDeclare = '';
         this.cancelProtection();
         this.origine = {};
         this.ouvert = { precisions: false, preuves: false, coordonnees: false };
@@ -1339,6 +1383,7 @@ export class DepotPlainte implements OnDestroy {
             ...this.origineAEnvoyer(isAnonymous),
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
             estimatedLoss:    this.f['estimatedLoss'].value    || undefined,
+            motifDeclare:     this.motifDeclare || undefined,
             declarantData: {
                 typeDeclarant:          isAnonymous
                                             ? 'ANONYMOUS' as any : this.fd['typeDeclarant'].value as any,

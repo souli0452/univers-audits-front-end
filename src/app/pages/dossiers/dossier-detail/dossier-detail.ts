@@ -75,7 +75,7 @@ interface WorkflowStep {
     date?: string; active: boolean; completed: boolean;
 }
 
-import { libelleDeNature } from '../../../core/utils/saisine-categories';
+import { libelleDeNature, motifCitoyen } from '../../../core/utils/saisine-categories';
 import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
 import { FicheACompleter, AudioDuDossier } from '../fiche-a-completer/fiche-a-completer';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -2126,6 +2126,25 @@ export class DossierDetail implements OnInit {
     canEditEtude(): boolean {
         return this.dossier?.status === 'EN_ETUDE_OPPORTUNITE'
             && this.hasRole(['CONSEILLER_JURIDIQUE', 'ADMIN_DDIC']);
+    }
+
+    /** Motif que le déclarant a choisi en mots simples (une piste, pas une qualification). */
+    motifDeclare() {
+        return motifCitoyen(this.dossier?.motifDeclare);
+    }
+
+    /** Allégation officielle qui correspond à ce motif, quand la liste des infractions est chargée. */
+    allegationProposee(): TypeInfractionOption | undefined {
+        const code = this.motifDeclare()?.allegation;
+        return code ? this.typesInfraction.find(t => t.code === code) : undefined;
+    }
+
+    /** L'agent accepte la piste : l'allégation est renseignée, la nature pénale seulement si rien n'était choisi. */
+    retenirAllegationDuMotif(): void {
+        const allegation = this.allegationProposee();
+        if (!allegation) { return; }
+        this.etudeForm.typeInfractionId = allegation.id;
+        if (!this.etudeForm.natureQualification) { this.etudeForm.natureQualification = 'PENALE'; }
     }
 
     openEtudeDialog(): void {

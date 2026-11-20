@@ -117,6 +117,8 @@ export interface DossierResponse {
     incidentPeriod?: string;
     estimatedLoss?: number;
     typologieInstitutionnelle?: string;
+    /** Motif choisi par le citoyen en mots simples (facultatif) ; l'allégation officielle reste celle de l'agent. */
+    motifDeclare?: string;
     isConfidential: boolean;
     receptionDate?: string;
     acknowledgmentDeadline?: string;
@@ -169,6 +171,8 @@ export interface DossierCreateRequest {
     natureSaisineChoisie?: string;
     /** Typologie de l'institution mise en cause (agent seulement). */
     typologieInstitutionnelle?: string;
+    /** Motif que le citoyen choisit en mots simples (facultatif) ; l'agent retient seul l'allégation officielle. */
+    motifDeclare?: string;
     object: string;
     description?: string;
     incidentLocation?: string;

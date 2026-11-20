@@ -39,6 +39,52 @@ export const MODES_RESEAUX_SOCIAUX: Choix[] = [
     { label: 'Autre',     value: 'OTHER' }
 ];
 
+/**
+ * Motifs que le citoyen peut choisir, en mots simples (facultatif). Les valeurs sont celles du serveur
+ * (MotifSignalement). `terme` est l'allégation officielle écrite à côté pour que chacun s'y retrouve, et
+ * `allegation` son code (table type_infraction) : l'agent la retient ou la corrige à l'étude d'opportunité,
+ * seul son choix entre dans les statistiques. Blanchiment, stellionat, concussion, délit d'apparence, conflit
+ * d'intérêt et dettes ne sont volontairement pas proposés au citoyen.
+ */
+export interface MotifCitoyen { code: string; libelle: string; explication: string; terme: string | null; allegation: string | null; }
+
+export const MOTIFS_CITOYEN: MotifCitoyen[] = [
+    { code: 'CORRUPTION', libelle: "On m'a demandé de l'argent ou un cadeau",
+      explication: 'Pour rendre un service, accélérer un dossier ou fermer les yeux.',
+      terme: 'Corruption', allegation: 'CORRUPTION' },
+    { code: 'DETOURNEMENT', libelle: "De l'argent ou des biens publics ont disparu",
+      explication: 'Caisse vidée, matériel emporté, dépenses sans justificatif.',
+      terme: 'Détournement et malversations financières', allegation: 'DETOURNEMENT_MALVERSATIONS' },
+    { code: 'FAVORITISME', libelle: 'Un marché ou un recrutement donné à un proche',
+      explication: 'Sans concurrence ou sans respecter les règles.',
+      terme: 'Favoritisme', allegation: 'FAVORITISME' },
+    { code: 'FAUX', libelle: 'Un faux document ou une fausse signature',
+      explication: 'Faux diplôme, fausse pièce, signature imitée.',
+      terme: 'Faux et usage de faux', allegation: 'FAUX_ET_USAGE_DE_FAUX' },
+    { code: 'FRAUDE', libelle: 'Une fausse facture ou une fausse déclaration',
+      explication: "Chiffres truqués pour tromper l'administration.",
+      terme: 'Fraude', allegation: 'FRAUDE' },
+    { code: 'ENRICHISSEMENT', libelle: 'Quelqu\'un vit bien au-dessus de ses moyens',
+      explication: "Maisons, voitures ou train de vie qui ne s'expliquent pas par son salaire.",
+      terme: 'Enrichissement illicite', allegation: 'ENRICHISSEMENT_ILLICITE' },
+    { code: 'ABUS_DE_FONCTION', libelle: 'Un responsable abuse de son pouvoir',
+      explication: 'Il utilise sa fonction pour son intérêt ou pour nuire.',
+      terme: 'Abus de fonction', allegation: 'ABUS_DE_FONCTION' },
+    { code: 'FONCIER', libelle: 'Un terrain vendu deux fois, un litige sur une parcelle',
+      explication: 'Conflit lié à un terrain ou à une attribution de parcelle.',
+      terme: 'Conflit foncier', allegation: 'CONFLIT_FONCIER' },
+    { code: 'DYSFONCTIONNEMENT', libelle: 'Un service ne fonctionne pas comme il le devrait',
+      explication: 'Lenteurs, absences, règles non appliquées.',
+      terme: 'Dysfonctionnement', allegation: 'DYSFONCTIONNEMENT' },
+    { code: 'AUTRE', libelle: 'Autre chose, ou je ne sais pas',
+      explication: "L'agent qualifiera lui-même les faits.",
+      terme: null, allegation: null }
+];
+
+export function motifCitoyen(code: string | null | undefined): MotifCitoyen | undefined {
+    return MOTIFS_CITOYEN.find(m => m.code === code);
+}
+
 const NATURES: Record<string, string> = {
     PLAINTE: 'Plainte',
     DENONCIATION: 'Dénonciation',
