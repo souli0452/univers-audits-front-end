@@ -1,6 +1,6 @@
 import {
-    COMPLEMENT_MAX_FILES, COMPLEMENT_MAX_MESSAGE, COMPLEMENT_MIN_MESSAGE,
-    addComplementFiles, formatFileSize, validateComplement
+    COMPLEMENT_ACCEPT, COMPLEMENT_MAX_FILES, COMPLEMENT_MAX_MESSAGE, COMPLEMENT_MIN_MESSAGE, LIBELLE_EXTENSIONS,
+    addComplementFiles, formatFileSize, isAllowedExtension, validateComplement
 } from './complement-form';
 
 const MB = 1024 * 1024;
@@ -12,6 +12,33 @@ function fichier(nom: string, taille = 10): File {
 }
 
 describe('complement-form', () => {
+    describe('formats de pièces acceptés (alignés sur le serveur)', () => {
+        it('accepte les notes vocales de téléphone : M4A, AAC, OPUS (WhatsApp), OGG, WAV, WEBM', () => {
+            for (const nom of ['note.m4a', 'note.aac', 'note.opus', 'note.ogg', 'note.wav', 'note.webm', 'NOTE.M4A']) {
+                expect(isAllowedExtension(nom)).withContext(nom).toBeTrue();
+            }
+        });
+
+        it('garde les formats d\'avant (PDF, Word, JPG, PNG, MP3, MP4, MOV, AVI)', () => {
+            for (const nom of ['a.pdf', 'a.doc', 'a.docx', 'a.jpg', 'a.jpeg', 'a.png', 'a.mp3', 'a.mp4', 'a.mov', 'a.avi']) {
+                expect(isAllowedExtension(nom)).withContext(nom).toBeTrue();
+            }
+        });
+
+        it('refuse ce que le serveur refuse au dépôt public : programmes, GIF et WebP (métadonnées non retirables)', () => {
+            for (const nom of ['virus.exe', 'script.sh', 'anim.gif', 'photo.webp', 'sans-extension']) {
+                expect(isAllowedExtension(nom)).withContext(nom).toBeFalse();
+            }
+        });
+
+        it('la liste lisible et l\'attribut « accept » du sélecteur de fichiers citent les mêmes formats', () => {
+            expect(LIBELLE_EXTENSIONS).toContain('M4A');
+            expect(LIBELLE_EXTENSIONS).toContain('OPUS');
+            expect(COMPLEMENT_ACCEPT).toContain('.m4a');
+            expect(COMPLEMENT_ACCEPT).toContain('.opus');
+        });
+    });
+
     describe('validateComplement', () => {
         it('accepte un message de 10 caractères ou plus', () => {
             expect(validateComplement('x'.repeat(COMPLEMENT_MIN_MESSAGE), [])).toEqual([]);

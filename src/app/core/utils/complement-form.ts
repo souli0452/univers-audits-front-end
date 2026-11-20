@@ -6,7 +6,12 @@ export const COMPLEMENT_MAX_FILE_MB = 25;
 export const COMPLEMENT_MAX_TOTAL_MB = 50;
 
 /** Extensions de pièces jointes acceptées, communes au dépôt et à la réponse à un complément. */
-export const EXTENSIONS_AUTORISEES = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'mp3', 'mp4', 'avi', 'mov'];
+/**
+ * Alignées sur le serveur. Les notes vocales de téléphone (M4A, AAC, OPUS de WhatsApp) sont acceptées ; GIF et WebP
+ * ne le sont pas au dépôt public, car on ne sait pas en retirer les informations cachées.
+ */
+export const EXTENSIONS_AUTORISEES = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'mp3', 'mp4', 'avi', 'mov',
+    'wav', 'ogg', 'opus', 'm4a', 'aac', 'webm'];
 const EXTENSIONS = EXTENSIONS_AUTORISEES;
 export const COMPLEMENT_ACCEPT = EXTENSIONS.map(e => `.${e}`).join(',');
 /** Liste lisible : « PDF, DOC, DOCX, JPG… ». */

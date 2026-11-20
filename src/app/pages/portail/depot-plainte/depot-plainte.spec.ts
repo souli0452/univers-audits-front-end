@@ -7,6 +7,7 @@ import { DepotPlainte } from './depot-plainte';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { GeographieService } from '../../../core/services/geographie.service';
+import { LIBELLE_EXTENSIONS } from '../../../core/utils/complement-form';
 
 const RECIT = 'Un agent de la mairie m\'a demandé de l\'argent pour un acte de naissance.';
 
@@ -515,6 +516,58 @@ describe('DepotPlainte (page unique)', () => {
             expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({ severity: 'warn', summary: 'Dossier créé' }));
         });
 
+        it('le message vocal part avec son vrai format : un enregistrement d\'iPhone reste de l\'audio/mp4 en .m4a', () => {
+            component.audioBlob = new Blob(['x'], { type: 'audio/mp4' });
+
+            component.submit();
+
+            const fichier: File = attachmentService.upload.calls.mostRecent().args[1][0];
+            expect(fichier.type).toBe('audio/mp4');
+            expect(fichier.name).toMatch(/^temoignage_audio_\d+\.m4a$/);
+        });
+
+        it('un enregistrement de Chrome ou d\'Android reste de l\'audio/webm en .webm', () => {
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+
+            component.submit();
+
+            const fichier: File = attachmentService.upload.calls.mostRecent().args[1][0];
+            expect(fichier.type).toBe('audio/webm');
+            expect(fichier.name).toMatch(/\.webm$/);
+        });
+
+        it('quand le serveur refuse une pièce, le citoyen voit POURQUOI et quel fichier (son code de suivi est conservé)', () => {
+            attachmentService.upload.and.returnValue(throwError(() => ({
+                error: { message: 'Fichier non accepté : note.xyz. Aucune pièce n\'a été enregistrée.' }
+            })));
+            ecrire();
+            component.attachments = [new File(['x'], 'note.xyz')];
+
+            component.submit();
+
+            expect(component.showSuccess).toBeTrue();
+            expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({
+                severity: 'warn', summary: 'Dossier créé',
+                detail: jasmine.stringContaining('note.xyz')
+            }));
+            expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({
+                detail: jasmine.stringContaining('code de suivi')
+            }));
+        });
+
+        it('sans message du serveur, l\'avertissement garde son texte général', () => {
+            attachmentService.upload.and.returnValue(throwError(() => new Error('réseau')));
+            ecrire();
+            component.attachments = [new File(['x'], 'preuve.pdf')];
+
+            component.submit();
+
+            expect(messages.add).toHaveBeenCalledWith(jasmine.objectContaining({
+                summary: 'Dossier créé',
+                detail: jasmine.stringContaining("n'ont pas pu être envoyées")
+            }));
+        });
+
         it('envoie les pièces jointes avec le code de suivi du dossier créé', () => {
             ecrire();
             component.attachments = [new File(['contenu'], 'preuve.pdf', { type: 'application/pdf' })];
@@ -564,7 +617,8 @@ describe('DepotPlainte (page unique)', () => {
         beforeEach(() => { component.ouvert.preuves = true; });
 
         it('affiche les formats acceptés dans la zone de dépôt', () => {
-            expect(texte()).toContain('Formats acceptés : PDF, DOC, DOCX, JPG, JPEG, PNG, MP3, MP4, AVI, MOV');
+            expect(texte()).toContain('Formats acceptés : ' + LIBELLE_EXTENSIONS);
+            expect(texte()).toContain('M4A');
         });
 
         it('refuse un format non accepté, même glissé dans la zone, et le dit', () => {
