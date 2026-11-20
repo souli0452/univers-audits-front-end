@@ -100,6 +100,16 @@ describe('DossierForm (enregistrement par un agent)', () => {
         expect(texte).not.toContain('Toutes les informations sont protégées');
     });
 
+    it("affiche les messages d'erreur en texte lisible (12 px au moins)", () => {
+        component.f['description'].setValue('');
+        component.f['description'].markAsTouched();
+        fixture.detectChanges();
+
+        const erreur = (fixture.nativeElement as HTMLElement).querySelector('.error-msg') as HTMLElement;
+        expect(erreur).not.toBeNull();
+        expect(parseFloat(getComputedStyle(erreur).fontSize)).toBeGreaterThanOrEqual(12);
+    });
+
     describe("suggestion d'après la description", () => {
         const RECIT = "On m'a réclamé 10 000 F à la mairie de Boromo pour un acte de mariage.";
         const bouton = (nom: string): HTMLButtonElement | undefined =>

@@ -1729,7 +1729,7 @@ interface ApiError { error?: { message?: string }; }
                                     ✓ {{ step.date | date:'dd/MM/yyyy HH:mm' }}
                                 </div>
                                 <div *ngIf="step.active && !step.date"
-                                    style="display:inline-flex;align-items:center;gap:4px;font-size:.7rem;
+                                    style="display:inline-flex;align-items:center;gap:4px;font-size:.9rem;
                                            color:#3b82f6;margin-top:3px;background:#eff6ff;
                                            padding:2px 8px;border-radius:20px;">
                                     <div style="width:5px;height:5px;border-radius:50%;background:#3b82f6;animation:pulse 1s infinite;"></div>

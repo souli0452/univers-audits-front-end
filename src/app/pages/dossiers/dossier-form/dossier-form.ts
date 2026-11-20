@@ -32,7 +32,7 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
     styles: [`
         .req { color: #ef4444; margin-left: 2px; }
         .error-msg {
-            color: #ef4444; font-size: .75rem;
+            color: #ef4444; font-size: .9rem;
             display: flex; align-items: center;
             gap: 4px; margin-top: 4px;
         }

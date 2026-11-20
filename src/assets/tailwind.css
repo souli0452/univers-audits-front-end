@@ -8,4 +8,12 @@
     --breakpoint-lg: 992px;
     --breakpoint-xl: 1200px;
     --breakpoint-2xl: 1920px;
+
+    /* La taille de base du site est 14 px : l'échelle Tailwind d'origine donnait 10,5 px à « text-xs » (880 usages)
+       et 12 px à « text-sm » (492 usages), trop petits à lire. On relève ces deux paliers seulement : minimum 12,6 px
+       et 13,3 px ; les titres (text-xl et plus) et les boîtes (marges, largeurs) ne bougent pas. */
+    --text-xs: 0.9rem;
+    --text-xs--line-height: 1.4;
+    --text-sm: 0.95rem;
+    --text-sm--line-height: 1.45;
 }
