@@ -1,6 +1,6 @@
 import {
-    CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, REGIONS_ORIGINE, TYPOLOGIES_INSTITUTIONNELLES,
-    libelleDeNature, libelleDeRegion
+    CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, MOTIFS_CITOYEN, REGIONS_ORIGINE, TYPOLOGIES_INSTITUTIONNELLES,
+    libelleDeNature, libelleDeRegion, motifCitoyen
 } from './saisine-categories';
 
 describe('saisine-categories', () => {
@@ -36,6 +36,30 @@ describe('saisine-categories', () => {
             expect(libelleDeNature('DENUNCIATION')).toBe('Dénonciation');
             expect(libelleDeNature('AUTRE')).toBe('AUTRE');
             expect(libelleDeNature(null)).toBe('—');
+        });
+    });
+
+    describe('motifs proposés au citoyen', () => {
+        it('reprennent exactement les dix valeurs du serveur (MotifSignalement)', () => {
+            expect(MOTIFS_CITOYEN.map(m => m.code)).toEqual(['CORRUPTION', 'DETOURNEMENT', 'FAVORITISME', 'FAUX', 'FRAUDE',
+                'ENRICHISSEMENT', 'ABUS_DE_FONCTION', 'FONCIER', 'DYSFONCTIONNEMENT', 'AUTRE']);
+        });
+
+        it('renvoient aux allégations officielles du tableau publié, « Autre » à aucune', () => {
+            expect(MOTIFS_CITOYEN.map(m => m.allegation)).toEqual(['CORRUPTION', 'DETOURNEMENT_MALVERSATIONS',
+                'FAVORITISME', 'FAUX_ET_USAGE_DE_FAUX', 'FRAUDE', 'ENRICHISSEMENT_ILLICITE', 'ABUS_DE_FONCTION',
+                'CONFLIT_FONCIER', 'DYSFONCTIONNEMENT', null]);
+        });
+
+        it('chacun a un libellé simple et une explication ; le terme officiel accompagne tous sauf « Autre »', () => {
+            expect(MOTIFS_CITOYEN.every(m => !!m.libelle && !!m.explication)).toBeTrue();
+            expect(MOTIFS_CITOYEN.filter(m => !m.terme).map(m => m.code)).toEqual(['AUTRE']);
+        });
+
+        it('motifCitoyen retrouve un motif par son code, ou rien', () => {
+            expect(motifCitoyen('FAUX')?.libelle).toBe('Un faux document ou une fausse signature');
+            expect(motifCitoyen('INCONNU')).toBeUndefined();
+            expect(motifCitoyen(null)).toBeUndefined();
         });
     });
 

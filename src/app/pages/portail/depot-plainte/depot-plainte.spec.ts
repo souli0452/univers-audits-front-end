@@ -306,6 +306,120 @@ describe('DepotPlainte (page unique)', () => {
         });
     });
 
+    describe('motif du signalement (facultatif)', () => {
+        const motifs = () => Array.from(racine().querySelectorAll('button.motif')) as HTMLButtonElement[];
+        const motif = (debut: string) => motifs().find(b => (b.textContent ?? '').includes(debut))!;
+
+        it('propose dix choix en mots simples, avec le terme officiel à côté', () => {
+            fixture.detectChanges();
+
+            expect(motifs().length).toBe(10);
+            expect(texte()).toContain("On m'a demandé de l'argent ou un cadeau");
+            expect(motif("On m'a demandé").textContent).toContain('Corruption');
+            expect(texte()).toContain('Autre chose, ou je ne sais pas');
+        });
+
+        it('ne demande aucune qualification juridique technique', () => {
+            const t = texte();
+
+            for (const terme of ['Concussion', 'Stellionat', 'Blanchiment', "Délit d'apparence", "Conflit d'intérêt"]) {
+                expect(t).not.toContain(terme);
+            }
+        });
+
+        it('est annoncé comme un groupe de choix facultatif, dont chaque choix dit s\'il est retenu', () => {
+            fixture.detectChanges();
+            const groupe = racine().querySelector('[role="group"][aria-labelledby="motif-titre"]')!;
+
+            expect(groupe).not.toBeNull();
+            expect(racine().querySelector('#motif-titre')!.textContent).toContain('facultatif');
+            expect(motifs().every(b => b.getAttribute('aria-pressed') === 'false')).toBeTrue();
+        });
+
+        it('ne choisit rien par défaut : la demande ne porte aucun motif', () => {
+            ecrire();
+
+            component.submit();
+
+            expect(envoyee().motifDeclare).toBeUndefined();
+        });
+
+        it('envoie le motif choisi avec le signalement', () => {
+            ecrire();
+            fixture.detectChanges();
+
+            motif("On m'a demandé").click();
+            fixture.detectChanges();
+            component.submit();
+
+            expect(motif("On m'a demandé").getAttribute('aria-pressed')).toBe('true');
+            expect(envoyee().motifDeclare).toBe('CORRUPTION');
+        });
+
+        it('un second clic sur le même motif le retire', () => {
+            ecrire();
+            fixture.detectChanges();
+            motif("On m'a demandé").click();
+            fixture.detectChanges();
+
+            motif("On m'a demandé").click();
+            fixture.detectChanges();
+            component.submit();
+
+            expect(motif("On m'a demandé").getAttribute('aria-pressed')).toBe('false');
+            expect(envoyee().motifDeclare).toBeUndefined();
+        });
+
+        it('ne garde qu\'un seul motif à la fois', () => {
+            fixture.detectChanges();
+
+            motif("On m'a demandé").click();
+            fixture.detectChanges();
+            motif('Un faux document').click();
+            fixture.detectChanges();
+
+            expect(motifs().filter(b => b.getAttribute('aria-pressed') === 'true').length).toBe(1);
+            expect(motif('Un faux document').getAttribute('aria-pressed')).toBe('true');
+        });
+
+        it('reste proposé à qui préfère parler au lieu d\'écrire', () => {
+            component.choisirMode('vocal');
+            fixture.detectChanges();
+
+            expect(motifs().length).toBe(10);
+        });
+
+        it('le récapitulatif rappelle le motif choisi', () => {
+            ecrire();
+            fixture.detectChanges();
+            motif('Un faux document').click();
+            component.showRecap = true;
+            const t = texte();
+
+            expect(t).toContain('Motif');
+            expect(t).toContain('Un faux document ou une fausse signature');
+        });
+
+        it('le récapitulatif ne parle pas de motif quand rien n\'est choisi', () => {
+            ecrire();
+            component.showRecap = true;
+
+            expect(texte()).not.toContain('Motif');
+        });
+
+        it('« Effacer » remet le motif à zéro', () => {
+            fixture.detectChanges();
+            motif('Un faux document').click();
+
+            (component as any).reinitialiser();
+            fixture.detectChanges();
+            ecrire();
+            component.submit();
+
+            expect(envoyee().motifDeclare).toBeUndefined();
+        });
+    });
+
     describe('récapitulatif avant l\'envoi', () => {
         it('« Envoyer » ouvre un récapitulatif sans rien envoyer', () => {
             ecrire();

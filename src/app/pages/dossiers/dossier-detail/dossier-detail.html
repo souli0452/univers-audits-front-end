@@ -418,6 +418,18 @@
             </div>
         </div>
 
+        <div *ngIf="motifDeclare() as m" role="note"
+            class="p-3 rounded-xl border border-primary-200 bg-white flex flex-wrap items-center gap-3 text-sm">
+            <span>
+                <i class="pi pi-lightbulb mr-2 text-primary-600"></i>Le déclarant a indiqué :
+                <strong>{{ m.libelle }}</strong>
+                <ng-container *ngIf="allegationProposee() as a"> · allégation proposée : <strong>{{ a.libelle }}</strong></ng-container>
+                <span class="block text-xs text-surface-500">C'est une piste : à vous de qualifier les faits.</span>
+            </span>
+            <p-button *ngIf="allegationProposee() as a" [disabled]="etudeForm.typeInfractionId === a.id"
+                label="Retenir cette allégation" size="small" [outlined]="true" (onClick)="retenirAllegationDuMotif()" />
+        </div>
+
         <div class="p-3 rounded-xl border border-primary-100 bg-primary-50 flex flex-col gap-3">
             <div>
                 <label class="text-xs font-medium text-surface-500 mb-1 block uppercase tracking-wide">Nature de la qualification</label>

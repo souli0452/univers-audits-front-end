@@ -62,6 +62,78 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
         });
     });
 
+    describe("motif indiqué par le déclarant, à l'étude d'opportunité", () => {
+        const types = [
+            { id: 't-cor', code: 'CORRUPTION', libelle: 'Corruption' },
+            { id: 't-fav', code: 'FAVORITISME', libelle: 'Favoritisme' }
+        ];
+
+        it('retrouve le motif en mots simples choisi par le citoyen', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'CORRUPTION' });
+
+            expect(component.motifDeclare()?.libelle).toBe("On m'a demandé de l'argent ou un cadeau");
+        });
+
+        it('ne dit rien quand le citoyen n\'a pas choisi de motif', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE');
+
+            expect(component.motifDeclare()).toBeUndefined();
+            expect(component.allegationProposee()).toBeUndefined();
+        });
+
+        it('propose l\'allégation officielle qui correspond au motif', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'FAVORITISME' });
+            component.typesInfraction = types;
+
+            expect(component.allegationProposee()?.id).toBe('t-fav');
+        });
+
+        it('ne propose aucune allégation pour « Autre » : l\'agent qualifie lui-même', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'AUTRE' });
+            component.typesInfraction = types;
+
+            expect(component.allegationProposee()).toBeUndefined();
+        });
+
+        it('ne propose rien tant que la liste des infractions n\'est pas chargée', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'CORRUPTION' });
+            component.typesInfraction = [];
+
+            expect(component.allegationProposee()).toBeUndefined();
+        });
+
+        it('« Retenir » renseigne l\'allégation et, si rien n\'est choisi, la nature pénale', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'CORRUPTION' });
+            component.typesInfraction = types;
+            component.etudeForm = { natureQualification: null, typeInfractionId: null };
+
+            component.retenirAllegationDuMotif();
+
+            expect(component.etudeForm.typeInfractionId).toBe('t-cor');
+            expect(component.etudeForm.natureQualification).toBe('PENALE');
+        });
+
+        it('« Retenir » ne change pas une nature déjà choisie par l\'agent', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'CORRUPTION' });
+            component.typesInfraction = types;
+            component.etudeForm = { natureQualification: 'ADMINISTRATIVE', typeInfractionId: null };
+
+            component.retenirAllegationDuMotif();
+
+            expect(component.etudeForm.natureQualification).toBe('ADMINISTRATIVE');
+            expect(component.etudeForm.typeInfractionId).toBe('t-cor');
+        });
+
+        it('n\'écrase rien à l\'ouverture : seul l\'agent, en cliquant, retient l\'allégation', () => {
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE', { motifDeclare: 'CORRUPTION' });
+            component.typesInfraction = types;
+
+            component.openEtudeDialog();
+
+            expect(component.etudeForm.typeInfractionId).toBeNull();
+        });
+    });
+
     describe('compléter la fiche', () => {
         it('est ouvert, avec le droit de modifier, avant le début de l\'étude (Soumis ou Reçu)', () => {
             droits = ['DOSSIER_MODIFIER'];
