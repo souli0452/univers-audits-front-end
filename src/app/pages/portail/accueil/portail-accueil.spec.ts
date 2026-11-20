@@ -62,13 +62,26 @@ describe('PortailAccueil', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/portail/suivi']);
         });
 
-        it('« Faire un signalement » ouvre le choix formulaire / vocal', () => {
+        it('« Faire un signalement » ouvre directement la page de dépôt, sans menu intermédiaire', () => {
             (q('.hero-actions .btn-hero-primary') as HTMLButtonElement).click();
             fixture.detectChanges();
 
-            expect(q('.overlay')).not.toBeNull();
-            (q('.c-audio') as HTMLElement).click();
-            expect(router.navigate).toHaveBeenCalledWith(['/portail/vocal']);
+            expect(q('.overlay')).toBeNull();
+            expect(router.navigate).toHaveBeenCalledWith(['/portail/deposer']);
+        });
+
+        it('la carte « vive voix » ouvre la même page de dépôt, déjà en mode « Parler »', () => {
+            (q('.btn-vocal') as HTMLButtonElement).click();
+
+            expect(router.navigate).toHaveBeenCalledWith(['/portail/deposer'], { queryParams: { mode: 'vocal' } });
+            expect(router.navigate).not.toHaveBeenCalledWith(['/portail/vocal']);
+        });
+
+        it('aucun lien de l\'accueil ne mène encore à l\'ancienne page vocale', () => {
+            const liens = Array.from(fixture.nativeElement.querySelectorAll('[routerLink], a[href]'))
+                .map((e: any) => e.getAttribute('routerLink') ?? e.getAttribute('href') ?? '');
+
+            expect(liens.filter((l: string) => l.includes('/portail/vocal'))).toEqual([]);
         });
     });
 
@@ -110,11 +123,12 @@ describe('PortailAccueil', () => {
             expect(q('.quick-circle.is-green')).toBeNull();
         });
 
-        it('le bouton d’« Accès rapide » ouvre le choix de dépôt', () => {
+        it('le bouton d’« Accès rapide » ouvre directement la page de dépôt', () => {
             (q('.quick-item') as HTMLButtonElement).click();
             fixture.detectChanges();
 
-            expect(q('.overlay')).not.toBeNull();
+            expect(q('.overlay')).toBeNull();
+            expect(router.navigate).toHaveBeenCalledWith(['/portail/deposer']);
         });
     });
 
@@ -177,20 +191,16 @@ describe('PortailAccueil', () => {
     describe('téléphone : boîte de dépôt et liens du pied de page', () => {
         const petitEcran = () => window.matchMedia('(max-width: 860px)').matches;   // la fenêtre de Karma est étroite
 
-        it('les deux choix de la boîte de dépôt s’empilent et tiennent dans la boîte', () => {
-            (q('.hero-actions .btn-hero-primary') as HTMLButtonElement).click();
-            fixture.detectChanges();
-            const boite = q('.dialog')!.getBoundingClientRect();
-            const choix = qa('.d-choice').map(c => c.getBoundingClientRect());
+        it('la carte « vive voix » et son bouton tiennent dans la largeur de l’écran', () => {
+            const carte = q('.vocal-card')!.getBoundingClientRect();
+            const bouton = q('.btn-vocal')!.getBoundingClientRect();
 
-            expect(choix.length).toBe(2);
-            for (const c of choix) {
-                expect(c.left).toBeGreaterThanOrEqual(boite.left);
-                expect(c.right).toBeLessThanOrEqual(boite.right + 0.5);
-            }
+            expect(carte.left).toBeGreaterThanOrEqual(0);
+            expect(carte.right).toBeLessThanOrEqual(window.innerWidth + 0.5);
+            expect(bouton.left).toBeGreaterThanOrEqual(carte.left);
+            expect(bouton.right).toBeLessThanOrEqual(carte.right + 0.5);
             if (petitEcran()) {
-                expect(getComputedStyle(q('.dialog-choices')!).flexDirection).toBe('column');
-                expect(parseFloat(getComputedStyle(q('.dialog')!).paddingLeft)).toBeLessThanOrEqual(24);
+                expect(getComputedStyle(q('.vocal-card')!).gridTemplateColumns.trim().split(/\s+/).length).toBe(1);
             }
         });
 
