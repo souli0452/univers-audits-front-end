@@ -189,23 +189,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         .btt.visible{opacity:1;pointer-events:all} .btt:hover{transform:translateY(-3px)}
 
         /* ── Dialogue de dépôt ──────────────────────────────── */
-        .overlay{position:fixed;inset:0;background:rgba(0,54,23,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem}
-        .dialog{background:#fff;border-radius:16px;padding:2.75rem 2.5rem;max-width:520px;width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.3);position:relative;animation:dialog-in .25s ease-out}
-        @keyframes dialog-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        .dialog-close{position:absolute;top:1rem;right:1.1rem;width:30px;height:30px;border-radius:50%;background:var(--mist);border:none;font-size:.9rem;cursor:pointer;color:var(--ink-60);display:flex;align-items:center;justify-content:center;transition:background .15s}
-        .dialog-close:hover{background:var(--hair)}
-        .dialog h2{font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:var(--ink);margin-bottom:.35rem}
-        .dialog-sub{font-size:.85rem;color:var(--ink-60);margin-bottom:2rem}
-        .dialog-choices{display:flex;gap:1rem;justify-content:center}
-        .d-choice{flex:1;min-width:150px;max-width:200px;border:1.5px solid var(--hair);border-radius:12px;padding:1.75rem 1.1rem;cursor:pointer;transition:all .2s;background:#fff;display:flex;flex-direction:column;align-items:center;gap:.75rem}
-        .d-choice:hover{transform:translateY(-4px);box-shadow:0 14px 28px rgba(0,0,0,.08)}
-        .d-choice.c-form:hover{border-color:var(--green)} .d-choice.c-audio:hover{border-color:var(--red)}
-        .d-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-        .c-form .d-icon{background:var(--green)} .c-audio .d-icon{background:var(--red)}
-        .d-icon i{font-size:1.4rem;color:#fff}
-        .d-label{font-size:.9rem;font-weight:800;color:var(--ink)}
-        .d-hint{font-size:.75rem;color:var(--ink-60);line-height:1.5}
-        .dialog-note{margin-top:1.5rem;padding:.85rem 1.1rem;background:var(--mist);border-radius:10px;border-left:3px solid var(--green);font-size:.78rem;color:var(--ink-60);text-align:left;line-height:1.5}
 
         @media (max-width:860px){
             .steps-row,.tc-grid,.garanties-grid,.channels-list{grid-template-columns:1fr}
@@ -217,9 +200,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
             .footer-arms img{height:56px}
             .hero-grid{grid-template-columns:1fr}
             /* Téléphone : boîte de dépôt plus étroite, choix empilés (sinon les cartes débordent des marges) */
-            .dialog{padding:1.75rem 1.25rem}
-            .dialog-choices{flex-direction:column}
-            .d-choice{max-width:none;min-width:0}
             /* Zones de toucher confortables pour les liens du pied de page */
             .footer-col a,.footer-phone{min-height:36px;padding:.4rem 0}
             .hero-title{font-size:clamp(1.5rem,7vw,2.1rem);overflow-wrap:anywhere}
@@ -256,7 +236,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                 <p class="hero-subtitle" @fadeIn>{{ heroSubtitle }}</p>
                 <p class="hero-legal" @fadeIn>Plateforme officielle sécurisée — Loi N°001-2021/AN</p>
                 <div class="hero-actions" @fadeIn>
-                    <button class="btn-hero-primary" (click)="showDialog=true"><i class="pi pi-megaphone"></i> Faire un signalement</button>
+                    <button class="btn-hero-primary" (click)="goToDepot()"><i class="pi pi-megaphone"></i> Faire un signalement</button>
                 </div>
                 <ul class="hero-trust">
                     <li *ngFor="let t of trustItems"><i class="pi pi-check"></i>{{ t.title }}</li>
@@ -299,7 +279,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
                 <h2>Témoignez de vive voix, en toute confiance</h2>
                 <p>Vous préférez raconter les faits plutôt que les écrire ? Enregistrez votre témoignage depuis votre téléphone, dans votre langue, en toute confidentialité.</p>
             </div>
-            <button class="btn-vocal" routerLink="/portail/vocal">Enregistrer mon témoignage <i class="pi pi-arrow-right"></i></button>
+            <button class="btn-vocal" (click)="goToDepot('vocal')">Enregistrer mon témoignage <i class="pi pi-arrow-right"></i></button>
         </div>
     </div>
 
@@ -349,7 +329,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
         <h2 class="section-title">Prêt à agir contre la corruption ?</h2>
         <p class="section-sub">Chaque signalement compte. Votre témoignage peut changer les choses.</p>
         <div class="quick-grid">
-            <button class="quick-item" (click)="showDialog=true">
+            <button class="quick-item" (click)="goToDepot()">
                 <div class="quick-circle is-red"><i class="pi pi-megaphone"></i></div>
                 <span>Faire un signalement</span>
             </button>
@@ -366,7 +346,7 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
             <div class="footer-col">
                 <h4>LIENS RAPIDES</h4>
                 <ul>
-                    <li><a style="cursor:pointer" (click)="showDialog=true"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
+                    <li><a style="cursor:pointer" (click)="goToDepot()"><i class="pi pi-angle-right"></i>Faire un signalement</a></li>
                     <li><a routerLink="/portail/suivi"><i class="pi pi-angle-right"></i>Suivre un dossier</a></li>
                     <li><a routerLink="/portail/info/missions"><i class="pi pi-angle-right"></i>Nos missions</a></li>
                     <li><a routerLink="/portail/info/charte"><i class="pi pi-angle-right"></i>Notre charte</a></li>
@@ -408,27 +388,6 @@ import { AvantDeSignaler } from '../shared/avant-de-signaler';
 
     <div class="btt" [class.visible]="scrolled" (click)="scrollToTop()"><i class="pi pi-arrow-up"></i></div>
 
-    <div class="overlay" *ngIf="showDialog" (click)="showDialog=false">
-        <div class="dialog" (click)="$event.stopPropagation()">
-            <button class="dialog-close" (click)="showDialog=false"><i class="pi pi-times"></i></button>
-            <h2>Comment voulez-vous déposer ?</h2>
-            <p class="dialog-sub">Les deux options sont totalement confidentielles</p>
-            <div class="dialog-choices">
-                <div class="d-choice c-form" (click)="goTo('/portail/deposer')">
-                    <div class="d-icon"><i class="pi pi-file-edit"></i></div>
-                    <div><div class="d-label">Formulaire écrit</div><div class="d-hint">Remplir un formulaire<br>avec pièces jointes</div></div>
-                </div>
-                <div class="d-choice c-audio" (click)="goTo('/portail/vocal')">
-                    <div class="d-icon"><i class="pi pi-microphone"></i></div>
-                    <div><div class="d-label">Témoignage vocal</div><div class="d-hint">Enregistrer votre voix<br>directement</div></div>
-                </div>
-            </div>
-            <div class="dialog-note">
-                <i class="pi pi-shield" style="color:var(--green);margin-right:6px;"></i>
-                <strong>Confidentialité</strong> — Vos données personnelles sont protégées conformément à la loi N°001-2021/AN.
-            </div>
-        </div>
-    </div>
 </div>
     `
 })
@@ -448,7 +407,6 @@ export class PortailAccueil implements OnInit, OnDestroy {
     readonly numeroVert = NUMERO_VERT;
     readonly lienNumeroVert = lienTelephone(NUMERO_VERT);
 
-    showDialog   = false;
     scrolled     = false;
     statsLoading = true;
     trackingCode = '';
@@ -522,7 +480,11 @@ export class PortailAccueil implements OnInit, OnDestroy {
         ];
     }
 
-    goTo(path: string): void { this.showDialog = false; this.router.navigate([path]); }
+    /** Une seule page de dépôt : le citoyen y choisit d'écrire ou de parler (« mode » ouvre directement la voix). */
+    goToDepot(mode?: 'vocal'): void {
+        if (mode) { this.router.navigate(['/portail/deposer'], { queryParams: { mode } }); return; }
+        this.router.navigate(['/portail/deposer']);
+    }
 
     goToTracking(): void {
         const code = this.trackingCode.trim();

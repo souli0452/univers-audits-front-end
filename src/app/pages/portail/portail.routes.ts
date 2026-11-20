@@ -14,10 +14,11 @@ export default [
             .then(m => m.DepotPlainte)
     },
     {
+        // Ancienne page vocale : une seule page de dépôt, avec le choix « Écrire » ou « Parler ». Les anciens liens
+        // et favoris continuent de marcher.
         path: 'vocal',
-        loadComponent: () =>
-            import('./vocal/portail-vocal')
-            .then(m => m.PortailVocal)
+        pathMatch: 'full',
+        redirectTo: '/portail/deposer?mode=vocal'
     },
     {
         path: 'suivi',

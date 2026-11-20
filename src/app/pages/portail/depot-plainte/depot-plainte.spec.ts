@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -25,7 +25,9 @@ describe('DepotPlainte (page unique)', () => {
     const ecrire = (recit: string = RECIT) => component.f['description'].setValue(recit);
     const envoyee = () => dossierService.submit.calls.mostRecent().args[0];
 
-    beforeEach(() => {
+    /** Crée la page ; `mode` simule « ?mode=vocal » dans l'adresse (liens de l'accueil). */
+    function creer(mode?: string): void {
+        TestBed.resetTestingModule();
         dossierService = { submit: jasmine.createSpy('submit').and.returnValue(of({ id: 'd1', accessCode: 'ABCD1234' })) };
         attachmentService = { upload: jasmine.createSpy('upload').and.returnValue(of({})) };
 
@@ -36,7 +38,8 @@ describe('DepotPlainte (page unique)', () => {
                 provideNoopAnimations(),
                 { provide: DossierService, useValue: dossierService },
                 { provide: AttachmentService, useValue: attachmentService },
-                { provide: GeographieService, useValue: { getArbre: () => of({ code: 'BF', libelle: 'Burkina Faso', regions: [] }) } }
+                { provide: GeographieService, useValue: { getArbre: () => of({ code: 'BF', libelle: 'Burkina Faso', regions: [] }) } },
+                { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(mode ? { mode } : {}) } } }
             ]
         });
         fixture = TestBed.createComponent(DepotPlainte);
@@ -44,7 +47,9 @@ describe('DepotPlainte (page unique)', () => {
         messages = fixture.debugElement.injector.get(MessageService);
         spyOn(messages, 'add');
         fixture.detectChanges();
-    });
+    }
+
+    beforeEach(() => creer());
 
     describe('une seule page, courte à lire', () => {
         it('n\'a plus d\'étapes : ni barre de progression, ni « Étape », ni écran de sécurité obligatoire', () => {
@@ -577,16 +582,208 @@ describe('DepotPlainte (page unique)', () => {
         });
     });
 
-    describe('message vocal', () => {
-        it('se propose à côté du récit, sans passer par les preuves', () => {
-            const t = texte();
+    describe('deux façons de raconter, une seule page : écrire ou parler', () => {
+        const choix = (libelle: string) =>
+            Array.from(racine().querySelectorAll<HTMLButtonElement>('.mode-choix button'))
+                .find(b => b.textContent?.includes(libelle))!;
 
-            expect(t).toContain('enregistrez votre voix');
-            expect(racine().querySelector('.recit-bloc .btn-voix')).not.toBeNull();
+        it('propose « Écrire » et « Parler » en tête, écrire étant le choix de départ', () => {
+            texte();
+
+            expect(component.mode).toBe('ecrit');
+            expect(choix('Écrire')).toBeDefined();
+            expect(choix('Parler')).toBeDefined();
+            expect(choix('Écrire').getAttribute('aria-pressed')).toBe('true');
+            expect(choix('Parler').getAttribute('aria-pressed')).toBe('false');
+            expect(racine().querySelector('textarea#recit')).not.toBeNull();
         });
 
-        it('avertit qu\'une voix peut identifier quand le dépôt est anonyme', () => {
-            expect(texte()).toContain('Votre voix peut vous identifier');
+        it('« ?mode=vocal » (lien « Parler » de l\'accueil) ouvre directement la page en mode vocal', () => {
+            creer('vocal');
+
+            expect(component.mode).toBe('vocal');
+            expect(racine().querySelector('textarea#recit')).toBeNull();
+            expect(racine().querySelector('.btn-parler')).not.toBeNull();
+        });
+
+        it('ignore une valeur inconnue dans l\'adresse', () => {
+            creer('nimporte-quoi');
+
+            expect(component.mode).toBe('ecrit');
+        });
+
+        it('en mode vocal : un grand bouton pour parler, les langues en toutes lettres, et l\'avertissement sur la voix', () => {
+            component.choisirMode('vocal');
+            const t = texte();
+
+            expect(racine().querySelector('textarea#recit')).toBeNull();
+            expect(racine().querySelector('.btn-parler')).not.toBeNull();
+            expect(t).toContain('Parlez dans votre langue');
+            expect(t).toContain('Mooré');
+            expect(t).toContain('Dioula');
+            expect(t).toContain('Fulfuldé');
+            expect(t).toContain('Votre voix peut vous identifier');
+        });
+
+        it('en mode écrit : pas de second bouton d\'enregistrement, le choix « Parler » suffit', () => {
+            texte();
+
+            expect(racine().querySelector('.btn-parler')).toBeNull();
+        });
+
+        it('changer de mode ne perd ni le texte ni le message vocal', () => {
+            ecrire();
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+            component.audioUrl = 'blob:test';
+
+            component.choisirMode('vocal');
+            component.choisirMode('ecrit');
+
+            expect(component.f['description'].value).toBe(RECIT);
+            expect(component.audioBlob).not.toBeNull();
+        });
+
+        it('en mode écrit, un message vocal déjà enregistré reste visible et supprimable', () => {
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+            component.audioUrl = 'blob:test';
+            component.recordingDuration = 42;
+
+            const t = texte();
+
+            expect(t).toContain('Message vocal joint');
+            expect(t).toContain('0:42');
+            expect(racine().querySelector('.btn-supprimer-audio')).not.toBeNull();
+        });
+
+        it('« Je préfère écrire » ramène au mode écrit', () => {
+            component.choisirMode('vocal');
+            texte();
+
+            (racine().querySelector('.lien-ecrire') as HTMLButtonElement).click();
+
+            expect(component.mode).toBe('ecrit');
+        });
+
+        it('la langue parlée, si elle est choisie, est notée pour l\'agent qui écoutera le message', () => {
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+            component.choisirLangue('Mooré');
+
+            component.submit();
+
+            expect(envoyee().object).toBe('Signalement déposé par message vocal');
+            expect(envoyee().description).toBe('Message vocal en Mooré.');
+        });
+
+        it('sans langue choisie, un message vocal seul n\'a pas de description inventée', () => {
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+
+            component.submit();
+
+            expect(envoyee().description).toBeUndefined();
+        });
+
+        it('avec un récit écrit ET un message vocal, la langue est ajoutée à la suite du récit', () => {
+            ecrire();
+            component.audioBlob = new Blob(['x'], { type: 'audio/webm' });
+            component.choisirLangue('Dioula');
+
+            component.submit();
+
+            expect(envoyee().description).toBe(`${RECIT}\n\nMessage vocal en Dioula.`);
+        });
+
+        it('la langue ne part pas sans message vocal', () => {
+            ecrire();
+            component.choisirLangue('Dioula');
+
+            component.submit();
+
+            expect(envoyee().description).toBe(RECIT);
+        });
+
+        it('choisir deux fois la même langue la retire (choix facultatif)', () => {
+            component.choisirLangue('Mooré');
+            component.choisirLangue('Mooré');
+
+            expect(component.langueParlee).toBe('');
+        });
+
+        it('tout effacer remet le mode écrit et retire la langue', () => {
+            spyOn((component as any).confirmationService, 'confirm').and.callFake((c: any) => c.accept && c.accept());
+            component.choisirMode('vocal');
+            component.choisirLangue('Mooré');
+
+            component.effacer();
+
+            expect(component.mode).toBe('ecrit');
+            expect(component.langueParlee).toBe('');
+        });
+    });
+
+    describe('preuves : photo, vidéo ou galerie', () => {
+        const entree = (sel: string) => racine().querySelector<HTMLInputElement>(sel);
+
+        beforeEach(() => { component.ouvert.preuves = true; texte(); });
+
+        it('« Prendre une photo » ouvre directement l\'appareil photo du téléphone', () => {
+            const photo = entree('input[type="file"][accept="image/*"][capture]');
+
+            expect(photo).not.toBeNull();
+            expect(photo!.getAttribute('capture')).toBe('environment');
+            expect(texte()).toContain('Prendre une photo');
+        });
+
+        it('« Filmer une vidéo » ouvre directement la caméra', () => {
+            const video = entree('input[type="file"][accept="video/*"][capture]');
+
+            expect(video).not.toBeNull();
+            expect(texte()).toContain('Filmer une vidéo');
+        });
+
+        it('« Choisir dans la galerie » ouvre la galerie et les fichiers, plusieurs à la fois, sans appareil photo', () => {
+            const galerie = entree('input[type="file"][multiple]:not([capture])');
+
+            expect(galerie).not.toBeNull();
+            expect(texte()).toContain('Choisir dans la galerie');
+            expect(galerie!.accept).toContain('.pdf');
+            expect(galerie!.accept).toContain('.jpg');
+        });
+
+        it('les trois façons alimentent la même liste, limitée à 5 fichiers', () => {
+            component.onFileSelect({ target: { files: [new File(['x'], 'photo.jpg', { type: 'image/jpeg' })] } });
+            component.onFileSelect({ target: { files: [new File(['x'], 'film.mp4', { type: 'video/mp4' })] } });
+            component.onFileSelect({ target: { files: [new File(['x'], 'acte.pdf', { type: 'application/pdf' })] } });
+
+            expect(component.attachments.map(f => f.name)).toEqual(['photo.jpg', 'film.mp4', 'acte.pdf']);
+        });
+
+        it('montre une miniature pour une photo, une icône pour les autres fichiers', () => {
+            component.attachments = [
+                new File(['x'], 'photo.jpg', { type: 'image/jpeg' }),
+                new File(['x'], 'acte.pdf', { type: 'application/pdf' })
+            ];
+            fixture.detectChanges();
+
+            const lignes = racine().querySelectorAll('.file-item');
+            expect(lignes[0].querySelector('img.miniature')).not.toBeNull();
+            expect(lignes[1].querySelector('img.miniature')).toBeNull();
+        });
+
+        it('permet de reprendre le même fichier après l\'avoir retiré (la sélection du navigateur est vidée)', () => {
+            const champ = { files: [new File(['x'], 'photo.jpg', { type: 'image/jpeg' })], value: 'C:\\fakepath\\photo.jpg' };
+
+            component.onFileSelect({ target: champ });
+
+            expect(champ.value).toBe('');
+        });
+
+        it('les boutons de preuves font au moins 52 px de haut', () => {
+            const boutons = Array.from(racine().querySelectorAll<HTMLElement>('.btn-preuve'));
+
+            expect(boutons.length).toBe(3);
+            for (const b of boutons) {
+                expect(b.getBoundingClientRect().height).toBeGreaterThanOrEqual(52);
+            }
         });
     });
 

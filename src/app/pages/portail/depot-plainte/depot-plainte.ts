@@ -1,5 +1,5 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
+import { Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -128,7 +128,28 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         .btn-envoyer { background:var(--green-text); color:#fff; flex:1 1 16em; }
         .btn-envoyer:hover { background:#005f2e; }
         .btn-effacer { border-color:var(--hair); color:var(--ink-60); }
-        .btn-voix { align-self:flex-start; }
+        .mode-choix { display:grid; grid-template-columns:1fr 1fr; gap:.75em; margin-bottom:.5em; }
+        .mode-choix button {
+            min-height:3.5em; padding:.5em 1em; border:2px solid var(--hair); border-radius:12px; background:#fff; cursor:pointer;
+            font:inherit; font-size:1.1em; font-weight:800; color:var(--ink); display:flex; align-items:center; justify-content:center; gap:.5em;
+        }
+        .mode-choix button:hover { background:var(--mist); }
+        .mode-choix button.actif { border-color:var(--green-text); background:var(--mist); box-shadow:inset 0 0 0 1px var(--green-text); color:var(--green-text); }
+        .mode-choix button:focus-visible { outline:3px solid var(--ink); outline-offset:3px; }
+        .btn-parler { width:100%; min-height:5em; font-size:1.3em; background:var(--green-text); color:#fff; }
+        .btn-parler:hover { background:#005f2e; }
+        .langues { display:flex; flex-direction:column; gap:.5em; }
+        .puces { display:flex; flex-wrap:wrap; gap:.5em; }
+        .puce {
+            min-height:2.75em; padding:0 1.1em; border:2px solid var(--hair); border-radius:999px; background:#fff;
+            font:inherit; font-size:1em; font-weight:700; color:var(--ink); cursor:pointer;
+        }
+        .puce.choisie { border-color:var(--green-text); background:var(--mist); color:var(--green-text); }
+        .puce:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+        .lien-ecrire { align-self:flex-start; }
+        .preuves-boutons { display:grid; grid-template-columns:repeat(auto-fit, minmax(13em, 1fr)); gap:.75em; }
+        .btn-preuve { text-align:center; }
+        .miniature { width:48px; height:48px; border-radius:9px; object-fit:cover; flex-shrink:0; }
         .btn-danger { border-color:var(--red); color:var(--red); }
         .btn:disabled { opacity:.5; cursor:default; }
 
@@ -156,11 +177,6 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         .sous-label { font-size:1em; font-weight:700; }
         .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1em; }
 
-        .upload-zone {
-            border:2px dashed var(--green-text); border-radius:12px; padding:1.5em; text-align:center;
-            cursor:pointer; background:var(--mist);
-        }
-        .upload-zone p { margin:.25em 0 0; }
         .file-item {
             display:flex; align-items:center; gap:.75em; padding:.75em; border-radius:10px;
             background:var(--mist); border:1.5px solid var(--hair);
@@ -428,28 +444,50 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         <button type="button" class="lien" (click)="showSecurite = true">Comment vos données sont protégées</button>
 
         <div class="recit-bloc">
-            <label for="recit">Votre récit <span class="req" aria-hidden="true">*</span></label>
-            <textarea pTextarea id="recit" #recitChamp class="champ champ-recit"
-                [formControl]="f['description']"
-                placeholder="Exemple : À la mairie de ..., un agent m'a demandé 50 000 FCFA pour un acte de naissance, en mars dernier."
-                (blur)="recitTouche = true; analyserRecit()"></textarea>
-            <div style="display:flex;justify-content:space-between;gap:1em;align-items:flex-start;">
-                @if (recitTouche && !recitSuffisant) {
-                    <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Racontez les faits en quelques phrases, ou enregistrez votre voix.</p>
-                } @else {
-                    <p class="hint">Qui, quoi, où, quand : écrivez ce que vous savez, même incomplet. Un soupçon raisonnable suffit.</p>
-                }
-                <span class="compteur">{{ f['description'].value?.length || 0 }}</span>
+            <div class="mode-choix" role="group" aria-label="Comment voulez-vous raconter ?">
+                <button type="button" [class.actif]="mode === 'ecrit'" [attr.aria-pressed]="mode === 'ecrit'"
+                    (click)="choisirMode('ecrit')"><i class="pi pi-pencil"></i> Écrire mon récit</button>
+                <button type="button" [class.actif]="mode === 'vocal'" [attr.aria-pressed]="mode === 'vocal'"
+                    (click)="choisirMode('vocal')"><i class="pi pi-microphone"></i> Parler dans ma langue</button>
             </div>
 
-            @if (!audioUrl && !isRecording) {
-                <button type="button" class="btn btn-voix" (click)="startRecording()">
-                    <i class="pi pi-microphone"></i> Ou enregistrez votre voix
+            @if (mode === 'ecrit') {
+                <label for="recit">Votre récit <span class="req" aria-hidden="true">*</span></label>
+                <textarea pTextarea id="recit" #recitChamp class="champ champ-recit"
+                    [formControl]="f['description']"
+                    placeholder="Exemple : À la mairie de ..., un agent m'a demandé 50 000 FCFA pour un acte de naissance, en mars dernier."
+                    (blur)="recitTouche = true; analyserRecit()"></textarea>
+                <div style="display:flex;justify-content:space-between;gap:1em;align-items:flex-start;">
+                    @if (recitTouche && !recitSuffisant) {
+                        <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Racontez les faits en quelques phrases, ou parlez dans votre langue.</p>
+                    } @else {
+                        <p class="hint">Qui, quoi, où, quand : écrivez ce que vous savez, même incomplet. Un soupçon raisonnable suffit.</p>
+                    }
+                    <span class="compteur">{{ f['description'].value?.length || 0 }}</span>
+                </div>
+            } @else if (!audioUrl && !isRecording) {
+                <button type="button" class="btn btn-parler" (click)="startRecording()">
+                    <i class="pi pi-microphone"></i> Appuyez ici pour parler
                 </button>
+                <p class="hint">Parlez dans votre langue, comme vous le diriez à quelqu'un. Un agent écoutera votre message.</p>
+                @if (recitTouche && !recitSuffisant) {
+                    <p class="error-msg"><i class="pi pi-exclamation-circle"></i> Appuyez sur le bouton pour enregistrer votre message.</p>
+                }
+                <div class="langues" role="group" aria-label="Langue parlée (facultatif)">
+                    <span class="label sous-label">Quelle langue parlez-vous ? <span class="opt">(facultatif)</span></span>
+                    <div class="puces">
+                        @for (langue of langues; track langue) {
+                            <button type="button" class="puce" [class.choisie]="langueParlee === langue"
+                                [attr.aria-pressed]="langueParlee === langue" (click)="choisirLangue(langue)">{{ langue }}</button>
+                        }
+                    </div>
+                </div>
                 @if (fd['anonymous'].value) {
                     <p class="hint">Votre voix peut vous identifier : préférez écrire si vous voulez rester anonyme.</p>
                 }
+                <button type="button" class="lien lien-ecrire" (click)="choisirMode('ecrit')">Je préfère écrire</button>
             }
+
             @if (isRecording) {
                 <div class="audio-recording" role="status">
                     <span class="rec-dot"></span><span class="rec-text">REC</span>
@@ -461,9 +499,9 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
             }
             @if (audioUrl && !isRecording) {
                 <div class="audio-done">
-                    <b><i class="pi pi-check"></i> Message vocal enregistré · {{ formatDuration(recordingDuration) }}</b>
+                    <b><i class="pi pi-check"></i> {{ mode === 'ecrit' ? 'Message vocal joint' : 'Message vocal enregistré' }} · {{ formatDuration(recordingDuration) }}</b>
                     <audio appDureeAudio [src]="audioUrl" controls style="width:100%;"></audio>
-                    <button type="button" class="btn btn-danger" style="align-self:flex-start;" (click)="deleteAudio()">
+                    <button type="button" class="btn btn-danger btn-supprimer-audio" style="align-self:flex-start;" (click)="deleteAudio()">
                         <i class="pi pi-trash"></i> Supprimer et recommencer
                     </button>
                 </div>
@@ -536,22 +574,36 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
                     <p class="hint">Un document ou une photo aide l'instruction, mais n'est jamais exigé pour signaler.
                         Envoyez des copies : un fichier peut contenir des informations cachées (auteur, date, lieu d'une photo).
                         {{ maxFiles }} fichiers au plus, {{ maxSizeMB }} Mo chacun.</p>
-                    <div class="upload-zone" role="button" tabindex="0" (click)="fileInput.click()"
-                        (keydown.enter)="fileInput.click()" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
-                        <input #fileInput type="file" multiple style="display:none;"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
-                            (change)="onFileSelect($event)" />
-                        <i class="pi pi-cloud-upload" style="font-size:2em;color:var(--green-text);"></i>
-                        <p style="font-size:1.1em;font-weight:800;">Touchez ici pour choisir vos fichiers</p>
-                        <p class="hint">Formats acceptés : {{ extensionsLibelle }}</p>
+                    <input #photoInput type="file" accept="image/*" capture="environment" style="display:none;"
+                        (change)="onFileSelect($event)" />
+                    <input #videoInput type="file" accept="video/*" capture="environment" style="display:none;"
+                        (change)="onFileSelect($event)" />
+                    <input #galerieInput type="file" multiple style="display:none;"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
+                        (change)="onFileSelect($event)" />
+                    <div class="preuves-boutons">
+                        <button type="button" class="btn btn-preuve" (click)="photoInput.click()">
+                            <i class="pi pi-camera"></i> Prendre une photo
+                        </button>
+                        <button type="button" class="btn btn-preuve" (click)="videoInput.click()">
+                            <i class="pi pi-video"></i> Filmer une vidéo
+                        </button>
+                        <button type="button" class="btn btn-preuve" (click)="galerieInput.click()">
+                            <i class="pi pi-images"></i> Choisir dans la galerie ou mes fichiers
+                        </button>
                     </div>
+                    <p class="hint">Formats acceptés : {{ extensionsLibelle }}</p>
                     @if (attachments.length > 0) {
                         <div style="display:flex;flex-direction:column;gap:.5em;">
                             @for (file of attachments; track $index) {
                                 <div class="file-item">
-                                    <div class="file-icon" [style.background]="getFileBg(file)">
-                                        <i [class]="getFileIcon(file)" [style.color]="getFileColor(file)"></i>
-                                    </div>
+                                    @if (apercu(file); as source) {
+                                        <img class="miniature" [src]="source" alt="" />
+                                    } @else {
+                                        <div class="file-icon" [style.background]="getFileBg(file)">
+                                            <i [class]="getFileIcon(file)" [style.color]="getFileColor(file)"></i>
+                                        </div>
+                                    }
                                     <div style="flex:1;min-width:0;">
                                         <div style="font-size:1.05em;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ file.name }}</div>
                                         <div class="hint">{{ formatFileSize(file.size) }}</div>
@@ -766,9 +818,10 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
 </p-dialog>
     `
 })
-export class DepotPlainte {
+export class DepotPlainte implements OnDestroy {
 
     router = inject(Router);
+    private route = inject(ActivatedRoute);
 
     private fb                  = inject(FormBuilder);
     private dossierService      = inject(DossierService);
@@ -777,6 +830,11 @@ export class DepotPlainte {
     private confirmationService = inject(ConfirmationService);
 
     @ViewChild('recitChamp') private recitChamp?: ElementRef<HTMLTextAreaElement>;
+
+    /** Écrire ou parler : deux façons de raconter sur une seule page (« ?mode=vocal » ouvre directement la voix). */
+    mode: 'ecrit' | 'vocal' = this.route.snapshot.queryParamMap.get('mode') === 'vocal' ? 'vocal' : 'ecrit';
+    readonly langues = ['Français', 'Mooré', 'Dioula', 'Fulfuldé', 'Autre'];
+    langueParlee = '';
 
     submitting        = false;
     showSuccess       = false;
@@ -847,6 +905,15 @@ export class DepotPlainte {
 
     onOrigine(origine: OrigineSaisie): void {
         this.origine = origine;
+    }
+
+    choisirMode(mode: 'ecrit' | 'vocal'): void {
+        this.mode = mode;
+    }
+
+    /** Un second appui sur la même langue la retire : le choix reste facultatif. */
+    choisirLangue(langue: string): void {
+        this.langueParlee = this.langueParlee === langue ? '' : langue;
     }
 
     basculer(volet: Volet): void {
@@ -1071,8 +1138,11 @@ export class DepotPlainte {
             typeDeclarant: 'CITIZEN', organizationName: '', firstName: '', lastName: '', email: '', phoneNumber: '',
             anonymous: true, dataProcessingConsent: false, notificationsAccepted: true, protectionRequested: false
         });
+        this.libererApercus();
         this.attachments = [];
         this.deleteAudio();
+        this.mode = 'ecrit';
+        this.langueParlee = '';
         this.cancelProtection();
         this.origine = {};
         this.ouvert = { precisions: false, preuves: false, coordonnees: false };
@@ -1142,13 +1212,11 @@ export class DepotPlainte {
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
+    /** Photo, vidéo ou galerie : les trois alimentent la même liste. La sélection est vidée pour pouvoir reprendre le même fichier. */
     onFileSelect(event: any): void {
-        this.addFiles(Array.from(event.target.files));
-    }
-
-    onDrop(event: DragEvent): void {
-        event.preventDefault();
-        this.addFiles(Array.from(event.dataTransfer?.files || []));
+        const champ = event.target;
+        this.addFiles(Array.from(champ.files ?? []));
+        champ.value = '';
     }
 
     private addFiles(files: File[]): void {
@@ -1179,7 +1247,32 @@ export class DepotPlainte {
         this.attachments = total.slice(0, this.maxFiles);
     }
 
-    removeAttachment(index: number): void { this.attachments.splice(index, 1); }
+    removeAttachment(index: number): void {
+        const [retire] = this.attachments.splice(index, 1);
+        if (retire) { this.libererApercu(retire); }
+    }
+
+    /** Miniatures des photos : une adresse temporaire par fichier, libérée au retrait. */
+    private apercus = new Map<File, string>();
+
+    apercu(file: File): string | null {
+        if (!file.type.startsWith('image/')) { return null; }
+        let adresse = this.apercus.get(file);
+        if (!adresse) { adresse = URL.createObjectURL(file); this.apercus.set(file, adresse); }
+        return adresse;
+    }
+
+    private libererApercu(file: File): void {
+        const adresse = this.apercus.get(file);
+        if (adresse) { URL.revokeObjectURL(adresse); this.apercus.delete(file); }
+    }
+
+    private libererApercus(): void {
+        this.apercus.forEach(adresse => URL.revokeObjectURL(adresse));
+        this.apercus.clear();
+    }
+
+    ngOnDestroy(): void { this.libererApercus(); }
 
     getFileIcon(file: File): string {
         if (file.type.includes('image')) return 'pi pi-image';
@@ -1228,6 +1321,9 @@ export class DepotPlainte {
         // Le citoyen n'écrit plus de résumé : l'objet est la première phrase de son récit.
         const recit = (this.f['description'].value ?? '').trim();
         const objet = recit ? resumeDuRecit(recit) : OBJET_MESSAGE_VOCAL;
+        // La langue parlée aide l'agent à trouver qui peut écouter le message ; elle ne part qu'avec un message vocal.
+        const noteLangue = this.audioBlob && this.langueParlee ? `Message vocal en ${this.langueParlee}.` : '';
+        const description = [recit, noteLangue].filter(Boolean).join('\n\n');
 
         const request = {
             type:             this.f['type'].value as any,
@@ -1235,7 +1331,7 @@ export class DepotPlainte {
             submissionMode:   'WEB_FORM' as any,
             anonymous:        isAnonymous,
             object:           objet,
-            description:      recit || undefined,
+            description:      description || undefined,
             incidentLocation: this.f['incidentLocation'].value || undefined,
             ...this.origineAEnvoyer(isAnonymous),
             incidentPeriod:   this.f['incidentPeriod'].value   || undefined,
