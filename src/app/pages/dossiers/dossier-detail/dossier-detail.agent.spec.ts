@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -14,6 +14,8 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
     let component: DossierDetail;
     let messages: MessageService;
     let droits: string[];
+    /** Valeur de « ?action=… » dans l'adresse, posée par le menu « ⋯ » de la liste des dossiers. */
+    let actionDemandee: string | null;
     let attachmentService: { telecharger: jasmine.Spy };
 
     const dossier = (status: string, surcharge: any = {}) =>
@@ -21,12 +23,16 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
 
     beforeEach(() => {
         droits = [];
+        actionDemandee = null;
         attachmentService = { telecharger: jasmine.createSpy('telecharger').and.returnValue(of(new Blob(['x']))) };
         TestBed.configureTestingModule({
             imports: [DossierDetail],
             providers: [
                 provideRouter([]), provideHttpClient(), provideNoopAnimations(),
-                { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'd1' } } } },
+                { provide: ActivatedRoute, useValue: { snapshot: {
+                    paramMap: { get: () => 'd1' },
+                    queryParamMap: { get: (cle: string) => cle === 'action' ? actionDemandee : null }
+                } } },
                 { provide: DossierService, useValue: {} },
                 { provide: AttachmentService, useValue: attachmentService },
                 { provide: PermissionService, useValue: { a: (p: string) => droits.includes(p), charger: () => of(undefined) } },
@@ -294,6 +300,74 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
             component.downloadingRecepisse = true;
 
             expect(item('Récépissé').disabled).toBeTrue();
+        });
+    });
+
+    describe('action demandée depuis le menu « ⋯ » de la liste (?action=…)', () => {
+        function moi(...mesRoles: string[]): void {
+            spyOn(TestBed.inject(KeycloakService), 'hasAnyRole').and.callFake((r: string[]) => r.some(x => mesRoles.includes(x)));
+        }
+
+        it('ouvre la fenêtre de l\'action demandée, si elle est bien à la portée de cet agent', () => {
+            moi('CGE');
+            actionDemandee = 'declarer-recevable';
+            component.dossier = dossier('EN_REVUE_CTADP');
+            const espion = spyOn(component, 'openDeclareAdmissible');
+            spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+            component.ouvrirActionDemandee();
+
+            expect(espion).toHaveBeenCalledTimes(1);
+        });
+
+        it('n\'ouvre rien si l\'action n\'est pas permise à cet agent : l\'adresse ne remplace pas ses droits', () => {
+            moi('AGENT_BRPD');
+            actionDemandee = 'declarer-recevable';
+            component.dossier = dossier('EN_REVUE_CTADP');
+            const espion = spyOn(component, 'openDeclareAdmissible');
+            spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+            component.ouvrirActionDemandee();
+
+            expect(espion).not.toHaveBeenCalled();
+        });
+
+        it('n\'ouvre rien si l\'étape du dossier a changé entre-temps', () => {
+            moi('CGE');
+            actionDemandee = 'declarer-recevable';
+            component.dossier = dossier('EN_INVESTIGATION');
+            const espion = spyOn(component, 'openDeclareAdmissible');
+            spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+            component.ouvrirActionDemandee();
+
+            expect(espion).not.toHaveBeenCalled();
+        });
+
+        it('ignore une valeur inconnue ou absente', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+            const espion = spyOn(component, 'lancerAction');
+
+            actionDemandee = null;
+            component.ouvrirActionDemandee();
+            actionDemandee = 'supprimer-tout';
+            component.ouvrirActionDemandee();
+
+            expect(espion).not.toHaveBeenCalled();
+        });
+
+        it('retire « ?action » de l\'adresse après usage, pour ne pas rouvrir la fenêtre au rafraîchissement', () => {
+            moi('CGE');
+            actionDemandee = 'declarer-recevable';
+            component.dossier = dossier('EN_REVUE_CTADP');
+            spyOn(component, 'openDeclareAdmissible');
+            const navigation = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+
+            component.ouvrirActionDemandee();
+
+            expect(navigation).toHaveBeenCalledWith([], jasmine.objectContaining({
+                queryParams: { action: null }, queryParamsHandling: 'merge', replaceUrl: true }));
         });
     });
 

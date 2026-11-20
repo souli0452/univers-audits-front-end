@@ -13,3 +13,7 @@
 @font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url('/assets/fonts/lato/Lato-Bold.woff2') format('woff2'); }
 @font-face { font-family: 'Lato'; font-style: normal; font-weight: 800; font-display: swap; src: url('/assets/fonts/lato/Lato-ExtraBold.woff2') format('woff2'); }
 @font-face { font-family: 'Lato'; font-style: normal; font-weight: 900; font-display: swap; src: url('/assets/fonts/lato/Lato-Black.woff2') format('woff2'); }
+
+/* Menu « ⋯ » des listes : une décision qui engage (irrecevable) est signalée en rouge. */
+.menu-danger .p-menu-item-label,
+.menu-danger .p-menu-item-icon { color: #b91c1c; }

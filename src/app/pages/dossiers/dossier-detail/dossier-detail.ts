@@ -377,6 +377,7 @@ export class DossierDetail implements OnInit {
                 this.buildWorkflowSteps(dossier);
                 this.loading = false;
                 this.loadRelatedData(id);
+                this.ouvrirActionDemandee();
             },
             error: () => {
                 this.loading = false;
@@ -1181,6 +1182,19 @@ export class DossierDetail implements OnInit {
     }
 
     suivreAction = (_: number, action: ActionPrincipale): string => action.id;
+
+    /**
+     * Action demandée depuis le menu « ⋯ » de la liste (?action=…) : la fenêtre s'ouvre seulement si l'action est bien
+     * à la portée de cet agent à l'étape actuelle (l'adresse ne remplace jamais ses droits), puis le paramètre est
+     * retiré pour qu'un rafraîchissement ne rouvre pas la fenêtre.
+     */
+    ouvrirActionDemandee(): void {
+        const demandee = this.route.snapshot.queryParamMap?.get('action');
+        if (!demandee) { return; }
+        const permise = this.actionsPrincipales().find(a => a.id === demandee);
+        if (permise) { this.lancerAction(permise.id); }
+        void this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
 
     lancerAction(id: ActionId): void {
         switch (id) {
