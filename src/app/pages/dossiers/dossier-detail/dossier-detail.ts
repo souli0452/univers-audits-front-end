@@ -102,19 +102,19 @@ import { PermissionService } from '../../../core/services/permission.service';
         }
         .badge-classe {
             background: #991B1B; color: #fff;
-            font-size: 11px; font-weight: 800;
+            font-size: .9rem; font-weight: 800;
             padding: 3px 10px; border-radius: 20px;
             letter-spacing: 1px; text-transform: uppercase;
         }
         .badge-clos {
             background: #166534; color: #fff;
-            font-size: 11px; font-weight: 800;
+            font-size: .9rem; font-weight: 800;
             padding: 3px 10px; border-radius: 20px;
             letter-spacing: 1px; text-transform: uppercase;
         }
         .badge-decision {
             background: #1e40af; color: #fff;
-            font-size: 11px; font-weight: 800;
+            font-size: .9rem; font-weight: 800;
             padding: 3px 10px; border-radius: 20px;
             letter-spacing: 1px; text-transform: uppercase;
         }
