@@ -17,6 +17,7 @@ import { environment } from '../../../../environments/environment';
 
 import { OrigineSaisie } from '../../../core/models/geographie.model';
 import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
+import { ChoixSuggere, SuggestionSaisineAide } from '../../../shared/suggestion-saisine/suggestion-saisine';
 import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES, libelleDeNature } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossier-form',
@@ -25,7 +26,7 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
         CommonModule, RouterModule, FormsModule,
         ReactiveFormsModule, ButtonModule, InputTextModule,
         TextareaModule, SelectModule, CheckboxModule,
-        InputNumberModule, StepperModule, ToastModule, OrigineGeographique
+        InputNumberModule, StepperModule, ToastModule, OrigineGeographique, SuggestionSaisineAide
     ],
     providers: [MessageService],
     styles: [`
@@ -204,6 +205,11 @@ import { CHOIX_NATURE_AGENT, MODES_RESEAUX_SOCIAUX, TYPOLOGIES_INSTITUTIONNELLES
                                     </small>
                                 </div>
                             </div>
+
+                            <app-suggestion-saisine [texte]="texteDuRecit()"
+                                [natureActuelle]="f['natureSaisineChoisie'].value"
+                                [typologieActuelle]="f['typologieInstitutionnelle'].value"
+                                (appliquer)="appliquerSuggestion($event)" />
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-1.5">
@@ -934,6 +940,18 @@ export class DossierForm {
 
     /** Origine choisie dans les listes liées ; transmise au serveur à l'enregistrement. */
     origine: OrigineSaisie = {};
+
+    /** Récit sur lequel s'appuie la suggestion : l'objet et la description saisis. */
+    texteDuRecit(): string {
+        return `${this.f['object'].value ?? ''}\n${this.f['description'].value ?? ''}`;
+    }
+
+    /** L'agent accepte la suggestion : elle remplit les deux listes, qu'il peut encore corriger avant l'envoi. */
+    appliquerSuggestion(choix: ChoixSuggere): void {
+        if (choix.nature) { this.f['natureSaisineChoisie'].setValue(choix.nature); }
+        if (choix.typologie) { this.f['typologieInstitutionnelle'].setValue(choix.typologie); }
+        this.dossierForm.markAsDirty();
+    }
 
     onOrigine(origine: OrigineSaisie): void {
         this.origine = origine;

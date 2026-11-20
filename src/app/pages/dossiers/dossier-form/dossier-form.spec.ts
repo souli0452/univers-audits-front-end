@@ -99,4 +99,30 @@ describe('DossierForm (enregistrement par un agent)', () => {
         expect(texte).not.toContain('Confidentialité garantie');
         expect(texte).not.toContain('Toutes les informations sont protégées');
     });
+
+    describe("suggestion d'après la description", () => {
+        const RECIT = "On m'a réclamé 10 000 F à la mairie de Boromo pour un acte de mariage.";
+        const bouton = (nom: string): HTMLButtonElement | undefined =>
+            Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+                .find(b => (b.textContent ?? '').includes(nom)) as HTMLButtonElement | undefined;
+
+        beforeEach(() => {
+            component.dossierForm.patchValue({ description: RECIT, natureSaisineChoisie: null, typologieInstitutionnelle: null });
+            fixture.detectChanges();
+        });
+
+        it("propose nature et type d'institution sans rien remplir", () => {
+            expect((fixture.nativeElement as HTMLElement).textContent).toContain('Suggestion');
+            expect(component.f['natureSaisineChoisie'].value).toBeNull();
+            expect(component.f['typologieInstitutionnelle'].value).toBeNull();
+        });
+
+        it('« Appliquer » remplit les deux listes', () => {
+            bouton('Appliquer')!.click();
+
+            expect(component.f['natureSaisineChoisie'].value).toBe('PLAINTE');
+            expect(component.f['typologieInstitutionnelle'].value).toBe('COLLECTIVITES_TERRITORIALES');
+            expect(dossierService.create).not.toHaveBeenCalled();
+        });
+    });
 });
