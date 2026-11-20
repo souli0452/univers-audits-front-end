@@ -137,4 +137,48 @@ describe('FicheACompleter', () => {
         expect(composant.form.value.description).toBe('Une description');
         expect(composant.enCours).toBeFalse();
     });
+
+    describe("suggestion d'après le récit", () => {
+        const RECIT = "On m'a réclamé 10 000 F à la mairie de Boromo pour un acte de mariage.";
+        const bouton = (nom: string): HTMLButtonElement | undefined =>
+            Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+                .find(b => (b.textContent ?? '').includes(nom)) as HTMLButtonElement | undefined;
+
+        it("propose la nature et le type d'institution sans rien modifier au formulaire", () => {
+            creer(dossier({ description: RECIT, typologieInstitutionnelle: null }));
+
+            expect(texte()).toContain('Suggestion');
+            expect(composant.form.value.natureSaisineChoisie).toBe('DENONCIATION');
+            expect(composant.form.value.typologieInstitutionnelle).toBeNull();
+        });
+
+        it('« Appliquer » renseigne les deux listes, sans enregistrer au dossier', () => {
+            creer(dossier({ description: RECIT, typologieInstitutionnelle: null }));
+
+            bouton('Appliquer')!.click();
+
+            expect(composant.form.value.natureSaisineChoisie).toBe('PLAINTE');
+            expect(composant.form.value.typologieInstitutionnelle).toBe('COLLECTIVITES_TERRITORIALES');
+            expect(dossierService.update).not.toHaveBeenCalled();
+        });
+
+        it("suit le texte que l'agent corrige à l'écran", () => {
+            creer(dossier({ description: 'Texte neutre sans indice particulier pour le moment.' }));
+            expect(texte()).not.toContain('Suggestion');
+
+            composant.form.patchValue({ description: RECIT });
+            fixture.detectChanges();
+
+            expect(texte()).toContain('Suggestion');
+        });
+
+        it("ne propose pas de nature pour un signalement d'autorité, mais le type oui", () => {
+            creer(dossier({ type: 'SIGNALEMENT', description: RECIT, typologieInstitutionnelle: null }));
+
+            bouton('Appliquer')!.click();
+
+            expect(composant.form.controls.natureSaisineChoisie.value).toBe('SIGNALEMENT');
+            expect(composant.form.value.typologieInstitutionnelle).toBe('COLLECTIVITES_TERRITORIALES');
+        });
+    });
 });

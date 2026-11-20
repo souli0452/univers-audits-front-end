@@ -11,6 +11,7 @@ import { DossierService } from '../../../core/services/dossier.service';
 import { DossierResponse, DossierUpdateRequest } from '../../../core/models/dossier.model';
 import { CHOIX_NATURE_AGENT, TYPOLOGIES_INSTITUTIONNELLES } from '../../../core/utils/saisine-categories';
 import { DureeAudio } from '../../../shared/duree-audio/duree-audio';
+import { ChoixSuggere, SuggestionSaisineAide } from '../../../shared/suggestion-saisine/suggestion-saisine';
 
 export interface AudioDuDossier { id: string; nom: string; url: string; }
 
@@ -21,7 +22,7 @@ export interface AudioDuDossier { id: string; nom: string; url: string; }
 @Component({
     selector: 'app-fiche-a-completer',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, TextareaModule, ToastModule, DureeAudio],
+    imports: [CommonModule, ReactiveFormsModule, ButtonModule, InputTextModule, SelectModule, TextareaModule, ToastModule, DureeAudio, SuggestionSaisineAide],
     providers: [MessageService],
     template: `
         <p-toast />
@@ -61,6 +62,12 @@ export interface AudioDuDossier { id: string; nom: string; url: string; }
                         <span class="text-sm font-medium">Décrivez les faits</span>
                         <textarea pTextarea formControlName="description" rows="5" maxlength="10000"></textarea>
                     </label>
+
+                    <app-suggestion-saisine [texte]="texteDuRecit()"
+                        [natureActuelle]="form.controls.natureSaisineChoisie.value"
+                        [typologieActuelle]="form.controls.typologieInstitutionnelle.value"
+                        [natureModifiable]="form.controls.natureSaisineChoisie.enabled"
+                        (appliquer)="appliquerSuggestion($event)" />
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <label class="flex flex-col gap-1">
@@ -134,6 +141,20 @@ export class FicheACompleter implements OnInit {
         if (!this.natures.some(n => n.value === d.type)) {
             this.form.controls.natureSaisineChoisie.disable();
         }
+    }
+
+    /** Récit sur lequel s'appuie la suggestion : l'objet et les faits, tels que l'agent les a à l'écran. */
+    texteDuRecit(): string {
+        return `${this.form.controls.object.value ?? ''}\n${this.form.controls.description.value ?? ''}`;
+    }
+
+    /** L'agent accepte la suggestion : elle remplit les listes, rien n'est enregistré avant « Enregistrer ». */
+    appliquerSuggestion(choix: ChoixSuggere): void {
+        if (choix.nature && this.form.controls.natureSaisineChoisie.enabled) {
+            this.form.controls.natureSaisineChoisie.setValue(choix.nature);
+        }
+        if (choix.typologie) { this.form.controls.typologieInstitutionnelle.setValue(choix.typologie); }
+        this.form.markAsDirty();
     }
 
     enregistrer(): void {
