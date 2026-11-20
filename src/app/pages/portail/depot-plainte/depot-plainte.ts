@@ -13,7 +13,8 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { DossierService } from '../../../core/services/dossier.service';
 import { AttachmentService } from '../../../core/services/attachment.service';
 import { TailleTexte } from '../shared/taille-texte';
-import { LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { COMPLEMENT_ACCEPT, LIBELLE_EXTENSIONS, isAllowedExtension } from '../../../core/utils/complement-form';
+import { typeAudioEnregistre } from '../../../core/utils/audio-enregistre';
 import { extraireDuRecit, formaterHeure, formaterJour, resumeDuRecit } from '../../../core/utils/extraction-recit';
 import { OrigineSaisie } from '../../../core/models/geographie.model';
 import { OrigineGeographique } from '../../../shared/origine-geographique/origine-geographique';
@@ -579,7 +580,7 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
                     <input #videoInput type="file" accept="video/*" capture="environment" style="display:none;"
                         (change)="onFileSelect($event)" />
                     <input #galerieInput type="file" multiple style="display:none;"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp3,.mp4,.avi,.mov"
+                        [attr.accept]="acceptFichiers"
                         (change)="onFileSelect($event)" />
                     <div class="preuves-boutons">
                         <button type="button" class="btn btn-preuve" (click)="photoInput.click()">
@@ -866,6 +867,7 @@ export class DepotPlainte implements OnDestroy {
     maxFiles  = 5;
     maxSizeMB = 25;
     readonly extensionsLibelle = LIBELLE_EXTENSIONS;
+    readonly acceptFichiers = COMPLEMENT_ACCEPT;
 
     /** Sans identité, un signalement est une dénonciation : c'est la valeur de départ, la page étant anonyme par défaut. */
     dossierForm = this.fb.group({
@@ -1170,7 +1172,8 @@ export class DepotPlainte implements OnDestroy {
                 if (e.data.size > 0) chunks.push(e.data);
             };
             this.mediaRecorder.onstop = () => {
-                this.audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                // Le vrai format de l'appareil (iPhone : audio/mp4), pas toujours « webm ».
+                this.audioBlob = new Blob(chunks, { type: typeAudioEnregistre(this.mediaRecorder?.mimeType).type });
                 this.audioUrl  = URL.createObjectURL(this.audioBlob);
                 stream.getTracks().forEach(t => t.stop());
             };
@@ -1359,22 +1362,26 @@ export class DepotPlainte implements OnDestroy {
 
                 const allFiles = [...this.attachments];
                 if (this.audioBlob) {
+                    const { type, extension } = typeAudioEnregistre(this.audioBlob.type);
                     allFiles.push(new File(
                         [this.audioBlob],
-                        `temoignage_audio_${Date.now()}.webm`,
-                        { type: 'audio/webm' }
+                        `temoignage_audio_${Date.now()}.${extension}`,
+                        { type }
                     ));
                 }
 
                 if (allFiles.length > 0) {
                     this.attachmentService.upload(dossier.id, allFiles, true, dossier.accessCode).subscribe({
                         next:  () => { this.submitting = false; this.showSuccess = true; },
-                        error: () => {
+                        error: err => {
                             this.submitting = false;
                             this.showSuccess = true;
+                            // Le serveur dit quel fichier est refusé et pourquoi : le citoyen doit le savoir.
+                            const cause = err?.error?.message
+                                ?? "Les pièces jointes n'ont pas pu être envoyées.";
                             this.messageService.add({
                                 severity: 'warn', summary: 'Dossier créé',
-                                detail:   "Les pièces jointes n'ont pas pu être envoyées. Conservez votre code de suivi et contactez l'ASCE-LC."
+                                detail:   `${cause} Conservez votre code de suivi et contactez l'ASCE-LC.`
                             });
                         }
                     });
