@@ -189,6 +189,142 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
         });
     });
 
+    describe('barre d\'actions : l\'action du moment, et le menu « ⋯ » pour le reste', () => {
+        function moi(...mesRoles: string[]): void {
+            spyOn(TestBed.inject(KeycloakService), 'hasAnyRole').and.callFake((r: string[]) => r.some(x => mesRoles.includes(x)));
+        }
+        const libelles = (): string[] =>
+            component.menuActions().flatMap(g => (g.items ?? []).map(i => i.label as string));
+        const item = (label: string) =>
+            component.menuActions().flatMap(g => g.items ?? []).find(i => i.label === label)!;
+
+        it('montre en évidence les actions du circuit de cet agent, pas celles des autres', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+
+            expect(component.actionsPrincipales().map(a => a.id)).toEqual(['declarer-recevable', 'declarer-irrecevable']);
+        });
+
+        it('« Enregistrer » dépend du droit d\'enregistrer, pas du rôle', () => {
+            droits = ['DOSSIER_ENREGISTRER'];
+            component.dossier = dossier('SOUMIS');
+
+            expect(component.actionsPrincipales().map(a => a.id)).toEqual(['enregistrer']);
+        });
+
+        it('lance la bonne fenêtre pour chaque action', () => {
+            const appels: Record<string, string> = {
+                'enregistrer': 'openRegister', 'demarrer-etude': 'openStartStudy', 'soumettre-ctadp': 'openSubmitCtadp',
+                'demander-complement': 'openComplementDialog', 'complement-recu': 'openComplementReceived',
+                'declarer-recevable': 'openDeclareAdmissible', 'declarer-irrecevable': 'openDeclareInadmissible',
+                'cloturer': 'openClose'
+            };
+            for (const [id, methode] of Object.entries(appels)) {
+                const espion = spyOn(component as any, methode);
+
+                component.lancerAction(id as any);
+
+                expect(espion).withContext(id).toHaveBeenCalledTimes(1);
+            }
+        });
+
+        it('le menu range les documents, puis la gestion du dossier, par groupes nommés', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+
+            expect(component.menuActions().map(g => g.label)).toEqual(['Documents', 'Gérer le dossier']);
+        });
+
+        it('un agent sans droit de gestion ne voit que les documents', () => {
+            moi('AGENT_BRPD');
+            component.dossier = dossier('SOUMIS');
+
+            expect(component.menuActions().map(g => g.label)).toEqual(['Documents']);
+            expect(libelles()).toContain('Récépissé');
+        });
+
+        it('« Transférer » n\'est proposé qu\'au CGE en revue CTADP', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+            expect(libelles()).toContain('Transférer à une institution');
+
+            component.dossier = dossier('EN_ETUDE_OPPORTUNITE');
+            expect(libelles()).not.toContain('Transférer à une institution');
+        });
+
+        it('la confidentialité et la priorité sont proposées aux seuls CGE, CGEA et administrateur, tant que le dossier est ouvert', () => {
+            moi('CGEA');
+            component.dossier = dossier('RECU', { isConfidential: false });
+            expect(libelles()).toContain('Marquer confidentiel');
+            expect(libelles().some(l => l.startsWith('Priorité'))).toBeTrue();
+
+            component.dossier = dossier('RECU', { isConfidential: true });
+            expect(libelles()).toContain('Retirer la confidentialité');
+
+            component.dossier = dossier('CLOS');
+            expect(libelles()).not.toContain('Marquer confidentiel');
+        });
+
+        it('les pièces du quitus, de la réponse motivée ou de la lettre suivent l\'étape et le rôle', () => {
+            moi('CGE');
+            component.dossier = dossier('DECISION_RENDUE', { decisionCGE: { decision: 'SUITE' } });
+            expect(libelles()).toContain('Quitus du CGE');
+            expect(libelles()).toContain('Accusé de réception');
+            expect(libelles()).toContain('Lettre au plaignant');
+            expect(libelles()).not.toContain('Réponse motivée');
+
+            component.dossier = dossier('CLOS', { decisionCGE: { decision: 'CLASSEMENT' } });
+            expect(libelles()).toContain('Réponse motivée');
+            expect(libelles()).toContain('Résumé de clôture');
+        });
+
+        it('un clic sur un élément du menu lance l\'action correspondante', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+            const espion = spyOn(component, 'openTransfer');
+
+            item('Transférer à une institution').command!({} as any);
+
+            expect(espion).toHaveBeenCalledTimes(1);
+        });
+
+        it('un document en cours de préparation ne peut pas être relancé', () => {
+            moi('AGENT_BRPD');
+            component.dossier = dossier('SOUMIS');
+            component.downloadingRecepisse = true;
+
+            expect(item('Récépissé').disabled).toBeTrue();
+        });
+    });
+
+    describe('prochaine étape (suite) : qui doit agir', () => {
+        function moi(...mesRoles: string[]): void {
+            spyOn(TestBed.inject(KeycloakService), 'hasAnyRole').and.callFake((r: string[]) => r.some(x => mesRoles.includes(x)));
+        }
+
+        it('dit à l\'agent dont c\'est le tour ce qu\'il fait', () => {
+            moi('CGE');
+            component.dossier = dossier('EN_REVUE_CTADP');
+
+            expect(component.etapeSuivante()).toContain('Votre action');
+            expect(component.etapeSuivante()).toContain('Déclarer recevable');
+        });
+
+        it('dit aux autres qui doit agir', () => {
+            moi('AGENT_BRPD');
+            component.dossier = dossier('EN_REVUE_CTADP');
+
+            expect(component.etapeSuivante()).toContain('En attente');
+            expect(component.etapeSuivante()).toContain('CGE');
+        });
+
+        it('ne dit rien d\'un dossier clos', () => {
+            component.dossier = dossier('CLOS');
+
+            expect(component.etapeSuivante()).toBeNull();
+        });
+    });
+
     describe('prochaine étape', () => {
         it('dit à qui peut enregistrer ce qu\'il doit faire', () => {
             droits = ['DOSSIER_ENREGISTRER'];

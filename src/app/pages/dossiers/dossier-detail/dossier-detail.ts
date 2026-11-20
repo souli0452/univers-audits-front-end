@@ -12,7 +12,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
+import { MenuModule } from 'primeng/menu';
+import { ActionId, ActionPrincipale, actionsPrincipales, attenteDe } from './actions-dossier';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DelaiEtapeResponse, DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
 import { classeEtatDelai, libelleEtatDelai } from '../../../core/utils/delai-etape';
@@ -87,7 +89,7 @@ import { PermissionService } from '../../../core/services/permission.service';
         ButtonModule, TagModule, DialogModule,
         TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
         ConfirmDialogModule, TooltipModule, SelectModule, DureeAudio,
-        InputTextModule, FicheACompleter
+        InputTextModule, FicheACompleter, MenuModule
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -1161,9 +1163,92 @@ export class DossierDetail implements OnInit {
                     : "Prochaine étape : l'agent BRPD enregistre le dossier et lui attribue un numéro.";
             case 'RECU':
                 return "Prochaine étape : le conseiller juridique démarre l'étude d'opportunité.";
-            default:
-                return null;
+            default: {
+                // Autres étapes du circuit : à l'agent dont c'est le tour, ce qu'il fait ; aux autres, qui doit agir.
+                const attente = attenteDe(this.dossier?.status);
+                if (!attente) { return null; }
+                const mesActions = this.actionsPrincipales();
+                return mesActions.length
+                    ? `Votre action : ${mesActions.map(a => a.label).join(' ou ')}.`
+                    : `En attente : ${attente.charAt(0).toLowerCase()}${attente.slice(1)}`;
+            }
         }
+    }
+
+    /** L'action du moment pour l'agent connecté, selon l'étape du dossier et ses droits. */
+    actionsPrincipales(): ActionPrincipale[] {
+        return actionsPrincipales(this.dossier?.status, this.peutEnregistrer(), roles => this.hasRole(roles));
+    }
+
+    suivreAction = (_: number, action: ActionPrincipale): string => action.id;
+
+    lancerAction(id: ActionId): void {
+        switch (id) {
+            case 'enregistrer': this.openRegister(); break;
+            case 'demarrer-etude': this.openStartStudy(); break;
+            case 'soumettre-ctadp': this.openSubmitCtadp(); break;
+            case 'demander-complement': this.openComplementDialog(); break;
+            case 'complement-recu': this.openComplementReceived(); break;
+            case 'declarer-recevable': this.openDeclareAdmissible(); break;
+            case 'declarer-irrecevable': this.openDeclareInadmissible(); break;
+            case 'cloturer': this.openClose(); break;
+        }
+    }
+
+    /**
+     * Menu « ⋯ » : tout ce qui n'est pas l'action du moment. Les documents d'abord, puis la gestion du dossier ;
+     * un groupe vide n'apparaît pas. Les droits sont ceux qui s'appliquaient bouton par bouton auparavant.
+     */
+    menuActions(): MenuItem[] {
+        const d = this.dossier;
+        if (!d) { return []; }
+        const horsCircuit = d.status === 'CLASSE' || d.status === 'TRANSFERE';
+        const direction = this.hasRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
+        const doc = (label: string, icon: string, enCours: boolean, command: () => void): MenuItem =>
+            ({ label, icon, disabled: enCours, command });
+
+        const documents: MenuItem[] = [];
+        documents.push(doc('Exporter en PDF', 'pi pi-file-pdf', this.exportingPdf, () => { void this.exportPdf(); }));
+        if (!horsCircuit) {
+            documents.push(doc('Export officiel', 'pi pi-file', this.downloadingOfficialPdf, () => this.downloadOfficialPdf()));
+        }
+        documents.push(doc('Récépissé', 'pi pi-receipt', this.downloadingRecepisse, () => this.downloadRecepisse()));
+        if (d.decisionCGE && direction) {
+            documents.push(doc('Quitus du CGE', 'pi pi-verified', this.downloadingQuitus, () => this.downloadQuitus()));
+        }
+        if (d.decisionCGE && d.decisionCGE.decision !== 'CLASSEMENT') {
+            documents.push(doc('Accusé de réception', 'pi pi-envelope', this.downloadingAccuse, () => this.downloadAccuseReception()));
+        }
+        if (d.decisionCGE && d.decisionCGE.decision === 'CLASSEMENT') {
+            documents.push(doc('Réponse motivée', 'pi pi-envelope', this.downloadingReponse, () => this.downloadReponseMotivee()));
+        }
+        if ((d.status === 'CLOS' || d.status === 'DECISION_RENDUE') && this.hasRole(['CGE', 'CGEA', 'AGENT_BRPD', 'ADMIN_DDIC'])) {
+            documents.push(doc('Lettre au plaignant', 'pi pi-send', this.downloadingLettre, () => this.downloadLettreInformation()));
+        }
+        if (d.status === 'CLOS' || d.status === 'CLASSE') {
+            documents.push(doc('Résumé de clôture', 'pi pi-book', this.downloadingResume, () => this.downloadResumeCloture()));
+        }
+
+        const gestion: MenuItem[] = [];
+        if (this.canTransfer()) {
+            gestion.push({ label: 'Transférer à une institution', icon: 'pi pi-share-alt', command: () => this.openTransfer() });
+        }
+        const ouvert = !horsCircuit && d.status !== 'CLOS';
+        if (ouvert && direction) {
+            gestion.push({
+                label: d.isConfidential ? 'Retirer la confidentialité' : 'Marquer confidentiel',
+                icon: d.isConfidential ? 'pi pi-lock-open' : 'pi pi-lock',
+                command: () => this.openToggleConfidential()
+            });
+            gestion.push({
+                label: `Priorité : ${this.getPriorityButtonLabel(d.priority)}`,
+                icon: 'pi pi-arrow-up', command: () => this.openPriorityDialog()
+            });
+        }
+
+        const groupes: MenuItem[] = [{ label: 'Documents', items: documents }];
+        if (gestion.length) { groupes.push({ label: 'Gérer le dossier', items: gestion }); }
+        return groupes;
     }
 
     /** Téléchargement : passe par le serveur, qui l'inscrit au journal d'audit. */
