@@ -148,18 +148,8 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         }
         .puce.choisie { border-color:var(--green-text); background:var(--mist); color:var(--green-text); }
         .puce:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
-        .motifs { display:grid; grid-template-columns:repeat(auto-fit, minmax(16em, 1fr)); gap:.6em; }
-        .motif {
-            display:flex; flex-direction:column; align-items:flex-start; gap:.25em; text-align:left; min-height:3.5em;
-            padding:.75em 1em; border:2px solid var(--hair); border-radius:12px; background:#fff; color:var(--ink);
-            font:inherit; cursor:pointer;
-        }
-        .motif:hover { border-color:var(--green-text); }
-        .motif.choisi { border-color:var(--green-text); background:var(--mist); box-shadow:inset 0 0 0 1px var(--green-text); }
-        .motif:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
-        .motif-libelle { font-size:1.05em; font-weight:800; }
-        .motif-expl { font-size:.95em; line-height:1.4; color:var(--hint); }
-        .motif-terme { font-size:.9em; font-weight:700; color:var(--green-text); }
+        select.champ { min-height:3em; cursor:pointer; }
+        .motif-detail strong { color:var(--green-text); }
         .lien-ecrire { align-self:flex-start; }
         .preuves-boutons { display:grid; grid-template-columns:repeat(auto-fit, minmax(13em, 1fr)); gap:.75em; }
         .btn-preuve { text-align:center; }
@@ -526,19 +516,19 @@ type Volet = 'precisions' | 'preuves' | 'coordonnees';
         </div>
 
         <!-- Motif : facultatif, en mots simples ; l'agent qualifie ensuite les faits -->
-        <div class="recit-bloc" role="group" aria-labelledby="motif-titre">
-            <span id="motif-titre" class="label">De quoi s'agit-il ? <span class="opt">(facultatif)</span></span>
-            <p class="hint">Choisissez ce qui s'en rapproche le plus. Un agent vérifiera.</p>
-            <div class="motifs">
+        <div class="recit-bloc">
+            <label for="motif" class="label">De quoi s'agit-il ? <span class="opt">(facultatif)</span></label>
+            <select id="motif" class="champ" (change)="choisirMotif($any($event.target).value)">
+                <option value="" [selected]="!motifDeclare">— Choisir, si vous le souhaitez —</option>
                 @for (m of motifs; track m.code) {
-                    <button type="button" class="motif" [class.choisi]="motifDeclare === m.code"
-                        [attr.aria-pressed]="motifDeclare === m.code" (click)="choisirMotif(m.code)">
-                        <span class="motif-libelle">{{ m.libelle }}</span>
-                        <span class="motif-expl">{{ m.explication }}</span>
-                        @if (m.terme) { <span class="motif-terme">{{ m.terme }}</span> }
-                    </button>
+                    <option [value]="m.code" [selected]="motifDeclare === m.code">{{ m.libelle }}</option>
                 }
-            </div>
+            </select>
+            @if (motifChoisi(); as m) {
+                <p class="hint motif-detail">{{ m.explication }}@if (m.terme) { <strong> · {{ m.terme }}</strong> }</p>
+            } @else {
+                <p class="hint">Choisissez ce qui s'en rapproche le plus. Un agent vérifiera.</p>
+            }
         </div>
 
         <!-- Précisions : repérées dans le récit, corrigeables, jamais obligatoires -->
@@ -889,9 +879,9 @@ export class DepotPlainte implements OnDestroy {
     readonly motifs = MOTIFS_CITOYEN;
     motifDeclare = '';
 
-    /** Un second clic sur le motif choisi le retire : rien n'est jamais obligatoire. */
+    /** Le motif choisi dans la liste ; le premier choix (vide) le retire : rien n'est jamais obligatoire. */
     choisirMotif(code: string): void {
-        this.motifDeclare = this.motifDeclare === code ? '' : code;
+        this.motifDeclare = code;
     }
 
     motifChoisi() { return motifCitoyen(this.motifDeclare); }

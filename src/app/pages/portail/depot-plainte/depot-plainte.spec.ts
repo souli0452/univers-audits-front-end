@@ -306,34 +306,42 @@ describe('DepotPlainte (page unique)', () => {
         });
     });
 
-    describe('motif du signalement (facultatif)', () => {
-        const motifs = () => Array.from(racine().querySelectorAll('button.motif')) as HTMLButtonElement[];
-        const motif = (debut: string) => motifs().find(b => (b.textContent ?? '').includes(debut))!;
+    describe('motif du signalement (facultatif), en liste déroulante', () => {
+        const liste = () => racine().querySelector('select#motif') as HTMLSelectElement;
+        const options = () => Array.from(liste().options);
+        const choisir = (code: string) => {
+            liste().value = code;
+            liste().dispatchEvent(new Event('change'));
+            fixture.detectChanges();
+        };
 
-        it('propose dix choix en mots simples, avec le terme officiel à côté', () => {
+        it('propose une liste déroulante : le choix « à faire » puis dix motifs en mots simples', () => {
             fixture.detectChanges();
 
-            expect(motifs().length).toBe(10);
-            expect(texte()).toContain("On m'a demandé de l'argent ou un cadeau");
-            expect(motif("On m'a demandé").textContent).toContain('Corruption');
-            expect(texte()).toContain('Autre chose, ou je ne sais pas');
+            expect(liste()).not.toBeNull();
+            expect(options().length).toBe(11);
+            expect(options()[0].value).toBe('');
+            expect(options()[0].textContent).toContain('Choisir');
+            expect(options().map(o => o.textContent)).toContain("On m'a demandé de l'argent ou un cadeau");
+            expect(options().map(o => o.textContent)).toContain('Autre chose, ou je ne sais pas');
+        });
+
+        it('a une étiquette qui dit que c\'est facultatif, reliée à la liste pour les lecteurs d\'écran', () => {
+            fixture.detectChanges();
+            const etiquette = racine().querySelector('label[for="motif"]')!;
+
+            expect(etiquette).not.toBeNull();
+            expect(etiquette.textContent).toContain('De quoi s\'agit-il');
+            expect(etiquette.textContent).toContain('facultatif');
         });
 
         it('ne demande aucune qualification juridique technique', () => {
-            const t = texte();
+            fixture.detectChanges();
+            const t = options().map(o => o.textContent).join(' ');
 
             for (const terme of ['Concussion', 'Stellionat', 'Blanchiment', "Délit d'apparence", "Conflit d'intérêt"]) {
                 expect(t).not.toContain(terme);
             }
-        });
-
-        it('est annoncé comme un groupe de choix facultatif, dont chaque choix dit s\'il est retenu', () => {
-            fixture.detectChanges();
-            const groupe = racine().querySelector('[role="group"][aria-labelledby="motif-titre"]')!;
-
-            expect(groupe).not.toBeNull();
-            expect(racine().querySelector('#motif-titre')!.textContent).toContain('facultatif');
-            expect(motifs().every(b => b.getAttribute('aria-pressed') === 'false')).toBeTrue();
         });
 
         it('ne choisit rien par défaut : la demande ne porte aucun motif', () => {
@@ -348,51 +356,54 @@ describe('DepotPlainte (page unique)', () => {
             ecrire();
             fixture.detectChanges();
 
-            motif("On m'a demandé").click();
-            fixture.detectChanges();
+            choisir('CORRUPTION');
             component.submit();
 
-            expect(motif("On m'a demandé").getAttribute('aria-pressed')).toBe('true');
             expect(envoyee().motifDeclare).toBe('CORRUPTION');
         });
 
-        it('un second clic sur le même motif le retire', () => {
-            ecrire();
-            fixture.detectChanges();
-            motif("On m'a demandé").click();
+        it('affiche, sous la liste, l\'explication et le terme officiel du motif choisi', () => {
             fixture.detectChanges();
 
-            motif("On m'a demandé").click();
-            fixture.detectChanges();
-            component.submit();
+            choisir('CORRUPTION');
 
-            expect(motif("On m'a demandé").getAttribute('aria-pressed')).toBe('false');
-            expect(envoyee().motifDeclare).toBeUndefined();
+            expect(texte()).toContain('Pour rendre un service, accélérer un dossier ou fermer les yeux.');
+            expect(texte()).toContain('Corruption');
         });
 
-        it('ne garde qu\'un seul motif à la fois', () => {
+        it('revenir au choix « à faire » retire le motif et son explication', () => {
+            ecrire();
+            fixture.detectChanges();
+            choisir('CORRUPTION');
+
+            choisir('');
+            component.submit();
+
+            expect(envoyee().motifDeclare).toBeUndefined();
+            expect(texte()).not.toContain('Pour rendre un service');
+        });
+
+        it('« Autre chose, ou je ne sais pas » est un choix comme un autre, sans terme officiel', () => {
+            ecrire();
             fixture.detectChanges();
 
-            motif("On m'a demandé").click();
-            fixture.detectChanges();
-            motif('Un faux document').click();
-            fixture.detectChanges();
+            choisir('AUTRE');
+            component.submit();
 
-            expect(motifs().filter(b => b.getAttribute('aria-pressed') === 'true').length).toBe(1);
-            expect(motif('Un faux document').getAttribute('aria-pressed')).toBe('true');
+            expect(envoyee().motifDeclare).toBe('AUTRE');
         });
 
         it('reste proposé à qui préfère parler au lieu d\'écrire', () => {
             component.choisirMode('vocal');
             fixture.detectChanges();
 
-            expect(motifs().length).toBe(10);
+            expect(liste()).not.toBeNull();
         });
 
         it('le récapitulatif rappelle le motif choisi', () => {
             ecrire();
             fixture.detectChanges();
-            motif('Un faux document').click();
+            choisir('FAUX');
             component.showRecap = true;
             const t = texte();
 
@@ -407,9 +418,9 @@ describe('DepotPlainte (page unique)', () => {
             expect(texte()).not.toContain('Motif');
         });
 
-        it('« Effacer » remet le motif à zéro', () => {
+        it('« Effacer » remet le motif à zéro, liste comprise', () => {
             fixture.detectChanges();
-            motif('Un faux document').click();
+            choisir('FAUX');
 
             (component as any).reinitialiser();
             fixture.detectChanges();
@@ -417,8 +428,10 @@ describe('DepotPlainte (page unique)', () => {
             component.submit();
 
             expect(envoyee().motifDeclare).toBeUndefined();
+            expect(liste().value).toBe('');
         });
     });
+
 
     describe('récapitulatif avant l\'envoi', () => {
         it('« Envoyer » ouvre un récapitulatif sans rien envoyer', () => {
