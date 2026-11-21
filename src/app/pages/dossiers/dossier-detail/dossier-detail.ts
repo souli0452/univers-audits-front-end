@@ -209,7 +209,19 @@ export class DossierDetail implements OnInit {
         deadlineStr: string;
     } = { level: 'NORMAL', reason: '', deadlineStr: '' };
 
-    activeTab = 'parties';
+    /** Onglet ouvert : le résumé d'abord, puis les sections du dossier. */
+    activeTab = 'resume';
+
+    /**
+     * Étapes de la barre d'avancement. « Complément » et « classé » sont des détours : elles n'apparaissent que lorsque le
+     * dossier y est (le calcul des étapes les compte comme franchies pour tout dossier plus avancé, même s'il n'y est
+     * jamais passé).
+     */
+    get etapesAffichees(): WorkflowStep[] {
+        const detours: string[] = ['EN_ATTENTE_COMPLEMENT', 'CLASSE'];
+        return this.workflowSteps.filter(s => !detours.includes(s.status) || s.active);
+    }
+
     tabs = [
         { key: 'parties',      label: 'Parties visées', icon: 'pi pi-user-minus',
           count: () => this.parties.length      },
