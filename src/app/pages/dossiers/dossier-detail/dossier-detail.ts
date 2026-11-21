@@ -15,7 +15,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
 import { ActionId, ActionPrincipale, actionsPrincipales, phraseEtape } from './actions-dossier';
-import { TRANSITIONS, TypeTransition } from './transitions-dossier';
+import { TransitionDossier } from '../transition-dossier/transition-dossier';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DelaiEtapeResponse, DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
 import { classeEtatDelai, libelleEtatDelai } from '../../../core/utils/delai-etape';
@@ -90,7 +90,7 @@ import { PermissionService } from '../../../core/services/permission.service';
         ButtonModule, TagModule, DialogModule,
         TextareaModule, ToastModule, SkeletonModule, MultiSelectModule,
         ConfirmDialogModule, TooltipModule, SelectModule, DureeAudio,
-        InputTextModule, FicheACompleter, MenuModule
+        InputTextModule, FicheACompleter, MenuModule, TransitionDossier
     ],
     providers: [MessageService, ConfirmationService],
     styles: [`
@@ -316,11 +316,8 @@ export class DossierDetail implements OnInit {
           label: "L'allégation est-elle solide ?" }
     ];
 
-    showTransitionDialog  = false;
-    transitionDialogTitle = '';
-    transitionPlaceholder = '';
-    transitionReason      = '';
-    currentTransitionType = '';
+    /** Action simple en cours de confirmation : la fenêtre est celle de la liste (TransitionDossier). */
+    actionEnCours: ActionId | null = null;
     workflowSteps: WorkflowStep[] = [];
 
     showPartyDialog   = false;
@@ -747,7 +744,7 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    openComplementReceived(): void { this.ouvrirTransition('complement-received'); }
+    openComplementReceived(): void { this.actionEnCours = 'complement-recu'; }
 
     canSeeConfidential(): boolean {
         return this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
@@ -780,7 +777,6 @@ export class DossierDetail implements OnInit {
         this.transitioning = false;
         if (isVersionConflict(err)) {
             this.staleVersion              = this.dossier?.version ?? 0;
-            this.showTransitionDialog      = false;
             this.showVersionConflictDialog = true;
             this.conflictRefreshing        = true;
             this.dossierService.refreshById(this.dossier!.id).subscribe({
@@ -1118,14 +1114,6 @@ export class DossierDetail implements OnInit {
             }));
     }
 
-    openTransition(type: string, title: string, placeholder: string): void {
-        this.currentTransitionType = type;
-        this.transitionDialogTitle = title;
-        this.transitionPlaceholder = placeholder;
-        this.transitionReason      = '';
-        this.showTransitionDialog  = true;
-    }
-
     // ───────── ce que l'agent peut faire : décidé par ses droits en base, non par le nom de son rôle ─────────
 
     ficheOuverte = false;
@@ -1278,40 +1266,19 @@ export class DossierDetail implements OnInit {
         this.ficheOuverte = false;
     }
 
-    /** Titres et messages des fenêtres : ceux du circuit partagé avec la liste (transitions-dossier.ts). */
-    private ouvrirTransition(type: TypeTransition): void {
-        const t = TRANSITIONS[type];
-        this.openTransition(type, t.titre, t.message(this.dossier?.status));
-    }
+    // Les actions simples du circuit : une seule fenêtre de confirmation, celle de la liste (transition-dossier).
+    openRegister(): void { this.actionEnCours = 'enregistrer'; }
+    openStartStudy(): void { this.actionEnCours = 'demarrer-etude'; }
+    openSubmitCtadp(): void { this.actionEnCours = 'soumettre-ctadp'; }
+    openDeclareAdmissible(): void { this.actionEnCours = 'declarer-recevable'; }
+    openDeclareInadmissible(): void { this.actionEnCours = 'declarer-irrecevable'; }
+    openClose(): void { this.actionEnCours = 'cloturer'; }
 
-    openRegister(): void { this.ouvrirTransition('register'); }
-    openStartStudy(): void { this.ouvrirTransition('start-study'); }
-    openSubmitCtadp(): void { this.ouvrirTransition('submit-ctadp'); }
-    openDeclareAdmissible(): void { this.ouvrirTransition('declare-admissible'); }
-    openDeclareInadmissible(): void { this.ouvrirTransition('declare-inadmissible'); }
-    openClose(): void { this.ouvrirTransition('close'); }
-
-    executeTransition(): void {
-        if (!this.dossier) return;
-        this.transitioning = true;
-        const request = { version: this.dossier.version, reason: this.transitionReason };
-        const obs$ = TRANSITIONS[this.currentTransitionType as TypeTransition]
-            ?.appel(this.dossierService, this.dossier.id, request);
-        if (!obs$) { this.transitioning = false; return; }
-        obs$.subscribe({
-            next: (updated: DossierResponse) => {
-                this.dossier = updated;
-                this.buildWorkflowSteps(updated);
-                this.transitioning        = false;
-                this.showTransitionDialog = false;
-                this.messageService.add({
-                    severity: 'success',
-                    summary:  'Statut mis à jour',
-                    detail:   this.getStatusLabel(updated.status)
-                });
-            },
-            error: (err: any) => this.handleTransitionError(err)
-        });
+    /** Le serveur a rendu le dossier mis à jour (ou rechargé après un conflit) : l'écran le reprend. */
+    apresTransition(misAJour: DossierResponse): void {
+        this.dossier = misAJour;
+        this.buildWorkflowSteps(misAJour);
+        this.actionEnCours = null;
     }
 
   

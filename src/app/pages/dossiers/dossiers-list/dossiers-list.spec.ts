@@ -55,13 +55,13 @@ describe('DossiersList : colonne « Actions » (œil et menu « ⋯ »)', () => 
             expect(entetes[entetes.length - 1]).toBe('Actions');
         });
 
-        it('met sur chaque ligne l\'œil pour voir le dossier, puis le menu « ⋯ »', () => {
-            const lignes = Array.from(racine().querySelectorAll('tbody tr'));
+        it('met sur chaque ligne un seul bouton d\'actions, le menu « ⋯ » : pas d\'œil en doublon', () => {
+            const lignes = Array.from(racine().querySelectorAll('tbody tr.ligne-dossier'));
 
             expect(lignes.length).toBe(2);
             for (const ligne of lignes) {
-                expect(ligne.querySelector('button .pi-eye')).withContext('œil').not.toBeNull();
                 expect(ligne.querySelector('button .pi-ellipsis-v')).withContext('⋯').not.toBeNull();
+                expect(ligne.querySelector('.pi-eye')).withContext('œil').toBeNull();
             }
         });
 
@@ -127,13 +127,11 @@ describe('DossiersList : colonne « Actions » (œil et menu « ⋯ »)', () => 
             expect(texte()).not.toContain('Motif indiqué');
         });
 
-        it('dit à l\'agent dont c\'est le tour ce qu\'il fait, et propose ses boutons', () => {
+        it('dit à l\'agent dont c\'est le tour ce qu\'il fait, sans répéter les boutons du menu « ⋯ »', () => {
             bascule();
-            const t = texte();
 
-            expect(t).toContain('Votre action');
-            expect(Array.from(racine().querySelectorAll('.detail-ligne button')).map(b => (b.textContent ?? '').trim()))
-                .toContain('Déclarer irrecevable');
+            expect(texte()).toContain('Votre action');
+            expect(racine().querySelectorAll('.detail-ligne button').length).toBe(0);
         });
 
         it('dit aux autres qui doit agir', () => {
@@ -151,12 +149,69 @@ describe('DossiersList : colonne « Actions » (œil et menu « ⋯ »)', () => 
             expect((lien!.textContent ?? '')).toContain('Voir le dossier complet');
         });
 
-        it('un clic sur l\'œil ou le menu « ⋯ » ne déplie pas la ligne', () => {
-            (lignes()[0].querySelector('button .pi-eye') as HTMLElement).closest('button')!.click();
+        it('un clic sur le menu « ⋯ » ne déplie pas la ligne', () => {
             (lignes()[0].querySelector('button[aria-haspopup="menu"]') as HTMLButtonElement).click();
             fixture.detectChanges();
 
             expect(texte()).not.toContain('Le maire a vendu des parcelles');
+        });
+    });
+
+    describe('dossier confidentiel : le détail déplié ne montre rien à qui n\'y a pas accès', () => {
+        const secret = dossier('s', 'EN_REVUE_CTADP', {
+            isConfidential: true, description: 'Récit très sensible', incidentLocation: 'Lieu secret',
+            estimatedLoss: 9000000, motifDeclare: 'CORRUPTION', incidentPeriod: 'mars 2026',
+            declarant: { anonymous: false, displayName: 'Awa Kaboré' }
+        });
+        const texte = () => (racine().textContent ?? '').replace(/\s+/g, ' ');
+        const deplier = () => { (racine().querySelector('tbody tr.ligne-dossier') as HTMLElement).click(); fixture.detectChanges(); };
+
+        it('affiche « Contenu confidentiel » et aucune des informations, pour un agent sans accès', () => {
+            rolesAgent = ['AGENT_BRPD'];
+            creer([secret]);
+
+            deplier();
+            const detail = (racine().querySelector('.detail-ligne')?.textContent ?? '').replace(/\s+/g, ' ');
+
+            expect(detail).toContain('Contenu confidentiel');
+            for (const interdit of ['Récit très sensible', 'Lieu secret', 'Awa Kaboré', 'mars 2026']) {
+                expect(detail).withContext(interdit).not.toContain(interdit);
+            }
+            expect(detail).not.toMatch(/9\D000\D000/);
+            expect(detail).not.toContain('On m\'a demandé de l\'argent');
+        });
+
+        it('garde le lien vers le dossier et les actions du rôle, que le serveur contrôle ensuite', () => {
+            rolesAgent = ['CGEA', 'AGENT_BRPD'];
+            creer([dossier('s', 'SOUMIS', { isConfidential: true })]);
+            droits = ['DOSSIER_ENREGISTRER'];
+            fixture.detectChanges();
+
+            deplier();
+
+            expect(racine().querySelector('.detail-ligne a[href*="/app/dossiers/s"]')).not.toBeNull();
+        });
+
+        it('montre tout à un agent habilité (CGE, CGEA, administrateur)', () => {
+            for (const role of ['CGE', 'CGEA', 'ADMIN_DDIC']) {
+                TestBed.resetTestingModule();
+                rolesAgent = [role];
+                creer([secret]);
+
+                deplier();
+
+                expect(texte()).withContext(role).toContain('Récit très sensible');
+                expect(texte()).withContext(role).not.toContain('Contenu confidentiel — accès restreint');
+            }
+        });
+
+        it('un dossier non confidentiel reste lisible par tous', () => {
+            rolesAgent = ['AGENT_BRPD'];
+            creer([dossier('n', 'RECU', { isConfidential: false, description: 'Récit ordinaire' })]);
+
+            deplier();
+
+            expect(texte()).toContain('Récit ordinaire');
         });
     });
 
@@ -179,6 +234,9 @@ describe('DossiersList : colonne « Actions » (œil et menu « ⋯ »)', () => 
             component.lancer(component.allDossiers[0], 'declarer-irrecevable');
             fixture.detectChanges();
 
+            const cases = Array.from(document.body.querySelectorAll('p-dialog input[type="checkbox"]')) as HTMLInputElement[];
+            cases[cases.length - 1].click();
+            fixture.detectChanges();
             const confirmer = Array.from(document.body.querySelectorAll('p-dialog button'))
                 .reverse().find(b => (b.textContent ?? '').includes('Déclarer irrecevable')) as HTMLButtonElement;
             confirmer.click();

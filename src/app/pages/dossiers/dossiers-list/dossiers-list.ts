@@ -457,9 +457,6 @@ import { CHOIX_NATURE_AGENT, MotifCitoyen, libelleDeNature, libelleDeRegion, mot
                     <!-- Actions : voir le dossier, puis le menu « ⋯ » (l'action du moment pour cet agent) -->
                     <td class="px-4 py-3" (click)="$event.stopPropagation()">
                         <div class="flex items-center justify-end gap-1">
-                            <p-button icon="pi pi-eye" severity="info" text size="small"
-                                [routerLink]="['/app/dossiers', d.id]"
-                                pTooltip="Voir le dossier" tooltipPosition="top" />
                             <button type="button" aria-haspopup="menu"
                                 class="p-button p-component p-button-icon-only p-button-text p-button-secondary p-button-sm"
                                 [attr.aria-label]="'Actions sur le dossier ' + (d.number || d.object)"
@@ -478,11 +475,16 @@ import { CHOIX_NATURE_AGENT, MotifCitoyen, libelleDeNature, libelleDeRegion, mot
                 <tr>
                     <td colspan="9" class="p-0">
                         <div class="detail-ligne flex flex-col gap-3 px-6 py-4 bg-surface-50 border-l-4 border-primary-400">
-                            <div *ngIf="d.description">
+                            <div *ngIf="confidentielMasque(d)" role="note"
+                                class="flex items-center gap-2 text-sm text-orange-800 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+                                <i class="pi pi-lock"></i>
+                                Contenu confidentiel — accès restreint. Seuls le CGE, le CGEA et l'administrateur y accèdent.
+                            </div>
+                            <div *ngIf="d.description && !confidentielMasque(d)">
                                 <div class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-1">Les faits</div>
                                 <p class="text-sm text-surface-800 whitespace-pre-line m-0">{{ d.description }}</p>
                             </div>
-                            <dl class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 m-0 text-sm">
+                            <dl *ngIf="!confidentielMasque(d)" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 m-0 text-sm">
                                 <div>
                                     <dt class="text-xs text-surface-500">Déclarant</dt>
                                     <dd class="m-0 font-medium">{{ d.declarant?.anonymous ? 'Anonyme' : (d.declarant?.displayName || '—') }}</dd>
@@ -512,9 +514,6 @@ import { CHOIX_NATURE_AGENT, MotifCitoyen, libelleDeNature, libelleDeRegion, mot
                                 <i class="pi pi-arrow-right mr-2"></i>{{ e }}
                             </p>
                             <div class="flex flex-wrap items-center gap-2">
-                                <p-button *ngFor="let a of actionsDe(d); trackBy: suivreAction"
-                                    [label]="a.label" [icon]="a.icon" [severity]="a.severity" size="small"
-                                    (onClick)="lancer(d, a.id)" />
                                 <a [routerLink]="['/app/dossiers', d.id]"
                                     class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline ml-auto">
                                     Voir le dossier complet <i class="pi pi-arrow-right text-xs"></i>
@@ -593,8 +592,6 @@ export class DossiersList implements OnInit {
         return actionsPrincipales(d.status, peutEnregistrer, roles => this.keycloakService.hasAnyRole(roles));
     }
 
-    suivreAction = (_: number, action: ActionPrincipale): string => action.id;
-
     // ───────── ligne dépliable ─────────
 
     /** Lignes dépliées, par identifiant de dossier (format attendu par le tableau). */
@@ -606,6 +603,14 @@ export class DossiersList implements OnInit {
         const suite = { ...this.deplies };
         if (suite[d.id]) { delete suite[d.id]; } else { suite[d.id] = true; }
         this.deplies = suite;
+    }
+
+    /**
+     * Dossier confidentiel que cet agent ne peut pas lire : le détail déplié n'affiche rien de son contenu (comme la page
+     * de détail). Le serveur masque déjà ces champs dans la liste ; ce garde-fou évite de n'afficher que des tirets.
+     */
+    confidentielMasque(d: DossierResponse): boolean {
+        return !!d.isConfidential && !this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
     }
 
     zone(d: DossierResponse): string { return libelleDeRegion(d.regionOrigine); }

@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api';
 import { DossierResponse, isVersionConflict } from '../../../core/models/dossier.model';
 import { DossierService } from '../../../core/services/dossier.service';
 import { ActionId } from '../dossier-detail/actions-dossier';
-import { DefinitionTransition, TRANSITIONS, transitionDeLAction } from '../dossier-detail/transitions-dossier';
+import { DefinitionTransition, TRANSITIONS, libelleStatut, transitionDeLAction } from '../dossier-detail/transitions-dossier';
 
 /**
  * Fenêtre de confirmation d'une action simple du circuit (enregistrer, démarrer l'étude, recevable, irrecevable,
@@ -25,16 +25,37 @@ import { DefinitionTransition, TRANSITIONS, transitionDeLAction } from '../dossi
             <p-dialog [visible]="true" (visibleChange)="$event || ferme.emit()" [header]="t.titre"
                 [modal]="true" [style]="{ width: 'min(32em, 94vw)' }" [draggable]="false" appendTo="body">
                 <div class="flex flex-col gap-4 py-2">
+                    <div class="p-3 bg-surface-50 border border-surface-200 rounded-xl text-sm flex flex-col gap-1">
+                        <div class="font-semibold">{{ dossier().number || 'Dossier sans numéro' }}</div>
+                        <div class="text-surface-700">{{ dossier().object }}</div>
+                        <div class="mt-1">
+                            Statut : <strong>{{ statutActuel() }}</strong>
+                            <i class="pi pi-arrow-right mx-2 text-xs"></i>
+                            <strong>{{ statutVise() }}</strong>
+                        </div>
+                    </div>
                     <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2">
                         <i class="pi pi-info-circle text-blue-500 mt-0.5"></i>
-                        <p class="text-sm text-blue-700">{{ t.message(dossier().status) }}</p>
+                        <p class="text-sm text-blue-700 m-0">{{ t.message(dossier().status) }}</p>
                     </div>
+                    @if (!t.annulable) {
+                        <div role="alert" class="p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-2">
+                            <i class="pi pi-exclamation-triangle text-orange-600 mt-0.5"></i>
+                            <p class="text-sm text-orange-800 m-0">
+                                Cette action est <strong>définitive</strong> : elle ne peut pas être annulée dans l'application.
+                            </p>
+                        </div>
+                    }
                     <textarea pTextarea [(ngModel)]="motif" placeholder="Motif / Observation (optionnel)"
                         rows="4" class="w-full resize-none" aria-label="Motif ou observation (facultatif)"></textarea>
+                    <label class="flex items-start gap-2 text-sm cursor-pointer">
+                        <input type="checkbox" [(ngModel)]="verifie" class="mt-1" />
+                        <span>J'ai vérifié le dossier et je confirme cette action.</span>
+                    </label>
                 </div>
                 <ng-template pTemplate="footer">
                     <p-button label="Annuler" severity="secondary" outlined (onClick)="ferme.emit()" />
-                    <p-button [label]="t.titre" [loading]="enCours" (onClick)="confirmer()" />
+                    <p-button [label]="t.titre" [loading]="enCours" [disabled]="!verifie" (onClick)="confirmer()" />
                 </ng-template>
             </p-dialog>
         }
@@ -51,7 +72,12 @@ export class TransitionDossier {
     private readonly messages = inject(MessageService);
 
     motif = '';
+    /** « J'ai vérifié le dossier » : sans cette case, rien ne part (les transitions ne s'annulent pas). */
+    verifie = false;
     enCours = false;
+
+    statutActuel(): string { return libelleStatut(this.dossier().status); }
+    statutVise(): string { return libelleStatut(this.transition()?.statutVise); }
 
     readonly transition = computed<DefinitionTransition | undefined>(() => {
         const type = transitionDeLAction(this.action());
@@ -60,7 +86,7 @@ export class TransitionDossier {
 
     confirmer(): void {
         const t = this.transition();
-        if (!t || this.enCours) { return; }
+        if (!t || this.enCours || !this.verifie) { return; }
         const d = this.dossier();
         this.enCours = true;
         t.appel(this.service, d.id, { version: d.version, reason: this.motif }).subscribe({

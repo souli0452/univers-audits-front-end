@@ -19,9 +19,11 @@ describe('TransitionDossier : la fenêtre de confirmation d\'une action du circu
     const bouton = (texte: string) =>
         Array.from(document.body.querySelectorAll('button')).reverse().find(b => (b.textContent ?? '').includes(texte)) as HTMLButtonElement | undefined;
 
-    function creer(action: string, d: any = dossier()): void {
+    /** `verifie` : l'agent a déjà coché « J'ai vérifié le dossier » (vrai par défaut, pour tester l'envoi). */
+    function creer(action: string, d: any = dossier(), verifie = true): void {
         fixture = TestBed.createComponent(TransitionDossier);
         composant = fixture.componentInstance;
+        composant.verifie = verifie;
         fixture.componentRef.setInput('dossier', d);
         fixture.componentRef.setInput('action', action);
         termine = jasmine.createSpy('termine');
@@ -52,6 +54,61 @@ describe('TransitionDossier : la fenêtre de confirmation d\'une action du circu
         expect(corps()).toContain('Déclarer recevable');
         expect(corps()).toContain('déclaré recevable');
         expect(document.body.querySelector('textarea')).not.toBeNull();
+    });
+
+    describe('vérifier avant d\'agir', () => {
+        it('rappelle de quel dossier il s\'agit et le changement de statut qui va avoir lieu', () => {
+            creer('declarer-recevable', dossier({ number: 'N-0042', object: 'Marché sans appel d\'offres' }));
+
+            expect(corps()).toContain('N-0042');
+            expect(corps()).toContain('Marché sans appel d\'offres');
+            expect(corps()).toContain('En revue CTADP');
+            expect(corps()).toContain('Recevable');
+        });
+
+        it('dit clairement que l\'action ne peut pas être annulée', () => {
+            creer('declarer-recevable');
+
+            expect(corps()).toContain('définitive');
+            expect(corps()).toContain('ne peut pas être annulée');
+        });
+
+        it('demande de cocher « J\'ai vérifié le dossier » avant de pouvoir confirmer', () => {
+            creer('declarer-recevable', dossier(), false);
+
+            expect(corps()).toContain("J'ai vérifié le dossier");
+            expect(composant.verifie).toBeFalse();
+        });
+
+        it('sans la case cochée, confirmer ne part pas', () => {
+            creer('declarer-recevable', dossier(), false);
+
+            composant.confirmer();
+
+            expect(service.declareAdmissible).not.toHaveBeenCalled();
+            expect(composant.enCours).toBeFalse();
+        });
+
+        it('avec la case cochée, confirmer part', () => {
+            creer('declarer-recevable', dossier(), false);
+            composant.verifie = true;
+
+            composant.confirmer();
+
+            expect(service.declareAdmissible).toHaveBeenCalledTimes(1);
+        });
+
+        it('le bouton de confirmation est grisé tant que la case n\'est pas cochée', () => {
+            creer('declarer-recevable', dossier(), false);
+            const confirmer = () => bouton('Déclarer recevable')!;
+
+            expect(confirmer().disabled).toBeTrue();
+
+            composant.verifie = true;
+            fixture.detectChanges();
+
+            expect(confirmer().disabled).toBeFalse();
+        });
     });
 
     it('adapte le message de la clôture à l\'étape du dossier', () => {
