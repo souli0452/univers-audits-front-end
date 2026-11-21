@@ -1,6 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +10,13 @@ import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Menu, MenuModule } from 'primeng/menu';
+import { PermissionService } from '../../../core/services/permission.service';
+import { KeycloakService } from '../../../core/auth/keycloak.service';
+import { ActionId, ActionPrincipale, actionsPrincipales, phraseEtape } from '../dossier-detail/actions-dossier';
+import { transitionDeLAction } from '../dossier-detail/transitions-dossier';
+import { TransitionDossier } from '../transition-dossier/transition-dossier';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DossierResponse, DossierStatus } from '../../../core/models/dossier.model';
 import { StatistiqueService, PublicStats } from '../../../core/services/statistique.service';
@@ -19,7 +25,7 @@ import { isToday as isTodayUtil } from '../../../core/utils/date';
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
 type DossierPriority = 'CRITIQUE' | 'URGENT' | 'NORMAL' | 'FAIBLE';
 
-import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine-categories';
+import { CHOIX_NATURE_AGENT, MotifCitoyen, libelleDeNature, libelleDeRegion, motifCitoyen } from '../../../core/utils/saisine-categories';
 @Component({
     selector: 'app-dossiers-list',
     standalone: true,
@@ -27,12 +33,13 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
         CommonModule, RouterModule, FormsModule,
         TableModule, ButtonModule, TagModule,
         InputTextModule, SelectModule, ToastModule,
-        ProgressSpinnerModule, TooltipModule
+        ProgressSpinnerModule, TooltipModule, MenuModule, TransitionDossier
     ],
     providers: [MessageService],
     styleUrls: ['../../../shared/styles/filter-select.scss'],
     template: `
 <p-toast />
+<p-menu #menuLigne [popup]="true" appendTo="body" [model]="[]" />
 
 <div class="flex flex-col gap-6">
 
@@ -301,10 +308,11 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
         <p-table [value]="filteredDossiers"
             [paginator]="filteredDossiers.length > pageSize"
             [rows]="pageSize" [rowsPerPageOptions]="[10,20,50]"
-            dataKey="id" styleClass="p-datatable-sm" [rowHover]="true">
+            dataKey="id" styleClass="p-datatable-sm" [rowHover]="true" [expandedRowKeys]="deplies">
 
             <ng-template pTemplate="header">
                 <tr>
+                    <th class="w-10"><span class="sr-only">Détail</span></th>
                     <th class="text-xs text-surface-400 font-semibold uppercase
                                tracking-wide py-3 px-4 w-28">Priorité</th>
                     <th class="text-xs text-surface-400 font-semibold uppercase
@@ -327,13 +335,14 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
                                 tooltipPosition="top"></i>
                         </div>
                     </th>
-                    <th class="w-16"></th>
+                    <th class="text-xs text-surface-400 font-semibold uppercase
+                               tracking-wide py-3 px-4 w-32 text-right">Actions</th>
                 </tr>
             </ng-template>
 
             <ng-template pTemplate="body" let-d>
-                <tr class="border-b border-surface-50 cursor-pointer transition-colors"
-                    [routerLink]="['/app/dossiers', d.id]"
+                <tr class="ligne-dossier border-b border-surface-50 cursor-pointer transition-colors"
+                    (click)="basculer(d)"
                     [class.bg-green-50]="d.id === newDossierId"
                     [class.border-green-200]="d.id === newDossierId">
 
@@ -341,6 +350,16 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
                     <td class="px-3 py-3" colspan="8"
                         *ngIf="d.id === newDossierId"
                         style="display:none">
+                    </td>
+
+                    <!-- Chevron : déplier ou replier le détail de la ligne -->
+                    <td class="pl-3 pr-0 py-3" (click)="$event.stopPropagation()">
+                        <button type="button" (click)="basculer(d)"
+                            class="p-button p-component p-button-icon-only p-button-text p-button-secondary p-button-sm"
+                            [attr.aria-expanded]="estDeplie(d)"
+                            [attr.aria-label]="(estDeplie(d) ? 'Replier' : 'Afficher') + ' le détail du dossier ' + (d.number || d.object)">
+                            <i class="pi" [ngClass]="estDeplie(d) ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                        </button>
                     </td>
 
                     <!-- Priorité -->
@@ -435,19 +454,80 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
                         </div>
                     </td>
 
-                    <!-- Action -->
+                    <!-- Actions : voir le dossier, puis le menu « ⋯ » (l'action du moment pour cet agent) -->
                     <td class="px-4 py-3" (click)="$event.stopPropagation()">
-                        <p-button icon="pi pi-eye" severity="info" text size="small"
-                            [routerLink]="['/app/dossiers', d.id]"
-                            pTooltip="Voir" tooltipPosition="top" />
+                        <div class="flex items-center justify-end gap-1">
+                            <p-button icon="pi pi-eye" severity="info" text size="small"
+                                [routerLink]="['/app/dossiers', d.id]"
+                                pTooltip="Voir le dossier" tooltipPosition="top" />
+                            <button type="button" aria-haspopup="menu"
+                                class="p-button p-component p-button-icon-only p-button-text p-button-secondary p-button-sm"
+                                [attr.aria-label]="'Actions sur le dossier ' + (d.number || d.object)"
+                                pTooltip="Actions" tooltipPosition="top"
+                                (click)="ouvrirMenu($event, d)">
+                                <i class="pi pi-ellipsis-v"></i>
+                            </button>
+                        </div>
                     </td>
 
                 </tr>
             </ng-template>
 
+            <!-- Détail déplié : l'essentiel du dossier, l'action du moment, et le lien vers la page complète -->
+            <ng-template pTemplate="expandedrow" let-d>
+                <tr>
+                    <td colspan="9" class="p-0">
+                        <div class="detail-ligne flex flex-col gap-3 px-6 py-4 bg-surface-50 border-l-4 border-primary-400">
+                            <div *ngIf="d.description">
+                                <div class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-1">Les faits</div>
+                                <p class="text-sm text-surface-800 whitespace-pre-line m-0">{{ d.description }}</p>
+                            </div>
+                            <dl class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 m-0 text-sm">
+                                <div>
+                                    <dt class="text-xs text-surface-500">Déclarant</dt>
+                                    <dd class="m-0 font-medium">{{ d.declarant?.anonymous ? 'Anonyme' : (d.declarant?.displayName || '—') }}</dd>
+                                </div>
+                                <div *ngIf="d.regionOrigine">
+                                    <dt class="text-xs text-surface-500">Zone d'origine</dt>
+                                    <dd class="m-0 font-medium">{{ zone(d) }}</dd>
+                                </div>
+                                <div *ngIf="d.incidentLocation">
+                                    <dt class="text-xs text-surface-500">Lieu des faits</dt>
+                                    <dd class="m-0 font-medium">{{ d.incidentLocation }}</dd>
+                                </div>
+                                <div *ngIf="d.incidentPeriod">
+                                    <dt class="text-xs text-surface-500">Période</dt>
+                                    <dd class="m-0 font-medium">{{ d.incidentPeriod }}</dd>
+                                </div>
+                                <div *ngIf="d.estimatedLoss">
+                                    <dt class="text-xs text-surface-500">Montant estimé</dt>
+                                    <dd class="m-0 font-medium">{{ montant(d.estimatedLoss) }} FCFA</dd>
+                                </div>
+                                <div *ngIf="motifDe(d) as m">
+                                    <dt class="text-xs text-surface-500">Motif indiqué</dt>
+                                    <dd class="m-0 font-medium">{{ m.libelle }}<span *ngIf="m.terme" class="text-surface-500"> · {{ m.terme }}</span></dd>
+                                </div>
+                            </dl>
+                            <p *ngIf="etapeLigne(d) as e" class="text-sm text-primary-900 m-0">
+                                <i class="pi pi-arrow-right mr-2"></i>{{ e }}
+                            </p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p-button *ngFor="let a of actionsDe(d); trackBy: suivreAction"
+                                    [label]="a.label" [icon]="a.icon" [severity]="a.severity" size="small"
+                                    (onClick)="lancer(d, a.id)" />
+                                <a [routerLink]="['/app/dossiers', d.id]"
+                                    class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline ml-auto">
+                                    Voir le dossier complet <i class="pi pi-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="flex flex-col items-center justify-center py-16">
                             <div class="w-16 h-16 rounded-2xl bg-surface-100
                                         flex items-center justify-center mb-4">
@@ -470,6 +550,12 @@ import { CHOIX_NATURE_AGENT, libelleDeNature } from '../../../core/utils/saisine
                 </tr>
             </ng-template>
         </p-table>
+
+        <!-- Fenêtre de confirmation d'une action simple, sur la liste : chaque ouverture repart d'un motif vide -->
+        @if (actionEnCours; as e) {
+            <app-transition-dossier [dossier]="e.dossier" [action]="e.action"
+                (termine)="apresAction($event)" (ferme)="actionEnCours = null" />
+        }
     </div>
 
 </div>
@@ -480,6 +566,80 @@ export class DossiersList implements OnInit {
     private dossierService     = inject(DossierService);
     private messageService     = inject(MessageService);
     private statistiqueService = inject(StatistiqueService);
+    private router             = inject(Router);
+    private permissionService  = inject(PermissionService);
+    private keycloakService    = inject(KeycloakService);
+
+    @ViewChild('menuLigne') private menuLigne!: Menu;
+
+    /**
+     * Menu « ⋯ » d'une ligne : « Voir le dossier », puis l'action du moment pour cet agent (étape du dossier et rôle,
+     * mêmes règles que le détail). Une action ouvre le dossier avec sa fenêtre de confirmation (?action=…).
+     */
+    actionsLigne(d: DossierResponse): MenuItem[] {
+        return [
+            { label: 'Voir le dossier', icon: 'pi pi-eye', command: () => { void this.router.navigate(['/app/dossiers', d.id]); } },
+            ...this.actionsDe(d).map((a): MenuItem => ({
+                label: a.label, icon: a.icon,
+                styleClass: a.severity === 'danger' ? 'menu-danger' : undefined,
+                command: () => this.lancer(d, a.id)
+            }))
+        ];
+    }
+
+    /** L'action du moment pour cet agent sur ce dossier (étape du dossier et rôle, mêmes règles que le détail). */
+    actionsDe(d: DossierResponse): ActionPrincipale[] {
+        const peutEnregistrer = d.status === 'SOUMIS' && this.permissionService.a('DOSSIER_ENREGISTRER');
+        return actionsPrincipales(d.status, peutEnregistrer, roles => this.keycloakService.hasAnyRole(roles));
+    }
+
+    suivreAction = (_: number, action: ActionPrincipale): string => action.id;
+
+    // ───────── ligne dépliable ─────────
+
+    /** Lignes dépliées, par identifiant de dossier (format attendu par le tableau). */
+    deplies: Record<string, boolean> = {};
+
+    estDeplie(d: DossierResponse): boolean { return !!this.deplies[d.id]; }
+
+    basculer(d: DossierResponse): void {
+        const suite = { ...this.deplies };
+        if (suite[d.id]) { delete suite[d.id]; } else { suite[d.id] = true; }
+        this.deplies = suite;
+    }
+
+    zone(d: DossierResponse): string { return libelleDeRegion(d.regionOrigine); }
+    motifDe(d: DossierResponse): MotifCitoyen | undefined { return motifCitoyen(d.motifDeclare); }
+    montant(valeur: number): string { return new Intl.NumberFormat('fr-FR').format(valeur); }
+    etapeLigne(d: DossierResponse): string | null { return phraseEtape(d.status, this.actionsDe(d)); }
+
+    // ───────── action en fenêtre, sans quitter la liste ─────────
+
+    actionEnCours: { dossier: DossierResponse; action: ActionId } | null = null;
+
+    /**
+     * Une action simple s'ouvre en fenêtre sur la liste ; « Demander un complément » demande un message au déclarant
+     * et garde sa fenêtre dans la page du dossier (?action=…).
+     */
+    lancer(d: DossierResponse, action: ActionId): void {
+        if (transitionDeLAction(action)) {
+            this.actionEnCours = { dossier: d, action };
+        } else {
+            void this.router.navigate(['/app/dossiers', d.id], { queryParams: { action } });
+        }
+    }
+
+    /** Le serveur a rendu le dossier mis à jour (ou rechargé après un conflit) : la ligne le reprend, dépliée ou non. */
+    apresAction(misAJour: DossierResponse): void {
+        this.allDossiers = this.allDossiers.map(d => d.id === misAJour.id ? misAJour : d);
+        this.applyFilters();
+        this.actionEnCours = null;
+    }
+
+    ouvrirMenu(event: Event, d: DossierResponse): void {
+        this.menuLigne.model = this.actionsLigne(d);
+        this.menuLigne.toggle(event);
+    }
 
     allDossiers:      DossierResponse[] = [];
     filteredDossiers: DossierResponse[] = [];

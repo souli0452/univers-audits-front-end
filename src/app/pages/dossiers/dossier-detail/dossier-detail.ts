@@ -14,7 +14,8 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
-import { ActionId, ActionPrincipale, actionsPrincipales, attenteDe } from './actions-dossier';
+import { ActionId, ActionPrincipale, actionsPrincipales, phraseEtape } from './actions-dossier';
+import { TRANSITIONS, TypeTransition } from './transitions-dossier';
 import { DossierService } from '../../../core/services/dossier.service';
 import { DelaiEtapeResponse, DossierResponse, DossierStatus, isVersionConflict } from '../../../core/models/dossier.model';
 import { classeEtatDelai, libelleEtatDelai } from '../../../core/utils/delai-etape';
@@ -377,6 +378,7 @@ export class DossierDetail implements OnInit {
                 this.buildWorkflowSteps(dossier);
                 this.loading = false;
                 this.loadRelatedData(id);
+                this.ouvrirActionDemandee();
             },
             error: () => {
                 this.loading = false;
@@ -745,12 +747,7 @@ export class DossierDetail implements OnInit {
         });
     }
 
-    openComplementReceived(): void {
-        this.openTransition(
-            'complement-received', 'Complément reçu',
-            "Le complément a été reçu. Le dossier reprendra son étude d'opportunité."
-        );
-    }
+    openComplementReceived(): void { this.ouvrirTransition('complement-received'); }
 
     canSeeConfidential(): boolean {
         return this.keycloakService.hasAnyRole(['CGE', 'CGEA', 'ADMIN_DDIC']);
@@ -1163,15 +1160,9 @@ export class DossierDetail implements OnInit {
                     : "Prochaine étape : l'agent BRPD enregistre le dossier et lui attribue un numéro.";
             case 'RECU':
                 return "Prochaine étape : le conseiller juridique démarre l'étude d'opportunité.";
-            default: {
+            default:
                 // Autres étapes du circuit : à l'agent dont c'est le tour, ce qu'il fait ; aux autres, qui doit agir.
-                const attente = attenteDe(this.dossier?.status);
-                if (!attente) { return null; }
-                const mesActions = this.actionsPrincipales();
-                return mesActions.length
-                    ? `Votre action : ${mesActions.map(a => a.label).join(' ou ')}.`
-                    : `En attente : ${attente.charAt(0).toLowerCase()}${attente.slice(1)}`;
-            }
+                return phraseEtape(this.dossier?.status, this.actionsPrincipales());
         }
     }
 
@@ -1181,6 +1172,19 @@ export class DossierDetail implements OnInit {
     }
 
     suivreAction = (_: number, action: ActionPrincipale): string => action.id;
+
+    /**
+     * Action demandée depuis le menu « ⋯ » de la liste (?action=…) : la fenêtre s'ouvre seulement si l'action est bien
+     * à la portée de cet agent à l'étape actuelle (l'adresse ne remplace jamais ses droits), puis le paramètre est
+     * retiré pour qu'un rafraîchissement ne rouvre pas la fenêtre.
+     */
+    ouvrirActionDemandee(): void {
+        const demandee = this.route.snapshot.queryParamMap?.get('action');
+        if (!demandee) { return; }
+        const permise = this.actionsPrincipales().find(a => a.id === demandee);
+        if (permise) { this.lancerAction(permise.id); }
+        void this.router.navigate([], { queryParams: { action: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
 
     lancerAction(id: ActionId): void {
         switch (id) {
@@ -1274,49 +1278,25 @@ export class DossierDetail implements OnInit {
         this.ficheOuverte = false;
     }
 
-    openRegister(): void {
-        this.openTransition('register', 'Enregistrer le dossier',
-            'Le dossier sera enregistré et un code de suivi attribué au déclarant.');
+    /** Titres et messages des fenêtres : ceux du circuit partagé avec la liste (transitions-dossier.ts). */
+    private ouvrirTransition(type: TypeTransition): void {
+        const t = TRANSITIONS[type];
+        this.openTransition(type, t.titre, t.message(this.dossier?.status));
     }
-    openStartStudy(): void {
-        this.openTransition('start-study', 'Démarrer étude opportunité',
-            "L'étude d'opportunité sera lancée par le conseiller juridique.");
-    }
-    openSubmitCtadp(): void {
-        this.openTransition('submit-ctadp', 'Soumettre au CTADP',
-            "Le dossier sera transmis au Comité de Traitement et d'Analyse.");
-    }
-    openDeclareAdmissible(): void {
-        this.openTransition('declare-admissible', 'Déclarer recevable',
-            'Le dossier sera déclaré recevable et une enquête pourra être ouverte.');
-    }
-    openDeclareInadmissible(): void {
-        this.openTransition('declare-inadmissible', 'Déclarer irrecevable',
-            'Le CGEA adressera une réponse motivée au déclarant dans 3 jours ouvrables.');
-    }
-    openClose(): void {
-        const isDecision = this.dossier?.status === 'DECISION_RENDUE';
-        this.openTransition('close', 'Clôturer le dossier',
-            isDecision
-                ? 'Clôture définitive après transmission aux autorités. Indiquez le motif.'
-                : 'Le dossier sera clôturé et classé sans suite. Indiquez le motif.'
-        );
-    }
+
+    openRegister(): void { this.ouvrirTransition('register'); }
+    openStartStudy(): void { this.ouvrirTransition('start-study'); }
+    openSubmitCtadp(): void { this.ouvrirTransition('submit-ctadp'); }
+    openDeclareAdmissible(): void { this.ouvrirTransition('declare-admissible'); }
+    openDeclareInadmissible(): void { this.ouvrirTransition('declare-inadmissible'); }
+    openClose(): void { this.ouvrirTransition('close'); }
 
     executeTransition(): void {
         if (!this.dossier) return;
         this.transitioning = true;
         const request = { version: this.dossier.version, reason: this.transitionReason };
-        const map: Record<string, () => any> = {
-            'register':             () => this.dossierService.registerReception(this.dossier!.id, request),
-            'start-study':          () => this.dossierService.startOpportunityStudy(this.dossier!.id, request),
-            'complement-received':  () => this.dossierService.complementReceived(this.dossier!.id, request),
-            'submit-ctadp':         () => this.dossierService.submitToCtadp(this.dossier!.id, request),
-            'declare-admissible':   () => this.dossierService.declareAdmissible(this.dossier!.id, request),
-            'declare-inadmissible': () => this.dossierService.declareInadmissible(this.dossier!.id, request),
-            'close':                () => this.dossierService.close(this.dossier!.id, request)
-        };
-        const obs$ = map[this.currentTransitionType]?.();
+        const obs$ = TRANSITIONS[this.currentTransitionType as TypeTransition]
+            ?.appel(this.dossierService, this.dossier.id, request);
         if (!obs$) { this.transitioning = false; return; }
         obs$.subscribe({
             next: (updated: DossierResponse) => {

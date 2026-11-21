@@ -24,6 +24,11 @@ const ACTIONS: Record<ActionId, ActionPrincipale> = {
     'cloturer':             { id: 'cloturer', label: 'Clôturer le dossier', icon: 'pi pi-lock', severity: 'secondary' }
 };
 
+/** Libellé du bouton d'une action (aussi le titre de sa fenêtre de confirmation). */
+export function libelleAction(id: ActionId): string {
+    return ACTIONS[id].label;
+}
+
 /** Actions du circuit proposées à cet agent, la voie principale d'abord. Vide si ce n'est pas à lui d'agir. */
 export function actionsPrincipales(
     statut: string | undefined,
@@ -56,6 +61,18 @@ export function actionsPrincipales(
             break;
     }
     return ids.map(id => ACTIONS[id]);
+}
+
+/**
+ * Phrase d'étape : « Votre action : … » pour l'agent dont c'est le tour, « En attente : … » pour les autres.
+ * Null hors circuit. Partagée par le détail et la liste.
+ */
+export function phraseEtape(statut: string | undefined, mesActions: ActionPrincipale[]): string | null {
+    const attente = attenteDe(statut);
+    if (!attente) { return null; }
+    return mesActions.length
+        ? `Votre action : ${mesActions.map(a => a.label).join(' ou ')}.`
+        : `En attente : ${attente.charAt(0).toLowerCase()}${attente.slice(1)}`;
 }
 
 /** Qui doit agir à cette étape, pour que l'agent qui n'a rien à faire sache qui s'en charge. Null hors circuit. */
