@@ -117,6 +117,8 @@ export interface DossierResponse {
     incidentPeriod?: string;
     estimatedLoss?: number;
     typologieInstitutionnelle?: string;
+    /** Zone d'origine du déclarant telle que publiée (KADIOGO, GUIRIKO, AUTRES_REGIONS, DIASPORA). */
+    regionOrigine?: string;
     /** Motif choisi par le citoyen en mots simples (facultatif) ; l'allégation officielle reste celle de l'agent. */
     motifDeclare?: string;
     isConfidential: boolean;
