@@ -1,24 +1,9 @@
 <p-toast />
 <p-confirmDialog />
 
-<p-dialog [(visible)]="showTransitionDialog" [header]="transitionDialogTitle"
-    [modal]="true" [style]="{width:'500px'}" [draggable]="false">
-    <div class="flex flex-col gap-4 py-2">
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2">
-            <i class="pi pi-info-circle text-blue-500 mt-0.5"></i>
-            <p class="text-sm text-blue-700">{{ transitionPlaceholder }}</p>
-        </div>
-        <textarea pTextarea [(ngModel)]="transitionReason"
-            placeholder="Motif / Observation (optionnel)"
-            rows="4" class="w-full resize-none"></textarea>
-    </div>
-    <ng-template pTemplate="footer">
-        <p-button label="Annuler" severity="secondary" outlined
-            (onClick)="showTransitionDialog=false"/>
-        <p-button [label]="transitionDialogTitle"
-            [loading]="transitioning" (onClick)="executeTransition()"/>
-    </ng-template>
-</p-dialog>
+<!-- Confirmation d'une action simple du circuit : la même fenêtre que sur la liste (vérification avant d'agir) -->
+<app-transition-dossier *ngIf="actionEnCours && dossier" [dossier]="dossier" [action]="actionEnCours"
+    (termine)="apresTransition($event)" (ferme)="actionEnCours = null" />
 
 <p-dialog [(visible)]="showComplementDialog"
     header="Demander un complément au déclarant"

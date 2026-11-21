@@ -303,6 +303,33 @@ describe('DossierDetail — ce que l\'agent peut faire, selon ses droits', () =>
         });
     });
 
+    describe('fenêtre de confirmation partagée avec la liste', () => {
+        it('chaque action simple ouvre la fenêtre partagée, avec la vérification avant d\'agir', () => {
+            const attendu: [string, string][] = [
+                ['openRegister', 'enregistrer'], ['openStartStudy', 'demarrer-etude'], ['openSubmitCtadp', 'soumettre-ctadp'],
+                ['openComplementReceived', 'complement-recu'], ['openDeclareAdmissible', 'declarer-recevable'],
+                ['openDeclareInadmissible', 'declarer-irrecevable'], ['openClose', 'cloturer']
+            ];
+            for (const [methode, action] of attendu) {
+                component.actionEnCours = null;
+
+                (component as any)[methode]();
+
+                expect(component.actionEnCours).withContext(methode).toBe(action as any);
+            }
+        });
+
+        it('une fois l\'action faite, le dossier affiché est celui que rend le serveur et la fenêtre se ferme', () => {
+            component.dossier = dossier('EN_REVUE_CTADP');
+            component.actionEnCours = 'declarer-recevable';
+
+            component.apresTransition(dossier('RECEVABLE', { version: 5 }));
+
+            expect(component.dossier?.status).toBe('RECEVABLE');
+            expect(component.actionEnCours).toBeNull();
+        });
+    });
+
     describe('action demandée depuis le menu « ⋯ » de la liste (?action=…)', () => {
         function moi(...mesRoles: string[]): void {
             spyOn(TestBed.inject(KeycloakService), 'hasAnyRole').and.callFake((r: string[]) => r.some(x => mesRoles.includes(x)));
